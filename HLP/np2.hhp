@@ -1,6 +1,6 @@
 [OPTIONS]
 Compatibility=1.1 or later
-Compiled file=../bin/np2.chm
+Compiled file=..\bin\vaeg.chm
 Contents file=np2.hhc
 Default Window=NP2
 Default topic=index.html
@@ -8,10 +8,11 @@ Display compile progress=No
 Full-text search=Yes
 Index file=np2.hhk
 Language=0x411 日本語
-Title=ねこープロジェクトII・ヘルプ
+Title=88VA Eternal Grafx ヘルプ
 
 [WINDOWS]
 NP2=,"np2.hhc","np2.hhk","index.html",,,,,,0x2520,,0x3006,,,,,,,,0
+
 
 [FILES]
 index.html

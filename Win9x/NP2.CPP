@@ -103,7 +103,11 @@ static	HMENU		hStat = NULL;
 static	BYTE		scrnmode;
 static	WINLOCEX	smwlex;
 
+#if defined(SUPPORT_PC88VA)
+static const char np2help[] = "vaeg.chm";
+#else
 static const char np2help[] = "np2.chm";
+#endif
 static const char np2flagext[] = "S%02d";
 
 

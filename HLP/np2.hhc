@@ -6,8 +6,13 @@
 </HEAD><BODY>
 <UL>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="ねこープロジェクトII">
+		<param name="Name" value="88VA Eternal Grafx">
 		<param name="Local" value="index.html">
+		<param name="ImageNumber" value="11">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="88VA Eternal Grafxについて">
+		<param name="Local" value="aboutva.html">
 		<param name="ImageNumber" value="11">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
@@ -281,7 +286,7 @@
 		<param name="ImageNumber" value="11">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="WebPage & CVS">
+		<param name="Name" value="WebPage">
 		<param name="Local" value="webpage.html">
 		<param name="ImageNumber" value="11">
 		</OBJECT>

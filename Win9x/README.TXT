@@ -123,20 +123,22 @@
   Neko Project IIの作者様への問い合わせはおやめください。
 
     ・Web
-      http://www.pc88.gr.jp/vaemu/
+      http://www.pc88.gr.jp/vaeg/
 
     ・メール
-      shinra@keb.biglobe.ne.jp
+      shinra＊keb_biglobe_ne_jp 
+      (メールアドレスの ＊ は @ に、 _ は . に置き換えてお読みください。)
 
         なお、上記メールアドレスは将来変更する可能性もあります。その場合は、
       以下にメールすることで最新のアドレスが自動返信されます。
       (そのようにするつもりです。)
-        shinra@mtj.biglobe.ne.jp
+        shinra＊mtj_biglobe_ne_jp
 
 
 
 
 以下、np2 v0.80のREADME.TXTです。
+(メールアドレスの部分のみ書き換えています)
 ==============================================================================
 　Neko Project II
                                        NP2 developer team, 1999-2001,2003,2004
@@ -418,6 +420,8 @@
 
 
 
-　　　　　　　　　　　　　　　　　　email: np2@yui.ne.jp
+　　　　　　　　　　　　　　　　　　email: np2＊yui_ne_jp
 　　　　　　　　　　　　　　　　　　webpage: http://www.yui.ne.jp/np2/
+
+      (メールアドレスの ＊ は @ に、 _ は . に置き換えてお読みください。)
 =============================================================================

@@ -972,7 +972,7 @@ BEGIN
             VALUE "FileDescription", "PC-88VA series emulator\0"
             VALUE "FileVersion", "0, 0, 0, 0\0"
             VALUE "InternalName", "vaeg\0"
-            VALUE "LegalCopyright", "Project VA\0"
+            VALUE "LegalCopyright", "Shinra\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "vaeg.exe\0"
             VALUE "PrivateBuild", "\0"

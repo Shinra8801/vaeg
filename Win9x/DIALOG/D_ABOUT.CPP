@@ -12,14 +12,15 @@
 static	SIZE	aboutsize;
 
 #if defined(SUPPORT_PC88VA)
-static const char str_np2title[] = "88VA Eternal Grafx\n\n   based on Neko Project II ";
-#else
+static const char str_vaegtitle[] = "88VA Eternal Grafx  ";
+#endif
+
 #if !defined(SUPPORT_PC9821)
 static const char str_np2title[] = "Neko Project II  ";
 #else
 static const char str_np2title[] = "Neko Project 21  ";
 #endif
-#endif
+
 static const char np2infostr[] = 								\
 						"CPU: %CPU% %CLOCK%\n"					\
 						"MEM: %MEM1%\n"							\
@@ -43,7 +44,14 @@ static void about_init(HWND hWnd) {
 	POINT	pt;
 	RECT	parent;
 
+#if defined(SUPPORT_PC88VA)
+	milstr_ncpy(work, str_vaegtitle, sizeof(work));
+	milstr_ncat(work, VAEGREL_CORE, sizeof(work));
+	milstr_ncat(work, "\nToo\n  Based on ", sizeof(work));
+	milstr_ncat(work, str_np2title, sizeof(work));
+#else
 	milstr_ncpy(work, str_np2title, sizeof(work));
+#endif
 	milstr_ncat(work, np2version, sizeof(work));
 #if defined(NP2VER_WIN9X)
 	milstr_ncat(work, NP2VER_WIN9X, sizeof(work));

@@ -1,6 +1,10 @@
-
+#if defined(SUPPORT_PC88VA)
+static const char np2toolclass[] = "VAEG-toolwin";
+static const char np2tooltitle[] = "VA-EG tool";
+#else
 static const char np2toolclass[] = "np2-toolwin";
 static const char np2tooltitle[] = "NP2 tool";
+#endif
 
 static const char str_deffont[] = "‚l‚r ‚oƒSƒVƒbƒN";
 static const char str_browse[] = "...";
@@ -53,7 +57,13 @@ static const INITBL skinini2[] = {
 	{"FD2BROWSE",	INITYPE_ARGS16,	&subitem[IDC_TOOLFDD2BROWSE].posx,	5},
 	{"FD2EJECT",	INITYPE_ARGS16,	&subitem[IDC_TOOLFDD2EJECT].posx,	5},
 	{"RESETBTN",	INITYPE_ARGS16,	&subitem[IDC_TOOLRESET].posx,		5},
-	{"POWERBTN",	INITYPE_ARGS16,	&subitem[IDC_TOOLPOWER].posx,		5}};
+	{"POWERBTN",	INITYPE_ARGS16,	&subitem[IDC_TOOLPOWER].posx,		5},
+#if defined(SUPPORT_PC88VA)
+	{"V1MODE",		INITYPE_ARGS16,	&subitem[IDC_TOOLV1MODE].posx,		5},
+	{"V2MODE",		INITYPE_ARGS16,	&subitem[IDC_TOOLV2MODE].posx,		5},
+	{"V3MODE",		INITYPE_ARGS16,	&subitem[IDC_TOOLV3MODE].posx,		5},
+#endif
+	};
 
 
 // static const DWORD mvccol[MVC_MAXCOLOR] = {

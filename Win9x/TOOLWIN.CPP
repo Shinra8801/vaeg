@@ -327,6 +327,7 @@ static void accdraw(HWND hWnd, BYTE count) {
 	EndPaint(hWnd, &ps);
 }
 
+#if defined(SUPPORT_PC88VA)
 static void modedraw(HWND hWnd, BYTE sw) {
 
 	HDC			hdc;
@@ -341,6 +342,7 @@ static void modedraw(HWND hWnd, BYTE sw) {
 	SelectObject(hdc, hbrush);
 	EndPaint(hWnd, &ps);
 }
+#endif
 
 static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 

@@ -7,7 +7,11 @@
 
 // ---- I/O
 
+#if defined(SUPPORT_PC88VA)
+       void IOOUTCALL upd4990_o20(UINT port, REG8 dat) {
+#else
 static void IOOUTCALL upd4990_o20(UINT port, REG8 dat) {
+#endif
 
 	REG8	mod;
 	REG8	cmd;

@@ -189,6 +189,32 @@ static void get_eotgsldtl(void) {
 	fdc.dtl = fdc.cmds[7];
 }
 
+#if 1	// Shinra
+
+static BOOL inc_fdcR(void) {
+	BOOL	over;			// シリンダをまたがった
+
+	over = FALSE;
+
+	fdc.R++;
+	if (fdc.R > fdc.eot) {
+		if (fdc.cmd & 0x80) {
+			// MT=1
+			if (fdc.hd) over = TRUE;
+			fdc.C += fdc.hd;
+			fdc.H = fdc.hd ^ 1;
+			fdc.R = 1;
+		}
+		else {
+			over = TRUE;
+			fdc.C++;
+			fdc.R = 1;
+		}
+	}
+	return over;
+}
+#endif
+
 // --------------------------------------------------------------------------
 
 static void FDC_Invalid(void) {							// cmd: xx
@@ -324,6 +350,7 @@ static void FDC_WriteData(void) {						// cmd: 05
 			if (writesector()) {
 				return;
 			}
+#if 0 // np2
 			if (fdc.tc) {
 				fdcsend_success7();
 				return;
@@ -334,6 +361,22 @@ static void FDC_WriteData(void) {						// cmd: 05
 				fdcsend_error7();
 				break;
 			}
+#else // Shinra
+			{
+				BOOL	over;
+				over = inc_fdcR();
+				if (fdc.tc) {
+					fdcsend_success7();
+					return;
+				}
+				if (over) {
+					fdc.stat[fdc.us] = fdc.us | (fdc.hd << 2) |
+														FDCRLT_IC0 | FDCRLT_EN;
+					fdcsend_error7();
+					break;
+				}
+			}
+#endif
 			break;
 
 		default:
@@ -699,18 +742,13 @@ REG8 DMACCALL fdc_dataread(void) {
 				if (fdc.tc) {
 					if (!fdc.bufcnt) {						// ver0.26
 						fdc.R++;
-#if 0
+#if 0	// np2
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							fdc.C += fdc.hd;
 							fdc.H = fdc.hd ^ 1;
 							fdc.R = 1;
 						}
 #else	// Shinra
-						/* ToDo:
-							このタイミングでR++しているが、
-							この先FDC_Ope[...]()でFDC_ReadDataが呼ばれたときにも
-							R++されるので、Rが2進むような気がする。
-						*/
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							/* ToDo:
 								fdd_seeksectorがfalseを返した場合のみ
@@ -722,17 +760,9 @@ REG8 DMACCALL fdc_dataread(void) {
 							fdc.H = fdc.hd ^ 1;
 							fdc.R = 1;
 						}
-						else if (fdc.R > fdc.eot) {
-							if (fdc.cmd & 0x80) {
-								// MT=1
-								fdc.C += fdc.hd;
-								fdc.H = fdc.hd ^ 1;
-								fdc.R = 1;
-							}
-							else {
-								fdc.C++;
-								fdc.R = 1;
-							}
+						else {
+							fdc.R--;	// inc_fdcRの中で+1するので。
+							inc_fdcR();
 						}
 #endif
 					}

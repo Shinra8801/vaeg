@@ -10,6 +10,7 @@
 #include	"beep.h"
 #include	"board14.h"
 
+#include	"iocoreva.h"
 
 #define	BEEPCOUNTEREX					// BEEPアイドル時のカウンタをα倍に
 #if defined(CPUCORE_IA32)
@@ -441,5 +442,15 @@ void itimer_bind(void) {
 	iocore_attachinp(0x3fd9, pit_i71);
 	iocore_attachinp(0x3fdb, pit_i71);
 	iocore_attachinp(0x3fdd, pit_i71);
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_attachout(0x1a0, pit_o71);
+	iocoreva_attachout(0x1a2, pit_o73);
+	iocoreva_attachout(0x1a4, pit_o75);
+	iocoreva_attachout(0x1a6, pit_o77);
+	iocoreva_attachinp(0x1a0, pit_i71);
+	iocoreva_attachinp(0x1a2, pit_i71);
+	iocoreva_attachinp(0x1a4, pit_i71);
+#endif
 }
 

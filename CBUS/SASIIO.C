@@ -10,6 +10,9 @@
 #include	"sxsi.h"
 #include	"sasibios.res"
 
+#if defined(SUPPORT_PC88VA)
+#include	"iocoreva.h"
+#endif
 
 enum {
 	SASI_IRQ		= 0x09,
@@ -78,9 +81,16 @@ static void sasidmac(void) {
 
 	REG8	en;
 
+#if 0 // np2
 	if ((sasiio.ocr & SASIOCR_DMAE) &&
 		((sasiio.phase == SASIPHASE_READ)
 			|| (sasiio.phase == SASIPHASE_WRITE))) {
+#else // Shinra
+	if ((sasiio.ocr & SASIOCR_DMAE) &&
+		((sasiio.phase == SASIPHASE_READ)
+			|| (sasiio.phase == SASIPHASE_WRITE) 
+			|| (sasiio.phase == SASIPHASE_SENSE) )) {
+#endif
 		en = TRUE;
 	}
 	else {
@@ -151,6 +161,9 @@ static void checkcmd(void) {
 			sasiio.sens[3] = (BYTE)sasiio.sector;
 			sasiio.error = 0x00;
 			sasiio.stat = 0x00;
+#if 1 // Shinra
+			sasidmac();
+#endif
 			break;
 
 		case 0x04:		// Format Drive
@@ -264,6 +277,15 @@ REG8 DMACCALL sasi_dataread(void) {
 			}
 		}
 	}
+#if 1 // Shinra
+	if (sasiio.phase == SASIPHASE_SENSE) {
+		ret = sasiio.sens[sasiio.senspos];
+		sasiio.senspos++;
+		if (sasiio.senspos >= 4) {
+			sasisetstat(0x00);
+		}
+	}
+#endif
 	else {
 		ret = 0;
 	}
@@ -473,6 +495,12 @@ void sasiio_bind(void) {
 		iocore_attachout(0x0082, sasiio_o82);
 		iocore_attachinp(0x0080, sasiio_i80);
 		iocore_attachinp(0x0082, sasiio_i82);
+#if defined(SUPPORT_PC88VA)
+		iocoreva_attachout(0x0080, sasiio_o80);
+		iocoreva_attachout(0x0082, sasiio_o82);
+		iocoreva_attachinp(0x0080, sasiio_i80);
+		iocoreva_attachinp(0x0082, sasiio_i82);
+#endif
 	}
 }
 #endif

@@ -4,6 +4,8 @@
 
 typedef struct {
 	UINT8	c;
+	UINT8	port010;
+	UINT8	port040;
 } _SYSPORTVA, *SYSPORTVA;
 
 

@@ -10,9 +10,17 @@ static UINT8 key106[256] = {
 			//	    ,    ,    ,STOP,    ,    ,    ,    		; 0x00
 				  NC,  NC,  NC,0x60,  NC,  NC,  NC,  NC,
 			//	  BS, TAB,    ,    , CLR, ENT,    ,    		; 0x08
+#if defined(SUPPORT_PC88VA)
+				0x0e,0x0f,  NC,  NC,  NC,0x59,  NC,  NC,
+#else
 				0x0e,0x0f,  NC,  NC,  NC,0x1c,  NC,  NC,
+#endif
 			//	 SFT,CTRL, ALT,PAUS,CAPS,KANA,    ,    		; 0x10
+#if defined(SUPPORT_PC88VA)
+				0x70,0x58,0x5b,0x60,0x71,0x72,  NC,  NC,
+#else
 				0x70,0x74,0x73,0x60,0x71,0x72,  NC,  NC,
+#endif
 			//	 FIN, KAN,    , ESC,XFER,NFER,    ,  MD		; 0x18
 				  NC,  NC,  NC,0x00,0x35,0x51,  NC,  NC,
 			//	 SPC,RLUP,RLDN, END,HOME,  Å©,  Å™,  Å®		; 0x20
@@ -30,7 +38,11 @@ static UINT8 key106[256] = {
 			//	  Ço,  Çp,  Çq,  Çr,  Çs,  Çt,  Çu,  Çv		; 0x50
 				0x19,0x10,0x13,0x1e,0x14,0x16,0x2c,0x11,
 			//	  Çw,  Çx,  Çy,LWIN,RWIN, APP,    ,    		; 0x58
+#if defined(SUPPORT_PC88VA)
+				0x2a,0x15,0x29,  NC,  NC,0x5a,  NC,  NC,
+#else
 				0x2a,0x15,0x29,  NC,  NC,  NC,  NC,  NC,
+#endif
 			//	<ÇO>,<ÇP>,<ÇQ>,<ÇR>,<ÇS>,<ÇT>,<ÇU>,<ÇV>		; 0x60
 				0x4e,0x4a,0x4b,0x4c,0x46,0x47,0x48,0x42,
 			//	<ÇW>,<ÇX>,<Åñ>,<Å{>,<ÅC>,<Å|>,<ÅD>,<Å^>		; 0x68
@@ -72,13 +84,33 @@ static UINT8 key106[256] = {
 			//	    ,    ,    ,    ,    ,    ,    ,    		; 0xf8
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC};
 
+/*
+lParam bit24Ç…ÇÊÇ¡ÇƒÉLÅ[ÉRÅ[ÉhÇïœâªÇ≥ÇπÇÈèÍçáÅAà»â∫ÇÃÉeÅ[ÉuÉãÇ≈bit24=0ÇÃ
+èÍçáÇÃÉLÅ[ÉRÅ[ÉhÇéwíËÇ∑ÇÈÅB
+*/
+#if defined(SUPPORT_PC88VA)
+/*
+  	ÉLÅ[ÉRÅ[Éhbit7
+		0.SHIFTìØéûâüÇµ
+		1.SHIFTìØéûâüÇµÇπÇ∏
+*/
+#endif
+
 static const UINT8 key106ext[256] = {
 			//	    ,    ,    ,STOP,    ,    ,    ,    		; 0x00
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC,
 			//	  BS, TAB,    ,    , CLR, ENT,    ,    		; 0x08
+#if defined(SUPPORT_PC88VA)
+				  NC,  NC,  NC,  NC,  NC,0x9c,  NC,  NC,
+#else
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC,
+#endif
 			//	 SFT,CTRL, ALT,PAUS,CAPS,KANA,    ,    		; 0x10
+#if defined(SUPPORT_PC88VA)
+				  NC,0xf4,0xf3,  NC,  NC,  NC,  NC,  NC,
+#else
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC,
+#endif
 			//	 FIN, KAN,    , ESC,XFER,NFER,    ,  MD		; 0x18
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC,
 			//	 SPC,RLUP,RLDN, END,HOME,  Å©,  Å™,  Å®		; 0x20
@@ -156,8 +188,18 @@ void winkbd_keydown(WPARAM wParam, LPARAM lParam) {
 		else if ((np2oscfg.KEYBOARD != KEY_PC98) &&
 				(!(lParam & 0x01000000)) &&
 				(key106ext[wParam & 0xff] != NC)) {			// ver0.28
+#if defined(SUPPORT_PC88VA)
+			data = key106ext[wParam & 0xff];
+			if (data & 0x80) {
+				data &= ~0x80;
+			}
+			else {
+				keystat_senddata(0x70);							// PC/AT only!
+			}
+#else
 			keystat_senddata(0x70);							// PC/AT only!
 			data = key106ext[wParam & 0xff];
+#endif
 		}
 		keystat_senddata(data);
 	}
@@ -183,8 +225,18 @@ void winkbd_keyup(WPARAM wParam, LPARAM lParam) {
 		else if ((np2oscfg.KEYBOARD != KEY_PC98) &&
 				(!(lParam & 0x01000000)) &&
 				(key106ext[wParam & 0xff] != NC)) {		// ver0.28
+#if defined(SUPPORT_PC88VA)
+			data = key106ext[wParam & 0xff];
+			if (data & 0x80) {
+				data &= ~0x80;
+			}
+			else {
+				keystat_senddata(0x70 | 0x80);				// PC/AT only
+			}
+#else
 			keystat_senddata(0x70 | 0x80);				// PC/AT only
 			data = key106ext[wParam & 0xff];
+#endif
 		}
 		keystat_senddata((BYTE)(data | 0x80));
 	}

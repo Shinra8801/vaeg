@@ -103,6 +103,13 @@ static const KEYNAME keyname[] = {
 		{0x55, "VF4"},
 		{0x56, "VF5"},
 
+#if defined(SUPPORT_PC88VA)
+		{0x58, "SFTR"},
+		{0x59, "[RET]"},
+		{0x5a, "PC"},
+		{0x5b, "ZEN"},
+#endif
+
 		{0x60, "STOP"},
 		{0x61, "COPY"},
 		{0x62, "F1"},

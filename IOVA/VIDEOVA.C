@@ -25,14 +25,6 @@ static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
 	(void)port;
 }
 */
-static REG8 IOINPCALL videova_i040(UINT port) {
-	UINT8 ret;
-
-	ret = gdc.vsync;
-
-	(void)port;
-	return ret;
-}
 
 // ---- I/F
 
@@ -46,7 +38,6 @@ void videova_bind(void) {
 	iocoreva_attachout(0x198, memctrlva_o198);
 	iocoreva_attachout(0x19a, memctrlva_o19a);
 	*/
-	iocoreva_attachinp(0x040, videova_i040);
 }
 
 #endif

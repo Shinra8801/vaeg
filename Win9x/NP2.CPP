@@ -1167,6 +1167,7 @@ TRACEOUT(("WM_KEYDOWN: wParam = %02x lParam & 0x01000000 = %02x",wParam, lParam 
 			break;
 
 		case WM_KEYUP:
+TRACEOUT(("WM_KEYUP: wParam = %02x lParam & 0x01000000 = %02x",wParam, lParam & 0x01000000));
 			if (wParam == VK_F11) {
 				return(DefWindowProc(hWnd, WM_SYSKEYUP, VK_F10, lParam));
 			}
@@ -1191,6 +1192,7 @@ TRACEOUT(("WM_SYSKEYDOWN: wParam = %02x lParam & 0x21000000 = %02x",wParam, lPar
 			break;
 
 		case WM_SYSKEYUP:
+TRACEOUT(("WM_SYSKEYUP: wParam = %02x lParam & 0x21000000 = %02x",wParam, lParam & 0x21000000));
 			winkbd_keyup(wParam, lParam);
 			break;
 

@@ -7,6 +7,7 @@
 #include	"videova.h"
 #include	"fdsubsys.h"
 #include	"sysportva.h"
+#include	"mouseifva.h"
 
 #ifdef __cplusplus
 extern "C" {

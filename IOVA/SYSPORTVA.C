@@ -1,5 +1,5 @@
 /*
- * SYSPORTVA.C: PC-88VA System port
+ * SYSPORTVA.C: PC-88VA System port/Calendar/Printer
  */
 
 
@@ -29,7 +29,60 @@ static void modeled_oneventset() {
 	}
 }
 
+static void calendar_ondataset() {
+	upd4990_o20(0,
+		(REG8) ((sysportva.port010 & 0x07) |		// C0-C2
+		        ((sysportva.port010 & 0x08) << 2) |	// データ出力
+		        ((sysportva.port040 & 0x06) << 2))	// STB,CLK
+	);
+}
+
 // ---- I/O
+
+static void IOOUTCALL sysp_o010(UINT port, REG8 dat) {
+	sysportva.port010 = dat;
+	calendar_ondataset();
+	// ToDo: プリンタ 未実装
+}
+
+/*
+	bit7	FBEEP
+	bit6	JOP1
+	bit5	BEEP
+	bit4	1
+	bit3	0
+	bit2	CCLK
+	bit1	CSTB
+	bit0	XPSTB
+*/
+static void IOOUTCALL sysp_o040(UINT port, REG8 dat) {
+	sysportva.port040 = dat;
+	calendar_ondataset();
+	// ToDo: カレンダ以外
+}
+
+/*
+	bit7	1
+	bit6	1
+	bit5	VRTC
+	bit4	CDI
+	bit3	SW7
+	bit2	DCD
+	bit1	SW1
+	bit0	PBSY
+*/
+static REG8 IOINPCALL sysp_i040(UINT port) {
+	UINT8 ret;
+
+	ret =
+		0xc0 |							// 常に1
+		(gdc.vsync & 0x20) |			// VSYNC
+		((uPD4990.cdat & 0x01) << 4) |	// CDI(カレンダ時計)
+		0x01;							// PBSY
+
+	return ret;
+}
+
 
 static void IOOUTCALL sysp_o1cd(UINT port, REG8 dat) {
 
@@ -97,12 +150,17 @@ static REG8 IOINPCALL sysp_i1cd(UINT port) {
 void systemportva_reset(void) {
 
 	sysportva.c = 0xf9;
+	sysportva.port010 = 0;
+	sysportva.port040 = 0;
 	//beep_oneventset();
 	modeled_oneventset();
 }
 
 void systemportva_bind(void) {
 
+	iocoreva_attachout(0x010, sysp_o010);
+	iocoreva_attachout(0x040, sysp_o040);
+	iocoreva_attachinp(0x040, sysp_i040);
 
 	iocoreva_attachout(0x1cd, sysp_o1cd);
 	iocoreva_attachout(0x1cf, sysp_o1cf);

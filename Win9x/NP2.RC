@@ -967,14 +967,18 @@ BEGIN
     BEGIN
         BLOCK "041104b0"
         BEGIN
+            VALUE "Comments", "\0"
             VALUE "CompanyName", "\0"
-            VALUE "FileDescription", "PC-9801series emulator\0"
-            VALUE "FileVersion", "0, 7, 6, 0\0"
-            VALUE "InternalName", "np2\0"
-            VALUE "LegalCopyright", "ÇÀÇ±Ç≥ÇÒäJî≠ÇøÅ[Çﬁ\0"
-            VALUE "OriginalFilename", "np2.exe\0"
-            VALUE "ProductName", "Neko Project II\0"
-            VALUE "ProductVersion", "0, 7, 6, 0\0"
+            VALUE "FileDescription", "PC-88VA series emulator\0"
+            VALUE "FileVersion", "0, 0, 0, 0\0"
+            VALUE "InternalName", "vaeg\0"
+            VALUE "LegalCopyright", "Project VA\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "vaeg.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "88VA Eternal Grafx\0"
+            VALUE "ProductVersion", "0, 0, 0, 0\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"

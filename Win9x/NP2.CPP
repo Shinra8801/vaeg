@@ -54,7 +54,11 @@
 #define		OPENING_WAIT		1500
 #endif
 
+#if defined(SUPPORT_PC88VA)
+static	char		szClassName[] = "VAEG-MainWindow";
+#else
 static	char		szClassName[] = "NP2-MainWindow";
+#endif
 		HWND		hWndMain;
 		HINSTANCE	hInst;
 		HINSTANCE	hPrev;
@@ -63,12 +67,17 @@ static	char		szClassName[] = "NP2-MainWindow";
 		BOOL		winui_en;
 
 		NP2OSCFG	np2oscfg = {
+#if defined(SUPPORT_PC88VA)
+						"88VA Eternal Grafx",
+						"VA-EG",
+#else
 #if !defined(SUPPORT_PC9821)
 						"Neko Project II",
 #else
 						"Neko Project 21",
 #endif
 						"NP2",
+#endif
 						CW_USEDEFAULT, CW_USEDEFAULT, 1, 1, 0, 1, 0, 0,
 						0, 0, KEY_UNKNOWN, 0,
 						0, 0, 0, {1, 2, 2, 1},

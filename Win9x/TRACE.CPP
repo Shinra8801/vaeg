@@ -21,7 +21,7 @@
 #if 0											// Shinra
 #define	VIEW_BUFFERSIZE	4096
 #else
-#define	VIEW_BUFFERSIZE	16384
+#define	VIEW_BUFFERSIZE	8192
 #endif
 
 #define	VIEW_FGCOLOR	0x000000
@@ -360,7 +360,11 @@ void trace_init(void) {
 		wc.cbClsExtra = 0;
 		wc.cbWndExtra = 0;
 		wc.hInstance = hInst;
+#if 1 // Shinra
+		wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+#else
 		wc.hIcon = NULL;
+#endif
 		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 		wc.lpszMenuName = NULL;

@@ -12,7 +12,11 @@ typedef struct {
 
 typedef struct {
 	char	titles[256];
+#if defined(SUPPORT_PC88VA)
+	char	winid[6];
+#else
 	char	winid[4];
+#endif
 
 	int		winx;
 	int		winy;

@@ -14,7 +14,7 @@
 #include	"maketextva.h"
 
 enum {
-	TEXTVA_LINEHEIGHTMAX	= 16,
+	TEXTVA_LINEHEIGHTMAX	= 20,
 	TEXTVA_CHARWIDTH		= 8,
 
 	TEXTVA_FRAMES			= 4,		// 分割画面の最大数
@@ -63,6 +63,7 @@ typedef struct {
 	UINT	y;			// 現在処理中のラスタ
 	UINT	raster;
 	UINT	texty;
+	UINT	lineheight;	// 1行のラスタ数
 /*
 	UINT16	rsa;		// 分割画面スタートアドレス
 	UINT16	vw;			// フレームバッファの横幅(バイト)
@@ -119,7 +120,7 @@ static void synattr1(BYTE attr, CHARATTR charattr) {
 
 static void makeline(BYTE *v, UINT16 rwchar) {
 	int		x;
-	int		r;
+	UINT	r;
 	int		i;
 	BYTE	*b;
 	WORD	hccode;
@@ -127,6 +128,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 	BYTE	fontdata;
 	BYTE	attr;
 	int		fontw;
+	UINT	fonth;
 	_CHARATTR	charattr;
 	UINT8	bg;
 	UINT8	fg;
@@ -142,6 +144,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 		v+=2;
 		font = cgromva_font(hccode);
 		fontw = cgromva_width(hccode);
+		fonth = 16;
 		work.synattr(attr, &charattr);
 
 		if (charattr.attr & TEXTVA_ATR_RV) {
@@ -156,7 +159,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 			fg = bg;
 		}
 
-		for (r = 0; r < tsp.lineheight; r++) {
+		for (r = 0; r < work.lineheight; r++) {
 			fontdata = *font;
 			font += fontw;
 			if ((charattr.attr & (TEXTVA_ATR_HL | TEXTVA_ATR_HL2)) && r == tsp.hlinepos) {
@@ -164,15 +167,20 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 					b[i] = fg;
 				}
 			}
-			else {
+			else if (r < fonth) {
 				for (i = 0; i < 8; i++) {
 					b[i] = (fontdata & 0x80) ? fg : bg;
 					fontdata <<= 1;
 				}
 			}
+			else {
+				for (i = 0; i < 8; i++) {
+					b[i] = bg;
+				}
+			}
 			b += SURFACE_WIDTH;
 		}
-		b -= SURFACE_WIDTH * tsp.lineheight - TEXTVA_CHARWIDTH;
+		b -= SURFACE_WIDTH * work.lineheight - TEXTVA_CHARWIDTH;
 	}
 
 }
@@ -256,6 +264,10 @@ void maketextva_begin(void) {
 	work.rwchar = work.rw / 8 + 2;
 */
 	work.y = 0;
+	work.lineheight = tsp.lineheight;
+	if (work.lineheight > TEXTVA_LINEHEIGHTMAX) {
+		work.lineheight = TEXTVA_LINEHEIGHTMAX;
+	}
 
 	// 分割画面制御テーブルの情報をコピー
 	fbinfo = textmem + tsp.texttable;
@@ -317,7 +329,7 @@ void maketextva_raster(void) {
 	}
 
 	work.raster++;
-	if (work.raster >= tsp.lineheight) {
+	if (work.raster >= work.lineheight) {
 		work.linebitmap_ready = FALSE;
 		work.raster = 0;
 	}

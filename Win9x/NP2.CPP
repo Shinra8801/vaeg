@@ -46,6 +46,9 @@
 #include	"subwind.h"
 #include	"viewer.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"bkupmemva.h"
+#endif
 
 #ifdef BETA_RELEASE
 #define		OPENING_WAIT		1500
@@ -1413,6 +1416,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	kdispwin_readini();
 	skbdwin_readini();
 	mdbgwin_readini();
+#if defined(SUPPORT_PC88VA)
+	bkupmemva_load();
+#endif
 
 	rand_setseed((unsigned)time(NULL));
 
@@ -1748,6 +1754,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 		mdbgwin_writeini();
 	}
 	skbdwin_deinitialize();
+#if defined(SUPPORT_PC88VA)
+	bkupmemva_save();
+#endif
 
 	TRACETERM();
 	_MEM_USED("report.txt");

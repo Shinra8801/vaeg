@@ -1,4 +1,59 @@
+  VA-EG固有事項
 
+・使用方法
+
+  ROMイメージ必須です。以下のファイルをnp2.exeと同じフォルダに置いてください。
+    VAFONT.ROM (320KB)  システムメモリエリア バンク8,9(9はA0000-AFFFF)
+    VADIC.ROM  (512KB)  システムメモリエリア バンクC,D
+    VAROM00.ROM(512KB)  ROMエリア0 バンク0～7
+    VAROM08.ROM(128KB)  ROMエリア0 バンク8～9
+    VAROM1.ROM (128KB)  ROMエリア1 バンク0,1
+
+  CPUは「V30ぽい動き」をします。V30独自命令(0Fhで始まる)はほとんど未サポート
+  です。0Fhで始まる未サポート命令を実行すると、永久にその命令を実行し続けま
+  す(IPが進まない)。ハングしたように見える場合は、Debug UtilityでIPを観察する
+  ことにより、これに該当するかどうか判断できます。
+
+・ディスクイメージ
+
+　　　FDD  - D88形式, XDF(ベタイメージ)形式
+　　　SASI - THD形式(T98), HDI形式(Anex86)
+             THDはEmulate-NewDiskで作成した直後の状態では使用不可。
+             98でいったんフォーマットすると使用可能かもしれない(未確認)
+      IDE  - 使用不可
+　　　SCSI - 使用不可
+
+・キー設定について
+
+  Win              88             98
+  ---------------------------------------
+  CTRL右        → SFT右          SHIFT(*)
+  tenkey[enter] → tenkey [RET]   RET
+  Windows App   → PC             無効
+  ALT右         → 全角           無効(*)
+  無変換        → 決定           NFER
+  変換          → 変換           XFER
+
+  (*)オリジナルnp2と割り当てが異なることに注意
+
+  key.txt用のシンボルとして以下を追加(動作未確認)
+
+  シンボル キー
+  ---------------------
+  SFTR     右SHIFT
+  [RET]    テンキーのRET 
+  PC       PC
+  ZEN      全角
+
+  
+
+
+                                                                      Shinra
+                                      http://sourceforge.jp/projects/pc88va/
+
+
+以下、np2のREADME.TXT
+==============================================================================
 　Neko Project II
                                        NP2 developer team, 1999-2001,2003,2004
 

@@ -221,6 +221,7 @@ static void checkcmd(void) {
 			break;
 
 		case 0x0b:
+			TRACEOUT(("Command 0x0b"));
 			sasiio.sector = (sasiio.cmd[1] & 0x1f) << 16;
 			sasiio.sector += (sasiio.cmd[2] << 8);
 			sasiio.sector += sasiio.cmd[3];
@@ -230,6 +231,7 @@ static void checkcmd(void) {
 			break;
 
 		case 0xc2:
+			TRACEOUT(("Command 0xc2"));
 			sasiio.phase = SASIPHASE_C2;
 			sasiio.c2pos = 0;
 			sasiio.stat = 0x00;
@@ -278,7 +280,7 @@ REG8 DMACCALL sasi_dataread(void) {
 		}
 	}
 #if 1 // Shinra
-	if (sasiio.phase == SASIPHASE_SENSE) {
+	else if (sasiio.phase == SASIPHASE_SENSE) {
 		ret = sasiio.sens[sasiio.senspos];
 		sasiio.senspos++;
 		if (sasiio.senspos >= 4) {
@@ -322,17 +324,19 @@ void DMACCALL sasi_datawrite(REG8 data) {
 
 static void IOOUTCALL sasiio_o80(UINT port, REG8 dat) {
 
+	TRACEOUT(("sasi: o080: 0x%.2x", dat));
+
 	switch(sasiio.phase) {
 		case SASIPHASE_FREE:
 			if (dat == 1) {
-//				TRACEOUT(("select controller - 1"));
+				TRACEOUT(("select controller - 1"));
 				sasiio.phase = SASIPHASE_CMD;
 				sasiio.cmdpos = 0;
 			}
 			break;
 
 		case SASIPHASE_CMD:
-//			TRACEOUT(("sasi cmd = %.2x", dat));
+			TRACEOUT(("sasi cmd = %.2x", dat));
 			sasiio.cmd[sasiio.cmdpos] = (BYTE)dat;
 			sasiio.cmdpos++;
 			if (sasiio.cmdpos >= 6) {
@@ -341,6 +345,7 @@ static void IOOUTCALL sasiio_o80(UINT port, REG8 dat) {
 			break;
 
 		case SASIPHASE_C2:
+			TRACEOUT(("sasi c2 data"));
 			sasiio.c2pos++;
 			if (sasiio.c2pos >= 10) {
 				sasisetstat(0x00);
@@ -348,6 +353,7 @@ static void IOOUTCALL sasiio_o80(UINT port, REG8 dat) {
 			break;
 
 		case SASIPHASE_WRITE:
+			TRACEOUT(("sasi write"));
 			sasi_datawrite(dat);
 			break;
 	}
@@ -357,6 +363,8 @@ static void IOOUTCALL sasiio_o80(UINT port, REG8 dat) {
 static void IOOUTCALL sasiio_o82(UINT port, REG8 dat) {
 
 	UINT8	oldocr;
+
+	TRACEOUT(("sasi: o082: 0x%.2x", dat));
 
 	oldocr = sasiio.ocr;
 	sasiio.ocr = (BYTE)dat;
@@ -401,8 +409,10 @@ static REG8 IOINPCALL sasiio_i80(UINT port) {
 			if (sasiio.senspos >= 4) {
 				sasisetstat(0x00);
 			}
+			TRACEOUT(("sasi sense"));
 			break;
 	}
+	TRACEOUT(("sasi: i080: ret=0x%.2x", ret));
 	(void)port;
 	return(ret);
 }
@@ -456,6 +466,8 @@ static REG8 IOINPCALL sasiio_i82(UINT port) {
 		}
 	}
 	(void)port;
+
+	TRACEOUT(("sasi: i082: ret=0x%.2x", ret));
 	return(ret);
 }
 

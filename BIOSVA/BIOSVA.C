@@ -5,7 +5,6 @@
  */
 
 #include	"compiler.h"
-#include	"strres.h"
 #include	"dosio.h"
 #include	"cpucore.h"
 #include	"pccore.h"

@@ -44,6 +44,7 @@
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/palettesva.h"
 #include	"../vramva/maketextva.h"
+#include	"memoryva.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -589,6 +590,9 @@ void screenvsync(NEVENTITEM item) {
 #if defined(TRACE) && IPTRACE
 static	UINT	trpos = 0;
 static	UINT32	treip[IPTRACE];
+#if defined(SUPPORT_PC88VA)
+static	BYTE	trerom0bank[IPTRACE];
+#endif
 
 void iptrace_out(void) {
 
@@ -606,9 +610,16 @@ void iptrace_out(void) {
 	}
 	fh = file_create_c("his.txt");
 	while(s < trpos) {
+#if defined(SUPPORT_PC88VA)
+		BYTE	bank = trerom0bank[s & (IPTRACE - 1)];
+#endif
 		eip = treip[s & (IPTRACE - 1)];
 		s++;
+#if defined(SUPPORT_PC88VA)
+		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x)\r\n", (eip >> 16), eip & 0xffff, bank);
+#else
 		SPRINTF(buf, "%.4x:%.4x\r\n", (eip >> 16), eip & 0xffff);
+#endif
 		file_write(fh, buf, strlen(buf));
 	}
 	file_close(fh);
@@ -671,6 +682,9 @@ void pccore_exec(BOOL draw) {
 		while(CPU_REMCLOCK > 0) {
 #if IPTRACE
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
+#if defined(SUPPORT_PC88VA)
+			trerom0bank[trpos & (IPTRACE - 1)] = rom0_bank;
+#endif
 			trpos++;
 #endif
 			//TRACEOUT(("%.4x:%.4x", CPU_CS, CPU_IP));
@@ -680,6 +694,11 @@ void pccore_exec(BOOL draw) {
 			}
 			else {
 				v30x_step();						// added by Shinra
+/*
+				if (CPU_CS == 0xef70 && CPU_IP==0x19cc) {
+					iptrace_out();
+				}
+*/
 			}
 		}
 #endif

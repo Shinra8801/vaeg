@@ -1147,7 +1147,7 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 					// オペランドがレジスタの場合
 					// byte ptr I286_REG[eax]でレジスタにアクセスできる
 
-					movzx	ecx, ebx
+					mov		ecx, ebx
 					shr		ecx, 16
 					and		cx, 0007h	// imm3
 					mov		al, byte ptr I286_REG[eax]
@@ -1194,8 +1194,8 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 
 
 
-I286 v30_clr1_ea8_i3(void) {					// F0 1A 11/000/reg  imm3
-												// F0 1A mod/000/mem disp imm3
+I286 v30_clr1_ea8_i3(void) {					// 0F 1A 11/000/reg  imm3
+												// 0F 1A mod/000/mem disp imm3
 		__asm {
 				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
 									// BL=命令2バイト目、BH=命令3バイト目 ... となる
@@ -1205,7 +1205,7 @@ I286 v30_clr1_ea8_i3(void) {					// F0 1A 11/000/reg  imm3
 					// オペランドがレジスタの場合
 					// byte ptr I286_REG[eax]でレジスタにアクセスできる
 
-					movzx	edx, ebx
+					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 0007h	// imm3
 					mov		cl, byte ptr I286_REG[eax]
@@ -1256,7 +1256,7 @@ I286 v30_clr1_ea16_i4(void) {					// 0F 1B 11/000/reg  imm4
 					// オペランドがレジスタの場合
 					// byte ptr I286_REG[eax]でレジスタにアクセスできる
 
-					movzx	edx, ebx
+					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 000fh	// imm4
 					btr		word ptr I286_REG[eax], dx	// dxビット目をリセット
@@ -1303,7 +1303,7 @@ I286 v30_set1_ea8_i3(void) {					// 0F 1C 11/000/reg  imm3
 					// オペランドがレジスタの場合
 					// byte ptr I286_REG[eax]でレジスタにアクセスできる
 
-					movzx	edx, ebx
+					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 0007h	// imm3
 					mov		cl, byte ptr I286_REG[eax]
@@ -1354,7 +1354,7 @@ I286 v30_set1_ea16_i4(void) {					// 0F 1D 11/000/reg  imm4
 					// オペランドがレジスタの場合
 					// byte ptr I286_REG[eax]でレジスタにアクセスできる
 
-					movzx	edx, ebx
+					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 000fh	// imm4
 					bts		word ptr I286_REG[eax], dx	// dxビット目をセット

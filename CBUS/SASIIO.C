@@ -14,6 +14,12 @@
 #include	"iocoreva.h"
 #endif
 
+// TRACEOUT‚ğ—LŒø‚É‚·‚éê‡‚ÍAˆÈ‰º‚Ì1‚ğ0‚É‚·‚é
+#if 1
+#undef TRACEOUT
+#define TRACEOUT(arg)
+#endif
+
 enum {
 	SASI_IRQ		= 0x09,
 	SASI_DMACH		= 0x00,

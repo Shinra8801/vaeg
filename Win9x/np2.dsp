@@ -853,6 +853,10 @@ SOURCE=.\DEBUGUTY\VIEWSEG.CPP
 
 SOURCE=.\DEBUGUTY\VIEWSND.CPP
 # End Source File
+# Begin Source File
+
+SOURCE=.\DEBUGUTY\VIEWVABANK.CPP
+# End Source File
 # End Group
 # Begin Source File
 

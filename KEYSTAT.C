@@ -573,7 +573,7 @@ void keystat_senddata(REG8 data) {
 
 	REG8	keycode;
 
-TRACEOUT(("keystat_senddata: data = %02x", data));
+//	TRACEOUT(("keystat_senddata: data = %02x", data));
 
 	keycode = cnvnewcode((REG8)(data & 0x7f));
 	if (!(data & 0x80)) {

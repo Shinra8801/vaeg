@@ -6,7 +6,15 @@
 #include	"cs4231.h"
 #include	"sasiio.h"
 
+#if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
+#endif
+
+// TRACEOUT‚ğ—LŒø‚É‚·‚éê‡‚ÍAˆÈ‰º‚Ì1‚ğ0‚É‚·‚é
+#if 1
+#undef TRACEOUT
+#define TRACEOUT(arg)
+#endif
 
 void DMACCALL dma_dummyout(REG8 data) {
 

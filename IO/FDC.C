@@ -273,12 +273,26 @@ static void FDC_SenseDeviceStatus(void) {				// cmd: 04
 			fdc.buf[0] = (fdc.hd << 2) | fdc.us;
 			fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
 			if (fdc.equip & (1 << fdc.us)) {
+#if defined(SUPPORT_PC88VA)
+				if (pccore.model_va == PCMODEL_NOTVA) {
+					fdc.buf[0] |= 0x08;
+				}
+#else
 				fdc.buf[0] |= 0x08;
+#endif
 				if (!fdc.treg[fdc.us]) {
 					fdc.buf[0] |= 0x10;
 				}
 				if (fddfile[fdc.us].fname[0]) {
 					fdc.buf[0] |= 0x20;
+#if defined(SUPPORT_PC88VA)
+					if (pccore.model_va != PCMODEL_NOTVA) {
+						fdc.buf[0] |= 0x08;
+							/*
+								VA‚Ìê‡AReady=0‚È‚çTwo Side=0‚Ì‚æ‚¤‚¾B
+							*/
+					}
+#endif
 				}
 				if (fddfile[fdc.us].protect) {
 					fdc.buf[0] |= 0x40;
@@ -883,8 +897,9 @@ static REG8 IOINPCALL fdc_i94(UINT port) {
 
 static REG8 IOINPCALL fdcva_i1b8(UINT port) {
 
-//	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
-//															CPU_CS, CPU_IP));
+	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
+															CPU_CS, CPU_IP));
+
 	return(fdc.status);
 }
 

@@ -176,6 +176,11 @@ void pccore_exec(BOOL draw);
 
 void pccore_postevent(UINT32 event);
 
+#if defined(USEIPTRACE) && defined(TRACE)		// Shinra
+void iptrace_out(void);
+extern	int		treafter;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

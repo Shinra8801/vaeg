@@ -1,5 +1,5 @@
 /*
- * SYSPORTVA.C: PC-88VA System port/Calendar/Printer
+ * SYSPORTVA.C: PC-88VA System port/Calendar/Printer/Dip switch
  */
 
 
@@ -83,6 +83,26 @@ static REG8 IOINPCALL sysp_i040(UINT port) {
 	return ret;
 }
 
+static REG8 IOINPCALL sysp_i150(UINT port) {
+	return sysportva.modesw & 0x00ff;
+}
+
+static REG8 IOINPCALL sysp_i151(UINT port) {
+	return sysportva.modesw >> 8;
+}
+
+static void IOOUTCALL sysp_o1c6(UINT port, REG8 dat) {
+	sysportva.modesw = (dat & 0x01) ? 0xfffe : 0xfffd;
+	if (dat & 0x02) {
+		sysportva.a |= 0x20;
+	}
+	else {
+		sysportva.a &= ~0x20;
+	}
+	if ((dat & 0xfc) != 0x04) {
+		TRACEOUT(("o1c6: unsupported bits are specified: 0x%.2x", dat));
+	}
+}
 
 static void IOOUTCALL sysp_o1cd(UINT port, REG8 dat) {
 
@@ -120,12 +140,12 @@ static void IOOUTCALL sysp_o1cf(UINT port, REG8 dat) {
 	(void)port;
 }
 
-/*
+
 static REG8 IOINPCALL sysp_i1c9(UINT port) {
-	(void)port;
-	return(np2cfg.dipsw[1]);
+	return sysportva.a;
 }
 
+/*
 static REG8 IOINPCALL sysp_i1cb(UINT port) {
 
 	REG8	ret;
@@ -148,7 +168,7 @@ static REG8 IOINPCALL sysp_i1cd(UINT port) {
 // ---- I/F
 
 void systemportva_reset(void) {
-
+	sysportva.a |= 0xc1;
 	sysportva.c = 0xf9;
 	sysportva.port010 = 0;
 	sysportva.port040 = 0;
@@ -162,9 +182,14 @@ void systemportva_bind(void) {
 	iocoreva_attachout(0x040, sysp_o040);
 	iocoreva_attachinp(0x040, sysp_i040);
 
+	iocoreva_attachinp(0x150, sysp_i150);
+	iocoreva_attachinp(0x151, sysp_i151);
+
+	iocoreva_attachout(0x1c6, sysp_o1c6);
+
 	iocoreva_attachout(0x1cd, sysp_o1cd);
 	iocoreva_attachout(0x1cf, sysp_o1cf);
-//	iocoreva_attachinp(0x1c9, sysp_i1c9);
+	iocoreva_attachinp(0x1c9, sysp_i1c9);
 //	iocoreva_attachinp(0x1cb, sysp_i1cb);
 	iocoreva_attachinp(0x1cd, sysp_i1cd);
 }

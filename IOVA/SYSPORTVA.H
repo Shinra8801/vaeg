@@ -1,11 +1,13 @@
 /*
- * SYSPORTVA.C: PC-88VA System port
+ * SYSPORTVA.C: PC-88VA System port/Calendar/Printer/Dip switch
  */
 
 typedef struct {
-	UINT8	c;
-	UINT8	port010;
-	UINT8	port040;
+	BYTE	a;				// bit5: SPEED, bit4-1: sw5-2
+	BYTE	c;
+	BYTE	port010;
+	BYTE	port040;
+	WORD	modesw;			// bit0: X88V1, bit1: X88V2
 } _SYSPORTVA, *SYSPORTVA;
 
 

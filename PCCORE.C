@@ -585,13 +585,17 @@ void screenvsync(NEVENTITEM item) {
 
 // ---------------------------------------------------------------------------
 
+#if defined(USEIPTRACE)					// Shinra
 #define	IPTRACE			(1 << 12)
+#endif
 
 #if defined(TRACE) && IPTRACE
 static	UINT	trpos = 0;
 static	UINT32	treip[IPTRACE];
 #if defined(SUPPORT_PC88VA)
 static	BYTE	trerom0bank[IPTRACE];
+
+		int		treafter = 0;			// Shinra
 #endif
 
 void iptrace_out(void) {
@@ -700,6 +704,20 @@ void pccore_exec(BOOL draw) {
 				}
 */
 			}
+
+#if defined(IPTRACE)	// Shinra
+			if (treafter) {
+				if (treafter < 0) {
+					iptrace_out();
+					treafter = 0;
+				}
+				else {
+					if (--treafter == 0) {
+						iptrace_out();
+					}
+				}
+			}
+#endif
 		}
 #endif
 		nevent_progress();

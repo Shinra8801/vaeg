@@ -111,7 +111,9 @@ typedef signed __int64		SINT64;
 
 #define	SOUNDRESERVE	20
 
-// Added by Shinra
+// Shinra
 #define SUPPORT_BMS
 #define SUPPORT_PC88VA
 #define SUPPORT_V30ORIGINAL
+
+#define USEIPTRACE

@@ -57,20 +57,6 @@ static REG8 IOINPCALL memctrlva_i031(UINT port) {
 	return backupmem[0x1fc6];
 }
 
-static REG8 IOINPCALL memctrlva_i150(UINT port) {
-	// ToDo: VA2の場合、V1/V2切り替えスイッチがないため、
-	//       この値が何で決まるのか定かでない。
-	// ToDo: リセット時に取り込むのが正しい？
-	if (backupmem[0x1fc6] & 0x80) {
-		// V1
-		return 0xfe;
-	}
-	else {
-		// V2
-		return 0xfd;
-	}
-}
-
 
 // ---- I/F
 
@@ -91,8 +77,6 @@ void memctrlva_bind(void) {
 
 	iocoreva_attachinp(0x030, memctrlva_i030);
 	iocoreva_attachinp(0x031, memctrlva_i031);
-
-	iocoreva_attachinp(0x150, memctrlva_i150);
 }
 
 #endif

@@ -79,7 +79,11 @@ typedef struct {
 
 	UINT16	samplingrate;
 	UINT16	delayms;
+#if defined(SUPPORT_PC88VA)
+	UINT16	SOUND_SW;
+#else
 	UINT8	SOUND_SW;
+#endif
 	UINT8	snd_x;
 
 	UINT8	snd14opt[3];

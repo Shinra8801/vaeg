@@ -407,7 +407,11 @@ void xmenu_setbeepvol(BYTE value) {
 	CheckMenuItem(hmenu, IDM_BEEPHIGH, MFCHECK(value == 3));
 }
 
+#if defined(SUPPORT_PC88VA)
+void xmenu_setsound(WORD value) {
+#else
 void xmenu_setsound(BYTE value) {
+#endif
 
 	HMENU	hmenu;
 
@@ -424,6 +428,9 @@ void xmenu_setsound(BYTE value) {
 	CheckMenuItem(hmenu, IDM_SPEAKBOARD, MFCHECK(value == 0x20));
 	CheckMenuItem(hmenu, IDM_SPARKBOARD, MFCHECK(value == 0x40));
 	CheckMenuItem(hmenu, IDM_AMD98, MFCHECK(value == 0x80));
+#if defined(SUPPORT_PC88VA)
+	CheckMenuItem(hmenu, IDM_SOUNDBOARD2, MFCHECK(value == 0x0200));
+#endif
 }
 
 void xmenu_setjastsound(BYTE value) {

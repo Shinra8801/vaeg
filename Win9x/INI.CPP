@@ -402,7 +402,11 @@ static const INITBL iniitem[] = {
 
 	{"SampleHz", INITYPE_UINT16,	&np2cfg.samplingrate,	0},
 	{"Latencys", INITYPE_UINT16,	&np2cfg.delayms,		0},
+#if defined(SUPPORT_PC88VA)
+	{"SNDboard", INITYPE_HEX16,		&np2cfg.SOUND_SW,		0},
+#else
 	{"SNDboard", INITYPE_HEX8,		&np2cfg.SOUND_SW,		0},
+#endif
 	{"BEEP_vol", INIAND_UINT8,		&np2cfg.BEEP_VOL,		3},
 	{"xspeaker", INIRO_BOOL,		&np2cfg.snd_x,			0},
 

@@ -20,7 +20,11 @@ void xmenu_setkey(BYTE value);
 void xmenu_setxshift(BYTE value);
 void xmenu_setf12copy(BYTE value);
 void xmenu_setbeepvol(BYTE value);
+#if defined(SUPPORT_PC88VA)
+void xmenu_setsound(WORD value);
+#else
 void xmenu_setsound(BYTE value);
+#endif
 void xmenu_setjastsound(BYTE value);
 void xmenu_setmotorflg(BYTE value);
 void xmenu_setextmem(BYTE value);

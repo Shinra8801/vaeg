@@ -19,6 +19,9 @@
 #include	"keydisp.h"
 #include	"keystat.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"boardsb2.h"
+#endif
 
 	UINT32		usesound;
 	OPN_T		opn;
@@ -178,6 +181,12 @@ void fmboard_reset(UINT32 type) {
 //			amd98_reset();
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case 0x0200:
+			boardsb2_reset();
+			break;
+#endif
+
 		default:
 			type = 0;
 			break;
@@ -226,6 +235,12 @@ void fmboard_bind(void) {
 		case 0x80:
 			amd98_bind();
 			break;
+
+#if defined(SUPPORT_PC88VA)
+		case 0x0200:
+			boardsb2_bind();
+			break;
+#endif
 	}
 	sound_streamregist(&beep, (SOUNDCB)beep_getpcm);
 }

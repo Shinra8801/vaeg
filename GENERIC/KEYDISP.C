@@ -574,6 +574,12 @@ void keydisp_setfmboard(UINT b) {
 	if (b & 0x80) {
 		setpsghdl(3);
 	}
+#if defined(SUPPORT_PC88VA)
+	if (b & 0x0200) {
+		setfmhdl(6, 0);
+		setpsghdl(1);
+	}
+#endif
 	delayreset();
 	fmkeyreset();
 	psgkeyreset();

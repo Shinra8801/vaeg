@@ -828,6 +828,7 @@ BEGIN
             MENUITEM "Beep &high",                  IDM_BEEPHIGH
             MENUITEM SEPARATOR
             MENUITEM "&Disable boards",             IDM_NOSOUND
+            MENUITEM "Sound board 2 (&VA2/3)",      IDM_SOUNDBOARD2
             MENUITEM "PC-9801-&14",                 IDM_PC9801_14
             MENUITEM "PC-9801-&26K",                IDM_PC9801_26K
             MENUITEM "PC-9801-8&6",                 IDM_PC9801_86

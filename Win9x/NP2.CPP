@@ -737,6 +737,13 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			update |= SYS_UPDATECFG;
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case IDM_SOUNDBOARD2:
+			xmenu_setsound(0x0200);
+			update |= SYS_UPDATECFG;
+			break;
+#endif
+
 		case IDM_JASTSOUND:
 			xmenu_setjastsound(np2oscfg.jastsnd ^ 1);
 			update |= SYS_UPDATEOSCFG;

@@ -76,7 +76,7 @@ static REG8 IOINPCALL sysp_i040(UINT port) {
 
 	ret =
 		0xc0 |							// èÌÇ…1
-		(gdc.vsync & 0x20) |			// VSYNC
+		(tsp.vsync & 0x20) |			// VSYNC
 		((uPD4990.cdat & 0x01) << 4) |	// CDI(ÉJÉåÉìÉ_éûåv)
 		0x01;							// PBSY
 
@@ -128,15 +128,15 @@ static void IOOUTCALL sysp_o1cf(UINT port, REG8 dat) {
 		else {
 			sysportva.c &= ~bit;
 		}
+		sysport.c = (sysport.c & 0xf0) | (sysportva.c & 0x0f);
 		if (bit == 0x04) {									// ver0.29
 			rs232c.send = 1;
 		}
 		else if (bit == 0x08) {
 			beep_oneventset();
 		}
+		modeled_oneventset();
 	}
-	sysport.c = (sysport.c & 0xf0) | (sysportva.c & 0x0f);
-	modeled_oneventset();
 	(void)port;
 }
 

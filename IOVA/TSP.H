@@ -29,6 +29,13 @@ typedef struct {
 	BYTE	senddatacnt;		// パラメータ残り送信バイト数
 	BYTE	*datap;				// 次に送信する/受信するデータ
 	BYTE	parambuf[16];		// 送受信バッファ
+
+	UINT32	dispclock;			// 表示期間の時間(CPUクロック数)
+	UINT32	vsyncclock;			// 垂直同期信号(VSYNC)の出力時間(CPUクロック数)
+	UINT32	rasterclock;		// 1ラスタ表示の時間(CPUクロック数)
+
+	UINT8	vsync;				// bit5: 1.VSYNC期間
+
 } _TSP, *TSP;
 
 
@@ -39,6 +46,8 @@ extern "C" {
 
 void tsp_reset(void);
 void tsp_bind(void);
+
+void tsp_updateclock(void);
 
 extern	_TSP	tsp;
 

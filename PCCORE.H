@@ -3,12 +3,18 @@
 #include	"statsave.h"
 
 enum {
+#if defined(SUPPORT_PC88VA)
+	PCBASECLOCK40		= 3993600,
+#endif
 	PCBASECLOCK25		= 2457600,
 	PCBASECLOCK20		= 1996800
 };
 
 enum {
 	CPUMODE_8MHZ		= 0x20,
+#if defined(SUPPORT_PC88VA)
+	CPUMODE_BASE4MHZ	= 0x40,
+#endif
 
 	PCMODEL_VF			= 0,
 	PCMODEL_VM			= 1,

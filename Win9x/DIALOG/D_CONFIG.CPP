@@ -8,10 +8,16 @@
 #include	"dialogs.h"
 #include	"pccore.h"
 
-
+#if defined(SUPPORT_PC88VA)
+static const char str_4mhz[] = "3.9936MHz";
+#endif
 static const char str_2halfmhz[] = "2.4576MHz";
 static const char str_2mhz[] = "1.9968MHz";
+#if defined(SUPPORT_PC88VA)
+static const char *basecstr[3] = {str_2mhz, str_2halfmhz, str_4mhz};
+#else
 static const char *basecstr[2] = {str_2mhz, str_2halfmhz};
+#endif
 static const UINT32 mulval[10] = {1, 2, 4, 5, 6, 8, 10, 12, 16, 20};
 static const char str_clockfmt[] = "%2u.%.4u";
 
@@ -25,9 +31,18 @@ static void setclock(HWND hWnd, UINT multiple) {
 	if (work[0] == '1') {
 		clock = PCBASECLOCK20 / 100;
 	}
+#if defined(SUPPORT_PC88VA)
+	else if (work[0] == '2') {
+		clock = PCBASECLOCK25 / 100;
+	}
+	else {
+		clock = PCBASECLOCK40 / 100;
+	}
+#else
 	else {
 		clock = PCBASECLOCK25 / 100;
 	}
+#endif
 	if (multiple == 0) {
 		GetDlgItemText(hWnd, IDC_MULTIPLE, work, sizeof(work));
 		multiple = (UINT)milstr_solveINT(work);
@@ -52,9 +67,18 @@ static void cfgcreate(HWND hWnd) {
 	if (np2cfg.baseclock < AVE(PCBASECLOCK25, PCBASECLOCK20)) {
 		val = 0;
 	}
+#if defined(SUPPORT_PC88VA)
+	else if (np2cfg.baseclock < AVE(PCBASECLOCK40, PCBASECLOCK25)) {
+		val = 1;
+	}
+	else {
+		val = 2;
+	}
+#else
 	else {
 		val = 1;
 	}
+#endif
 	SendDlgItemMessage(hWnd, IDC_BASECLOCK, CB_SETCURSEL, val, 0);
 	SETLISTUINT32(hWnd, IDC_MULTIPLE, mulval);
 	wsprintf(work, str_u, np2cfg.multiple);
@@ -118,9 +142,18 @@ const char	*str;
 	if (work[0] == '1') {
 		val = PCBASECLOCK20;
 	}
+#if defined(SUPPORT_PC88VA)
+	else if (work[0] == '2') {
+		val = PCBASECLOCK25;
+	}
+	else {
+		val = PCBASECLOCK40;
+	}
+#else
 	else {
 		val = PCBASECLOCK25;
 	}
+#endif
 	if (np2cfg.baseclock != val) {
 		np2cfg.baseclock = val;
 		update |= SYS_UPDATECFG | SYS_UPDATECLOCK;

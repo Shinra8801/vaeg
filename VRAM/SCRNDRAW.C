@@ -137,6 +137,12 @@ const SDRAWFN	*sdrawfn;
 	int			i;
 	int			height;
 
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		return scrndrawva_draw(redraw);
+	}
+#endif
+
 	if (redraw) {
 		updateallline(0x80808080);
 	}
@@ -273,7 +279,7 @@ const SDRAWFN	*sdrawfn;
 		palva_make(vapal);
 	}
 	*/
-	scrndrawva_draw_sub(surf);
+//	scrndrawva_draw_sub(surf);
 #endif
 
 sddr_exit2:

@@ -28,19 +28,51 @@ void scrndrawva_initialize(void) {
 	for (i=0; i<64; i++) {
 		colorlevel6[i]= (i << 2) | ((i) ?  0x03 : 0);
 	}
-/*
-	{
-		int i,j;
-		for (i=0; i<200; i++) {
-			for (j=0; j<16; j++) {
-				np2_tbitmap[SURFACE_WIDTH*i+j]=i%15;
-
-			}
-		}
-	}
-*/
 }
 
+BYTE scrndrawva_draw(BYTE redraw) {
+
+	BYTE		ret;
+	const	SCRNSURF	*surf;
+	SDRAWFNVA	sdrawfn;
+	_SDRAWVA	sdraw;
+	int			height;
+
+	if (!initialized) {
+		scrndrawva_initialize();
+		initialized=1;
+	}
+
+	ret = 0;
+	surf = scrnmng_surflock();
+	if (surf == NULL) {
+		goto sddr_exit1;
+	}
+
+	sdrawfn = sdrawva_getproctbl(surf);
+	if (sdrawfn == NULL) {
+		goto sddr_exit2;
+	}
+
+	height = surf->height;
+
+	sdraw.dst = surf->ptr;
+	sdraw.width = surf->width;
+	sdraw.xbytes = surf->xalign * surf->width;
+	sdraw.y = 0;
+	sdraw.xalign = surf->xalign;
+	sdraw.yalign = surf->yalign;
+	sdrawfn(&sdraw, height);
+
+sddr_exit2:
+	scrnmng_surfunlock(surf);
+
+sddr_exit1:
+	return ret;
+
+}
+
+/*
 void scrndrawva_draw_sub(const SCRNSURF	*surf) {
 	SDRAWFNVA	sdrawfn;
 	_SDRAWVA		sdraw;
@@ -61,6 +93,7 @@ void scrndrawva_draw_sub(const SCRNSURF	*surf) {
 	sdraw.yalign = surf->yalign;
 	if (sdrawfn) sdrawfn(&sdraw, height);
 }
+*/
 
 typedef struct {
 	WORD *bp;			// vabitmap

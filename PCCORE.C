@@ -144,6 +144,13 @@ static void pccore_set(void) {
 	}
 	pccore.model = model;
 
+#if defined(SUPPORT_PC88VA)
+	if (np2cfg.baseclock >= ((PCBASECLOCK40 + PCBASECLOCK25) / 2)) {
+		pccore.baseclock = PCBASECLOCK40;			// 4.0MHz
+		pccore.cpumode = CPUMODE_BASE4MHZ;
+	}
+	else 
+#endif
 	if (np2cfg.baseclock >= ((PCBASECLOCK25 + PCBASECLOCK20) / 2)) {
 		pccore.baseclock = PCBASECLOCK25;			// 2.5MHz
 		pccore.cpumode = 0;
@@ -413,6 +420,7 @@ void pccore_reset(void) {
 	soundmng_play();
 }
 
+
 static void drawscreen(void) {
 
 	UINT8	timing;
@@ -538,28 +546,14 @@ static void drawscreen(void) {
 			screenupdate |= 1;
 		}
 	}
-#if defined(SUPPORT_PC88VA)
-	//maketextva();
-	{
-		int y;
-
-		maketextva_begin();
-		makesprva_begin();
-		scrndrawva_compose_begin();
-		for (y = 0; y < SURFACE_HEIGHT; y++) {
-			maketextva_raster();
-			makesprva_raster();
-			scrndrawva_compose_raster();
-		}
-	}
-	screenupdate |= 2;			// 今のところVA用描画ルーチンは全体描画しか実装していない
-#endif
 	if (screenupdate) {
 		screenupdate = scrndraw_draw((BYTE)(screenupdate & 2));
 		drawcount++;
 	}
 }
 
+
+// 表示期間の開始
 void screendisp(NEVENTITEM item) {
 
 	PICITEM		pi;
@@ -578,6 +572,7 @@ void screendisp(NEVENTITEM item) {
 	(void)item;
 }
 
+// VSYNC期間の開始
 void screenvsync(NEVENTITEM item) {
 
 	MEMWAIT_TRAM = np2cfg.wait[1];
@@ -585,17 +580,7 @@ void screenvsync(NEVENTITEM item) {
 	MEMWAIT_GRCG = np2cfg.wait[5];
 	gdc_work(GDCWORK_MASTER);
 	gdc.vsync = 0x20;
-#if defined(SUPPORT_PC88VA)
-	
-	if (--tsp.blinkcnt == 0) {
-		tsp.blinkcnt = tsp.blink;
-		tsp.blinkcnt2++;
-	}
-
-	if (gdc.vsyncint || pccore.model_va != PCMODEL_NOTVA) {
-#else
 	if (gdc.vsyncint) {
-#endif
 		gdc.vsyncint = 0;
 		pic_setirq(2);
 	}
@@ -607,6 +592,80 @@ void screenvsync(NEVENTITEM item) {
 	}
 	(void)item;
 }
+
+#if defined(SUPPORT_PC88VA)
+
+static void drawscreenva(void) {
+
+	int y;
+
+	tsp_updateclock();
+
+	if (!drawframe) {
+		return;
+	}
+
+	maketextva_begin();
+	makesprva_begin();
+	scrndrawva_compose_begin();
+	for (y = 0; y < SURFACE_HEIGHT; y++) {
+		maketextva_raster();
+		makesprva_raster();
+		scrndrawva_compose_raster();
+	}
+	screenupdate |= 2;			// 今のところVA用描画ルーチンは全体描画しか実装していない
+
+	if (screenupdate) {
+		screenupdate = scrndraw_draw((BYTE)(screenupdate & 2));
+		drawcount++;
+	}
+}
+
+// 表示期間の開始
+void screendispva(NEVENTITEM item) {
+
+	PICITEM		pi;
+
+//	gdc_work(GDCWORK_SLAVE);
+	tsp.vsync = 0;
+	screendispflag = 0;
+	if (!np2cfg.DISPSYNC) {
+		drawscreenva();
+	}
+	pi = &pic.pi[0];
+	if (pi->irr & PIC_CRTV) {
+		pi->irr &= ~PIC_CRTV;
+//		gdc.vsyncint = 1;
+	}
+}
+
+// VSYNC期間の開始
+void screenvsyncva(NEVENTITEM item) {
+
+//	MEMWAIT_TRAM = np2cfg.wait[1];
+//	MEMWAIT_VRAM = np2cfg.wait[3];
+//	MEMWAIT_GRCG = np2cfg.wait[5];
+//	gdc_work(GDCWORK_MASTER);
+	tsp.vsync = 0x20;
+	
+	if (--tsp.blinkcnt == 0) {
+		tsp.blinkcnt = tsp.blink;
+		tsp.blinkcnt2++;
+	}
+
+	if (/*gdc.vsyncint ||*/ pccore.model_va != PCMODEL_NOTVA) {
+//		gdc.vsyncint = 0;
+		pic_setirq(2);
+	}
+	nevent_set(NEVENT_FLAMES, tsp.vsyncclock, screendispva, NEVENT_RELATIVE);
+
+	// drawscreenで pccore.vsyncclockが変更される可能性があります
+	if (np2cfg.DISPSYNC) {
+		drawscreenva();
+	}
+}
+
+#endif
 
 
 // ---------------------------------------------------------------------------
@@ -684,7 +743,17 @@ void pccore_exec(BOOL draw) {
 	MEMWAIT_TRAM = np2cfg.wait[0];
 	MEMWAIT_VRAM = np2cfg.wait[2];
 	MEMWAIT_GRCG = np2cfg.wait[4];
+#if defined(SUPPORT_PC88VA)
+	tsp.vsync = 0;
+	if (pccore.model_va == PCMODEL_NOTVA) {
+		nevent_set(NEVENT_FLAMES, gdc.dispclock, screenvsync, NEVENT_RELATIVE);
+	}
+	else {
+		nevent_set(NEVENT_FLAMES, tsp.dispclock, screenvsyncva, NEVENT_RELATIVE);
+	}
+#else
 	nevent_set(NEVENT_FLAMES, gdc.dispclock, screenvsync, NEVENT_RELATIVE);
+#endif
 
 //	nevent_get1stevent();
 

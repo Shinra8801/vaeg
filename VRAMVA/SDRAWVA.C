@@ -29,14 +29,14 @@ static void SCRNCALL sdrawva16(SDRAWVA sdraw, int maxy) {
 
 				q += sdraw->xalign;
 				c = p[x];
-				if (c) {
+				//if (c) {
 					rgb32.d = 
 						RGB32D(
 							colorlevel5[(c & 0x03e0) >> 5], 
 							colorlevel6[(c & 0xfc00) >> 10],
 							colorlevel5[c & 0x1f] );
 					*(UINT16 *)q = scrnmng_makepal16(rgb32);
-				}
+				//}
 			}
 			q -= sdraw->xbytes;
 		}
@@ -72,11 +72,11 @@ static void SCRNCALL sdrawva24(SDRAWVA sdraw, int maxy) {
 
 				q += sdraw->xalign;
 				c = p[x];
-				if (c) {
+				//if (c) {
 					((UINT8 *)q)[RGB24_R] = colorlevel5[(c & 0x03e0) >> 5];
 					((UINT8 *)q)[RGB24_G] = colorlevel6[(c & 0xfc00) >> 10];
 					((UINT8 *)q)[RGB24_B] = colorlevel5[c & 0x1f];
-				}
+				//}
 			}
 			q -= sdraw->xbytes;
 		}
@@ -112,12 +112,12 @@ static void SCRNCALL sdrawva32(SDRAWVA sdraw, int maxy) {
 
 				q += sdraw->xalign;
 				c = p[x];
-				if (c) {
+				//if (c) {
 					*(UINT32 *)q = RGB32D(
 						colorlevel5[(c & 0x03e0) >> 5], 
 						colorlevel6[(c & 0xfc00) >> 10],
 						colorlevel5[c & 0x1f]);
-				}
+				//}
 			}
 			q -= sdraw->xbytes;
 		}

@@ -8,6 +8,7 @@
 #include	"iocore.h"
 #include	"iocoreva.h"
 #include	"memoryva.h"
+#include	"timing.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -184,6 +185,43 @@ void tsp_bind(void) {
 	iocoreva_attachinp(0x142, tsp_i142);
 	iocoreva_attachout(0x142, tsp_o142);
 	iocoreva_attachout(0x146, tsp_o146);
+}
+
+// ---- 
+
+void tsp_updateclock(void) {
+	/*
+	TSPの仕様はわからないので、代わりに、
+	np2のGDCの処理と同じ計算を実施する。
+	*/
+	UINT hs = 7;		// 水平同期信号の幅(文字)
+	UINT hfp = 9;		// 右方向の非表示区間(文字)
+	UINT hbp = 7;		// 左方向の非表示区間(文字)
+	UINT vs = 8;		// 垂直同期信号の幅(ライン)
+	UINT vfp = 7;		// 下方向の非表示区間(ライン)
+	UINT vbp = 0x19;	// 上方向の非表示区間(ライン)
+	UINT lf = 400;		// 1画面あたり表示ライン数
+	UINT cr = 80;		// 1行あたり表示文字数
+	UINT32 clock = 21052600 / 8;	// 動作クロック=1秒あたり表示ブロック数
+						// (ブロック=1文字の1ライン分)
+	UINT x;
+	UINT y;
+	UINT cnt;
+	UINT32 hclock;
+
+	x = hfp + hbp + hs + cr + 3;	// 1行あたり総表示文字数
+	y = vfp + vbp + vs + lf;		// 1画面あたり総表示ライン数
+
+	hclock = clock / x;				// 1秒あたり表示ライン数
+	cnt = (pccore.baseclock * y) / hclock;	// 1画面あたり時間(ベースクロック数)
+	cnt *= pccore.multiple;			// 1画面あたり時間(CPUクロック数)
+	tsp.rasterclock = cnt / y;
+//	tsp.hsyncclock = (tsp.rasterclock * cr) / x;
+	tsp.dispclock = tsp.rasterclock * lf;
+	tsp.vsyncclock = cnt - tsp.dispclock;
+	timing_setrate(y, hclock);
+
+
 }
 
 #endif

@@ -243,6 +243,7 @@ static void selectframe(int no) {
 
 void maketextva_begin(void) {
 	int i;
+	BYTE *fbinfo;
 
 /*
 	work.rsa = 0;
@@ -253,13 +254,12 @@ void maketextva_begin(void) {
 	work.y = 0;
 
 	// 分割画面制御テーブルの情報をコピー
+	fbinfo = textmem + tsp.texttable;
 	for (i = 0; i < TEXTVA_FRAMES; i++) {
 		TEXTVAFRAME f;
-		BYTE *fbinfo;
 		WORD d;
 
 		f = &work._frame[i];
-		fbinfo = textmem + tsp.texttable + 0x0020 * i;
 
 		f->vw = LOADINTELWORD(fbinfo + 0x08) & 0x03ff;
 		d = LOADINTELWORD(fbinfo + 0x0a);
@@ -273,6 +273,8 @@ void maketextva_begin(void) {
 		f->rw = LOADINTELWORD(fbinfo + 0x16) & 0x03ff;
 		f->rwchar = f->rw / TEXTVA_CHARWIDTH + 2;
 		f->rxp = LOADINTELWORD(fbinfo + 0x1a) & 0x03ff;
+
+		fbinfo += 0x0020;
 	}
 
 	selectframe(0);

@@ -44,6 +44,7 @@
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/palettesva.h"
 #include	"../vramva/maketextva.h"
+#include	"../vramva/makesprva.h"
 #include	"scrnmng.h"
 #include	"../vramva/scrndrawva.h"
 #include	"memoryva.h"
@@ -240,6 +241,7 @@ void pccore_init(void) {
 #if defined(SUPPORT_PC88VA)
 //	palva_maketable();
 	maketextva_initialize();
+	makesprva_initialize();
 #endif
 	dispsync_initialize();
 	sxsi_initialize();
@@ -542,9 +544,11 @@ static void drawscreen(void) {
 		int y;
 
 		maketextva_begin();
+		makesprva_begin();
 		scrndrawva_compose_begin();
 		for (y = 0; y < SURFACE_HEIGHT; y++) {
 			maketextva_raster();
+			makesprva_raster();
 			scrndrawva_compose_raster();
 		}
 	}
@@ -581,7 +585,11 @@ void screenvsync(NEVENTITEM item) {
 	MEMWAIT_GRCG = np2cfg.wait[5];
 	gdc_work(GDCWORK_MASTER);
 	gdc.vsync = 0x20;
+#if defined(SUPPORT_PC88VA)
+	if (gdc.vsyncint || pccore.model_va != PCMODEL_NOTVA) {
+#else
 	if (gdc.vsyncint) {
+#endif
 		gdc.vsyncint = 0;
 		pic_setirq(2);
 	}

@@ -1401,6 +1401,10 @@ SOURCE=..\GENERIC\UNASM.C
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\VRAMVA\MAKESPRVA.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\VRAMVA\MAKETEXTVA.C
 # End Source File
 # Begin Source File
@@ -1532,6 +1536,10 @@ SOURCE=..\TIMING.C
 # Begin Source File
 
 SOURCE=..\IOVA\FDSUBSYS.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\MAKESPRVA.H
 # End Source File
 # Begin Source File
 

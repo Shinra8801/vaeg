@@ -6,6 +6,7 @@
 #include	"scrndraw.h"
 #include	"sdrawva.h"
 #include	"maketextva.h"
+#include	"makesprva.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -81,10 +82,14 @@ void scrndrawva_compose_begin(void) {
 void scrndrawva_compose_raster(void) {
 	int x;
 	WORD *bp;
+	BYTE c;
 
 	bp = work.bp;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
-		*bp = videova.palette[textraster[x]];
+		c = sprraster[x];
+		if (c == 0) c = textraster[x];
+
+		*bp = videova.palette[c];
 		bp++;
 	}
 

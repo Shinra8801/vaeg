@@ -47,6 +47,10 @@ BEGIN
                     68,50,10
     CONTROL         "PC-286",IDC_MODELEPSON,"Button",BS_AUTORADIOBUTTON,128,
                     68,38,10
+    CONTROL         "PC-88VA1",IDC_MODELPC88VA1,"Button",BS_AUTORADIOBUTTON | 
+                    WS_DISABLED,16,77,47,10
+    CONTROL         "PC-88VA2",IDC_MODELPC88VA2,"Button",BS_AUTORADIOBUTTON,
+                    72,77,47,10
     GROUPBOX        "Sound",IDC_STATIC,8,88,166,46
     LTEXT           "Sampling Rate",IDC_STATIC,14,101,43,8
     CONTROL         "11KHz",IDC_RATE11,"Button",BS_AUTORADIOBUTTON | 
@@ -574,8 +578,8 @@ CAPTION "About..."
 CLASS "np2dialog"
 FONT 9, "‚l‚r ‚oƒSƒVƒbƒN"
 BEGIN
-    ICON            IDI_ICON1,IDC_NP2ICON,8,8,20,20
-    LTEXT           "",IDC_NP2VER,36,16,102,8
+    ICON            IDI_ICON1,IDC_NP2ICON,8,8,20,21
+    LTEXT           "",IDC_NP2VER,34,8,106,24
     DEFPUSHBUTTON   "&OK",IDOK,148,4,40,14,WS_GROUP
     PUSHBUTTON      "More >>",IDC_MORE,148,22,40,14
     EDITTEXT        IDC_NP2INFO,8,48,180,48,ES_MULTILINE | ES_READONLY | 
@@ -1020,6 +1024,10 @@ BEGIN
     IDS_SCRNMUL16           "1280x800"
     IDS_MEMDBG32            "Memory Debug"
     IDS_MEMORYDUMP          "Memory Dump"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
     IDS_DEBUGUTY            "Debug Utility"
     IDS_FDD1                "FDD&1"
     IDS_FDD2                "FDD&2"

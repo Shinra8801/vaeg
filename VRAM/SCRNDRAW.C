@@ -7,6 +7,10 @@
 #include	"dispsync.h"
 #include	"palettes.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"../vramva/scrndrawva.h"
+#include	"../vramva/palettesva.h"
+#endif
 
 	BYTE	renewal_line[SURFACE_HEIGHT];
 	BYTE	np2_tram[SURFACE_SIZE];
@@ -25,6 +29,7 @@ static void updateallline(UINT32 update) {
 
 // ----
 
+// どこからも参照されていないらしい・・・
 void scrndraw_initialize(void) {
 
 	ZeroMemory(np2_tram, sizeof(np2_tram));
@@ -239,6 +244,36 @@ const SDRAWFN	*sdrawfn;
 	else {
 		ret = rasterdraw(*sdrawfn, &sdraw, height);
 	}
+
+#if defined(SUPPORT_PC88VA)
+	{
+		RGB32 vapal[NP2PALVA_TOTAL];
+		int n;
+
+		for (n=0; n<NP2PALVA_TOTAL; n++) {
+			int r, g, b;
+			if (n==NP2PALVA_BACKDROP) {
+				r = g = b = 0;
+			}
+			else if ((n % 16) < 8) {
+				r= (n&2) ? 15 : 0;
+				g= (n&4) ? 15 : 0;
+				b= (n&1) ? 15 : 0;
+			}
+			else if ((n % 16) == 8) {
+				r= g= b= 4;
+			}
+			else {
+				r= (n&2) ? 7 : 0;
+				g= (n&4) ? 7 : 0;
+				b= (n&1) ? 7 : 0;
+			}
+			vapal[n].d=RGB32D(r, g, b);
+		}
+		palva_make(vapal);
+	}
+	scrndrawva_draw_sub(surf);
+#endif
 
 sddr_exit2:
 	scrnmng_surfunlock(surf);

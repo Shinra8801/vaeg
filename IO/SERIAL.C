@@ -5,6 +5,93 @@
 #include	"iocore.h"
 #include	"keystat.h"
 
+#if defined(SUPPORT_PC88VA)
+/*
+  ToDo: 
+    SFT RT, RET 10, PC, 全角 が入力できない
+	Port 197h (RESETだけは実装済み)
+*/
+
+#include	"iocoreva.h"
+
+/*
+スキャンコード→ I/Oポート番号(上位4ビット), ビット番号(下位4ビット)
+*/
+static UINT8 scantomap[0x80]={
+	// ESC,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   -,   ^,   \,  BS, TAB,
+	  0x97,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x71,0x72,0x60,0x57,0x56,0x54,0xc5,0xa0,
+	//   Q,   W,   E,   R,   T,   Y,   U,   I,   O,   P,   @,   [, RET,   A,   S,   D,
+	  0x41,0x47,0x25,0x42,0x44,0x51,0x45,0x31,0x37,0x40,0x20,0x53,0xe0,0x21,0x43,0x24,
+	//   F,   G,   H,   J,   K,   L,   ;,   :,   ],   Z,   X,   C,   V,   B,   N,   M,
+	  0x26,0x27,0x30,0x32,0x33,0x34,0x73,0x72,0x55,0x52,0x50,0x23,0x46,0x22,0x36,0x35,
+	//   <,   >,   /,   _, SPC,変換, RUP,RDOWN,INS, DEL,  ↑,  ←,  →,  ↓, CLR,HELP,
+      0x74,0x75,0x76,0x77,0xf6,0xd0,0xb0,0xb1,0xc6,0xc7,0x18,0xa2,0xb2,0xa1,0x80,0xa3,
+	//   -,   /,   7,   8,   9,   *,   4,   5,   6,   +,   1,   2,   3,   =,   0,   ,,
+      0xa5,0xa6,0x07,0x10,0x11,0x12,0x04,0x05,0x06,0x13,0x01,0x02,0x03,0x14,0x00,0x15,
+	//   .,決定,
+      0x16,0xd1,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	//STOP,COPY,  F1,  F2,  F3,  F4,  F5,  F6,  F7,  F8,  F9, F10
+	  0x90,0xa4,0xf1,0xf2,0xf3,0xf4,0xf5,0xc0,0xc1,0xc2,0xc3,0xc4,0xff,0xff,0xff,0xff,
+	//LSFT,CAPS,カナ,GRPH,CTRL,    ,    ,    ,RSFT, RET,  PC,全角
+	  0xe2,0xa7,0x85,0x84,0x87,0xff,0xff,0xff,0xe3,0xe1,0xd2,0xd3,0xff,0xff,0xff,0xff,
+};
+
+/*
+	以下はエミュレータ内部で使用する(I/Oからは読み出せない)
+	0xf1-0xf5: F1-F5
+	0xf6     : SPACE
+*/
+
+static void setmapbit(UINT8 pos, BOOL brkflag) {
+	UINT8 bit;
+	UINT8 port;
+
+	if (pos == 0xff) return;
+
+	bit = (1 << (pos & 0x07));
+	port = pos >> 4;
+	if (brkflag) {
+		// break
+		keybrd.keymap[port] |= bit;
+	}
+	else {
+		// make
+		keybrd.keymap[port] &= ~bit;
+	}
+}
+
+static void updatekeymap(UINT8 scancode) {
+	UINT8	pos;
+	BOOL	brkflg;
+
+	pos = scantomap[scancode & 0x7f];
+	brkflg = scancode & 0x80;
+	setmapbit(pos, brkflg);
+
+	// SHIFT
+	setmapbit(0x86, !(
+	 (~keybrd.keymap[0x0e] & 0x0c) |	// SFT RT, SFT LT
+	 (~keybrd.keymap[0x0c] & 0x5f)		// INS, F10-F6
+	));
+
+	// INSDEL
+	setmapbit(0x83, !(~keybrd.keymap[0x0c] & 0xe0));	// INS,DEL,BS
+
+	// RETURN
+	setmapbit(0x17, !(~keybrd.keymap[0x0e] & 0x03));	// RET 10, RET FK
+
+	// SPACES
+	setmapbit(0x96, !(
+	 (~keybrd.keymap[0x0f] & 0x40) |	// SPACE
+	 (~keybrd.keymap[0x0d] & 0x03)		// 決定, 変換
+	));
+
+	// F1-F5
+	keybrd.keymap[0x09] = (keybrd.keymap[0x09] & 0xc1) | 
+						  ((keybrd.keymap[0x0c]<<1) & keybrd.keymap[0x0f] & 0x3e); 
+}
+#endif
+
 
 // ---- Keyboard
 
@@ -23,8 +110,11 @@ void keyboard_callback(NEVENTITEM item) {
 					keybrd.buffers--;
 					keybrd.data = keybrd.buf[keybrd.bufpos];
 					keybrd.bufpos = (keybrd.bufpos + 1) & KB_BUFMASK;
+#if defined(SUPPORT_PC88VA)
+					updatekeymap(keybrd.data);
+#endif
 				}
-//				TRACEOUT(("recv -> %02x", keybrd.data));
+				//TRACEOUT(("recv -> %02x", keybrd.data));
 			}
 			pic_setirq(1);
 			nevent_set(NEVENT_KEYBOARD, keybrd.xferclock,
@@ -63,17 +153,42 @@ static REG8 IOINPCALL keyboard_i41(UINT port) {
 	(void)port;
 	keybrd.status &= ~2;
 	pic_resetirq(1);
-//	TRACEOUT(("in41 -> %02x %.4x:%.8x", keybrd.data, CPU_CS, CPU_EIP));
+//	TRACEOUT(("in41 -> %02x %.4x:%.8x", keybrd.data, CPU_CS, CPU_IP));
 	return(keybrd.data);
 }
 
 static REG8 IOINPCALL keyboard_i43(UINT port) {
 
 	(void)port;
-//	TRACEOUT(("in43 -> %02x %.4x:%.8x", keybrd.status, CPU_CS, CPU_EIP));
+//	TRACEOUT(("in43 -> %02x %.4x:%.8x", keybrd.status, CPU_CS, CPU_IP));
 	return(keybrd.status | 0x85);
 }
 
+#if defined(SUPPORT_PC88VA)
+
+static REG8 IOINPCALL keyboardva_i000(UINT port) {
+	(void)port;
+	return(keybrd.keymap[port]);
+}
+
+static void IOOUTCALL keyboardva_o197(UINT port, REG8 dat) {
+
+	TRACEOUT(("keyboard: o197 -> %02x %.4x:%.4x", dat, CPU_CS, CPU_IP));
+	if ((dat & 0xc0) == 0x80) {
+		// オペレーションコマンド
+		if (dat & 0x01) {
+			// RESET
+			keyboard_resetsignal();
+		}
+	}
+	else {
+		// モードコマンド
+	}
+	
+	(void)port;
+}
+
+#endif
 
 // ----
 
@@ -89,6 +204,17 @@ void keyboard_reset(void) {
 	ZeroMemory(&keybrd, sizeof(keybrd));
 	keybrd.data = 0xff;
 	keybrd.mode = 0x5e;
+
+#if defined(SUPPORT_PC88VA)
+	{
+		int i;
+
+		for (i = 0; i < KB_MAP; i++) {
+			keybrd.keymap[i] = 0xff;
+		}
+	}
+#endif
+
 }
 
 void keyboard_bind(void) {
@@ -97,9 +223,28 @@ void keyboard_bind(void) {
 	keybrd.xferclock = pccore.realclock / 1920;
 	iocore_attachsysoutex(0x0041, 0x0cf1, keybrdo41, 2);
 	iocore_attachsysinpex(0x0041, 0x0cf1, keybrdi41, 2);
+
+#if defined(SUPPORT_PC88VA)
+	{
+		int i;
+		for (i = 0; i < 0x0f; i++) {
+			iocoreva_attachinp(i, keyboardva_i000);
+		}
+		iocoreva_attachinp(0x1c1, keyboard_i41);
+		iocoreva_attachout(0x197, keyboardva_o197);
+	}
+#endif
 }
 
 void keyboard_resetsignal(void) {
+
+#if defined(SUPPORT_PC88VA)
+	int i;
+
+	for (i = 0; i < KB_MAP; i++) {
+		keybrd.keymap[i] = 0xff;
+	}
+#endif
 
 	nevent_reset(NEVENT_KEYBOARD);
 	keybrd.cmd = 0;

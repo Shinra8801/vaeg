@@ -14,6 +14,7 @@ typedef void (*IOCBFN)(void);
 #include	"lsidef.h"
 
 #include	"artic.h"
+#include	"bmsio.h"
 #include	"cgrom.h"
 #include	"cpuio.h"
 #include	"crtc.h"
@@ -30,6 +31,7 @@ typedef void (*IOCBFN)(void);
 #include	"necio.h"
 #include	"nmiio.h"
 #include	"np2sysp.h"
+#include	"np2vasup.h"
 #include	"pcidev.h"
 #include	"pic.h"
 #include	"pit.h"
@@ -44,6 +46,7 @@ extern "C" {
 #endif
 
 extern	_ARTIC		artic;
+extern	_BMSIO		bmsio;
 extern	_CGROM		cgrom;
 extern	_CGWINDOW	cgwindow;
 extern	_CRTC		crtc;
@@ -68,6 +71,10 @@ extern	_UPD4990	uPD4990;
 
 #if defined(SUPPORT_PC9821)
 extern	_PCIDEV		pcidev;
+#endif
+
+#if defined(SUPPORT_PC88VA)
+extern	UINT8		iomode_va;
 #endif
 
 

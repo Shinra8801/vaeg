@@ -9,6 +9,8 @@
 #include	"iocore.h"
 #include	"fddfile.h"
 
+#include	"iocoreva.h"
+
 enum {
 	FDC_DMACH2HD	= 2,
 	FDC_DMACH2DD	= 3
@@ -53,7 +55,7 @@ static BOOL fdc_isfdcinterrupt(void) {
 
 REG8 DMACCALL fdc_dmafunc(REG8 func) {
 
-//	TRACEOUT(("fdc_dmafunc = %d", func));
+	//TRACEOUT(("fdc_dmafunc = %d", func));
 	switch(func) {
 		case DMAEXT_START:
 			return(1);
@@ -113,8 +115,14 @@ void fdcsend_success7(void) {
 	fdc.buf[6] = fdc.N;
 	fdc.status = FDCSTAT_RQM | FDCSTAT_CB | FDCSTAT_DIO;
 	fdc.stat[fdc.us] = 0;										// ver0.29
+
+	TRACEOUT(("fdc: ST0=0x%02x ST1=0x%02x ST2=0x%02x",fdc.buf[0],fdc.buf[1],fdc.buf[2]));
+	TRACEOUT(("fdc: C=0x%02x H=0x%02x R=0x%02x N=0x%02x",fdc.buf[3],fdc.buf[4],fdc.buf[5],fdc.buf[6]));
+
 	fdc_dmaready(0);
 	dmac_check();
+
+	TRACEOUT(("fdc: send interrupt"));
 	fdc_interrupt();
 }
 
@@ -253,7 +261,7 @@ static void FDC_SenseDeviceStatus(void) {				// cmd: 04
 			else {
 				fdc.buf[0] |= 0x80;
 			}
-//			TRACEOUT(("FDC_SenseDeviceStatus %.2x", fdc.buf[0]));
+			TRACEOUT(("fdc: FDC_SenseDeviceStatus %.2x", fdc.buf[0]));
 			fdc.event = FDCEVENT_BUFSEND;
 			fdc.bufcnt = 1;
 			fdc.bufp = 0;
@@ -434,7 +442,7 @@ static void FDC_SenceintStatus(void) {					// cmd: 08
 			fdc.buf[1] = fdc.treg[fdc.us];
 			fdc.bufcnt = 2;
 			fdc.stat[fdc.us] = 0;
-//			TRACEOUT(("fdc stat - %d [%.2x]", fdc.us, fdc.buf[0]));
+			TRACEOUT(("fdc: fdc stat - %d [%.2x]", fdc.us, fdc.buf[0]));
 		}
 		else {
 			for (; i<4; i++) {
@@ -443,7 +451,7 @@ static void FDC_SenceintStatus(void) {					// cmd: 08
 					fdc.buf[1] = fdc.treg[i];
 					fdc.bufcnt = 2;
 					fdc.stat[i] = 0;
-//					TRACEOUT(("fdc stat - %d [%.2x]", i, fdc.buf[0]));
+					TRACEOUT(("fdc: fdc stat - %d [%.2x]", i, fdc.buf[0]));
 					break;
 				}
 			}
@@ -460,6 +468,7 @@ static void FDC_SenceintStatus(void) {					// cmd: 08
 	if (!fdc.bufcnt) {
 		fdc.buf[0] = FDCRLT_IC1;
 		fdc.bufcnt = 1;
+		TRACEOUT(("fdc: fdc stat - [%.2x]", fdc.buf[0]));
 	}
 }
 
@@ -643,6 +652,7 @@ void DMACCALL fdc_datawrite(REG8 data) {
 
 			case FDCEVENT_CMDRECV:
 				fdc.cmds[fdc.cmdp++] = data;
+				TRACEOUT(("fdc: cmd parameter=0x%02x", data));
 				if (!(--fdc.cmdcnt)) {
 					fdc.status &= ~FDCSTAT_RQM;
 					FDC_Ope[fdc.cmd & 0x1f]();
@@ -651,6 +661,7 @@ void DMACCALL fdc_datawrite(REG8 data) {
 
 			default:
 				fdc.cmd = data;
+				TRACEOUT(("fdc: cmd=0x%02x (bit4-bit0=0x%02x)", fdc.cmd, fdc.cmd & 0x1f));
 				get_mtmfsk();
 				if (FDCCMD_TABLE[data & 0x1f]) {
 					fdc.event = FDCEVENT_CMDRECV;
@@ -688,11 +699,42 @@ REG8 DMACCALL fdc_dataread(void) {
 				if (fdc.tc) {
 					if (!fdc.bufcnt) {						// ver0.26
 						fdc.R++;
+#if 0
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							fdc.C += fdc.hd;
 							fdc.H = fdc.hd ^ 1;
 							fdc.R = 1;
 						}
+#else	// Shinra
+						/* ToDo:
+							このタイミングでR++しているが、
+							この先FDC_Ope[...]()でFDC_ReadDataが呼ばれたときにも
+							R++されるので、Rが2進むような気がする。
+						*/
+						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
+							/* ToDo:
+								fdd_seeksectorがfalseを返した場合のみ
+								以下の処理をする、というのは正しいのか？
+								fdc.cmd bit7=1のときのみ fdd_seeksectorをする、
+								というのは正しいのか？
+							*/
+							fdc.C += fdc.hd;
+							fdc.H = fdc.hd ^ 1;
+							fdc.R = 1;
+						}
+						else if (fdc.R > fdc.eot) {
+							if (fdc.cmd & 0x80) {
+								// MT=1
+								fdc.C += fdc.hd;
+								fdc.H = fdc.hd ^ 1;
+								fdc.R = 1;
+							}
+							else {
+								fdc.C++;
+								fdc.R = 1;
+							}
+						}
+#endif
 					}
 					fdcsend_success7();
 				}
@@ -737,6 +779,34 @@ static void IOOUTCALL fdc_o94(UINT port, REG8 dat) {
 	fdc.ctrlreg = dat;
 }
 
+#if defined(SUPPORT_PC88VA)
+
+static void IOOUTCALL fdcva_o1ba(UINT port, REG8 dat) {
+
+//	TRACEOUT(("fdc out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
+
+	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO)) == FDCSTAT_RQM) {
+		fdc_datawrite(dat);
+	}
+}
+
+static void IOOUTCALL fdcva_o1b6(UINT port, REG8 dat) {
+
+//	TRACEOUT(("fdc out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
+
+	if ((fdc.ctrlreg ^ dat) & 0x10) {
+		fdcstatusreset();
+		fdc_dmaready(0);
+		dmac_check();
+	}
+	fdc.ctrlreg = dat & 0xf5;		// 実際には、参照しているのはbit4(DMAE)のみのようだ
+}
+
+
+
+#endif
+
+
 static REG8 IOINPCALL fdc_i90(UINT port) {
 
 //	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
@@ -779,6 +849,44 @@ static REG8 IOINPCALL fdc_i94(UINT port) {
 	}
 }
 
+#if defined(SUPPORT_PC88VA)
+
+static REG8 IOINPCALL fdcva_i1b8(UINT port) {
+
+//	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
+//															CPU_CS, CPU_IP));
+	return(fdc.status);
+}
+
+static REG8 IOINPCALL fdcva_i1ba(UINT port) {
+
+	REG8	ret;
+
+	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO))
+										== (FDCSTAT_RQM | FDCSTAT_DIO)) {
+		ret = fdc_dataread();
+	}
+	else {
+		ret = fdc.lastdata;
+	}
+//	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
+	return(ret);
+}
+
+static REG8 IOINPCALL fdcva_i1b6(UINT port) {
+	REG8	ret;
+
+	ret = 0xa6 | 0x10;			// 常にready
+								// VA2のmonでi1b6 したら a6 が帰ってくる
+								// ToDo: bit4以外も意味があるのか？？
+
+//	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
+	return ret;
+}
+
+#endif
+
+
 
 static void IOOUTCALL fdc_obe(UINT port, REG8 dat) {
 
@@ -797,6 +905,28 @@ static REG8 IOINPCALL fdc_ibe(UINT port) {
 	(void)port;
 	return((fdc.chgreg & 3) | 8);
 }
+
+#if defined(SUPPORT_PC88VA)
+
+static void IOOUTCALL fdcva_o1b2(UINT port, REG8 dat) {
+/*
+	ToDo:
+	ドライブのモードにあわせて CTRL_FDMEDIA を切り替える必要があるが、
+	98は2ドライブ共通なのに対し、VAは独立に指定できるため、
+	困った。
+	また、2Dの扱いは・・・？
+	とりあえず、ドライブ0のみ参照
+*/
+	if (dat & 1) {
+		CTRL_FDMEDIA = DISKTYPE_2HD;
+	}
+	else {
+		CTRL_FDMEDIA = DISKTYPE_2DD;
+	}
+	(void)port;
+}
+
+#endif
 
 static void IOOUTCALL fdc_o4be(UINT port, REG8 dat) {
 
@@ -852,5 +982,15 @@ void fdc_bind(void) {
 	}
 	iocore_attachsysoutex(0x00be, 0x0cff, fdcobe, 1);
 	iocore_attachsysinpex(0x00be, 0x0cff, fdcibe, 1);
+
+#if defined(SUPPORT_PC88VA)
+	// 0x1b0 未作成
+	iocoreva_attachout(0x01b2, fdcva_o1b2);
+	iocoreva_attachout(0x01b6, fdcva_o1b6);
+	iocoreva_attachinp(0x01b6, fdcva_i1b6);
+	iocoreva_attachinp(0x01b8, fdcva_i1b8);
+	iocoreva_attachout(0x01ba, fdcva_o1ba);
+	iocoreva_attachinp(0x01ba, fdcva_i1ba);
+#endif
 }
 

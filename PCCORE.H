@@ -30,7 +30,14 @@ enum {
 	PCSOUND_NONE		= 0x00,
 
 	PCCBUS_PC9861K		= 0x0001,
-	PCCBUS_MPU98		= 0x0002
+	PCCBUS_MPU98		= 0x0002,
+
+#if defined(SUPPORT_PC88VA)
+	PCMODEL_NOTVA		= 0,
+	PCMODEL_VA1			= 1,
+	PCMODEL_VA2			= 2,
+#endif
+
 };
 
 
@@ -128,6 +135,10 @@ typedef struct {
 	UINT32	device;
 
 	UINT32	realclock;
+
+#if defined(SUPPORT_PC88VA)
+	UINT8	model_va;
+#endif
 } PCCORE;
 
 enum {

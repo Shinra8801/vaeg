@@ -3,6 +3,7 @@
 #include	"pccore.h"
 #include	"iocore.h"
 
+#include	"iocoreva.h"
 
 enum {
 	PIC_OCW2_L		= 0x07,
@@ -333,6 +334,35 @@ static REG8 IOINPCALL pic_i02(UINT port) {
 	return(picp->imr);
 }
 
+#if defined(SUPPORT_PC88VA)
+//slave
+static void IOOUTCALL picva_o184(UINT port, REG8 dat) {
+	pic_o00(0x08, dat);
+}
+static void IOOUTCALL picva_o186(UINT port, REG8 dat) {
+	pic_o02(0x0a, dat);
+}
+static REG8 IOINPCALL picva_i184(UINT port) {
+	return pic_i00(0x08);
+}
+static REG8 IOINPCALL picva_i186(UINT port) {
+	return pic_i02(0x0a);
+}
+
+//master
+static void IOOUTCALL picva_o188(UINT port, REG8 dat) {
+	pic_o00(0x00, dat);
+}
+static void IOOUTCALL picva_o18a(UINT port, REG8 dat) {
+	pic_o02(0x02, dat);
+}
+static REG8 IOINPCALL picva_i188(UINT port) {
+	return pic_i00(0x00);
+}
+static REG8 IOINPCALL picva_i18a(UINT port) {
+	return pic_i02(0x02);
+}
+#endif
 
 // ---- I/F
 
@@ -364,6 +394,19 @@ void pic_bind(void) {
 #else
 	iocore_attachsysoutex(0x0000, 0x0cf1, pico00, 4);
 	iocore_attachsysinpex(0x0000, 0x0cf1, pici00, 4);
+#endif
+
+#if defined(SUPPORT_PC88VA)
+	// slave
+	iocoreva_attachout(0x184, picva_o184);
+	iocoreva_attachout(0x186, picva_o186);
+	iocoreva_attachinp(0x184, picva_i184);
+	iocoreva_attachinp(0x186, picva_i186);
+	// master
+	iocoreva_attachout(0x188, picva_o188);
+	iocoreva_attachout(0x18a, picva_o18a);
+	iocoreva_attachinp(0x188, picva_i188);
+	iocoreva_attachinp(0x18a, picva_i18a);
 #endif
 }
 

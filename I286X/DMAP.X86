@@ -1,8 +1,15 @@
 
+SUPPORT_PC88VA	equ		1		; added by Shinra
+
 				struc	dmach_t
 .adrs			resd	1		; 00
 .leng			resw	1		; 04
+%if SUPPORT_PC88VA
+.dmy			resw	1		; 06
+.adrsorg		resd	1		; 08
+%else
 .adrsorg		resw	1		; 06
+%endif
 .lengorg		resw	1		; 08
 .action			resw	1		; 0a
 .outproc		resd	1		; 0c

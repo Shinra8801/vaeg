@@ -66,6 +66,14 @@ static void cfgcreate(HWND hWnd) {
 	else if (!milstr_cmp(np2cfg.model, str_EPSON)) {
 		val = IDC_MODELEPSON;
 	}
+#if defined(SUPPORT_PC88VA)
+	else if (!milstr_cmp(np2cfg.model, str_VA1)) {
+		val = IDC_MODELPC88VA1;
+	}
+	else if (!milstr_cmp(np2cfg.model, str_VA2)) {
+		val = IDC_MODELPC88VA2;
+	}
+#endif
 	else {
 		val = IDC_MODELVX;
 	}
@@ -137,6 +145,14 @@ const char	*str;
 	else if (GetDlgItemCheck(hWnd, IDC_MODELEPSON)) {
 		str = str_EPSON;
 	}
+#if defined(SUPPORT_PC88VA)
+	else if (GetDlgItemCheck(hWnd, IDC_MODELPC88VA1)) {
+		str = str_VA1;
+	}
+	else if (GetDlgItemCheck(hWnd, IDC_MODELPC88VA2)) {
+		str = str_VA2;
+	}
+#endif
 	else {
 		str = str_VX;
 	}

@@ -36,6 +36,11 @@ extern "C" {
 #endif
 void toolwin_fddaccess(BYTE drv);
 void toolwin_hddaccess(BYTE drv);
+
+#if defined(SUPPORT_PC88VA)
+void toolwin_modeled(BYTE num, BYTE sw);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

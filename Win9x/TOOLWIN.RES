@@ -23,7 +23,13 @@ static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_BUTTON,	str_browse,	352, 29,  18,  17, 0, 0},
 		{TCTL_BUTTON,	str_eject,	370, 29,  34,  17, 0, 0},
 		{TCTL_BUTTON,	str_reset,    0,  0,   0,   0, 0, 0},
-		{TCTL_BUTTON,	str_power,	  0,  0,   0,   0, 0, 0}};
+		{TCTL_BUTTON,	str_power,	  0,  0,   0,   0, 0, 0},
+#if defined(SUPPORT_PC88VA)
+		{TCTL_STATIC,	NULL,		 17, 28,   8,   3, 0, 0},
+		{TCTL_STATIC,	NULL,		 49, 28,   8,   3, 0, 0},
+		{TCTL_STATIC,	NULL,		 80, 28,   8,   3, 0, 0},
+#endif
+};
 
 // ----
 

@@ -125,7 +125,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I ".\\" /I ".\x86" /I ".\dialog" /I ".\debuguty" /I "..\\" /I "..\common" /I "..\i286x" /I "..\io" /I "..\cbus" /I "..\bios" /I "..\vram" /I "..\sound" /I "..\sound\vermouth" /I "..\sound\getsnd" /I "..\fdd" /I "..\lio" /I "..\font" /I "..\generic" /D "_DEBUG" /D "TRACE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I ".\\" /I ".\x86" /I ".\dialog" /I ".\debuguty" /I "..\\" /I "..\common" /I "..\i286x" /I "..\io" /I "..\cbus" /I "..\bios" /I "..\vram" /I "..\sound" /I "..\sound\vermouth" /I "..\sound\getsnd" /I "..\fdd" /I "..\lio" /I "..\font" /I "..\generic" /I "..\cpuxva" /I "../biosva" /I "../iova" /D "_DEBUG" /D "TRACE" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x411 /d "_DEBUG"
@@ -183,7 +183,7 @@ InputPath=.\x86\PARTS.X86
 InputName=PARTS
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -195,7 +195,7 @@ InputPath=.\x86\PARTS.X86
 InputName=PARTS
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -207,7 +207,7 @@ InputPath=.\x86\PARTS.X86
 InputName=PARTS
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -219,7 +219,7 @@ InputPath=.\x86\PARTS.X86
 InputName=PARTS
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -258,7 +258,7 @@ InputPath=..\I286X\DMAP.X86
 InputName=DMAP
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -270,7 +270,7 @@ InputPath=..\I286X\DMAP.X86
 InputName=DMAP
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -282,7 +282,7 @@ InputPath=..\I286X\DMAP.X86
 InputName=DMAP
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -294,7 +294,7 @@ InputPath=..\I286X\DMAP.X86
 InputName=DMAP
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -313,7 +313,7 @@ InputPath=..\I286X\EGCMEM.X86
 InputName=EGCMEM
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -325,7 +325,7 @@ InputPath=..\I286X\EGCMEM.X86
 InputName=EGCMEM
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -337,7 +337,7 @@ InputPath=..\I286X\EGCMEM.X86
 InputName=EGCMEM
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -349,7 +349,7 @@ InputPath=..\I286X\EGCMEM.X86
 InputName=EGCMEM
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -388,7 +388,7 @@ InputPath=..\I286X\MEMORY.X86
 InputName=MEMORY
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -400,7 +400,7 @@ InputPath=..\I286X\MEMORY.X86
 InputName=MEMORY
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -412,7 +412,7 @@ InputPath=..\I286X\MEMORY.X86
 InputName=MEMORY
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -424,7 +424,7 @@ InputPath=..\I286X\MEMORY.X86
 InputName=MEMORY
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -579,7 +579,7 @@ InputPath=.\x86\OPNGENG.X86
 InputName=OPNGENG
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -591,7 +591,7 @@ InputPath=.\x86\OPNGENG.X86
 InputName=OPNGENG
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj -l $(IntDir)\$(InputName).cod
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj -l $(IntDir)\$(InputName).cod
 
 # End Custom Build
 
@@ -603,7 +603,7 @@ InputPath=.\x86\OPNGENG.X86
 InputName=OPNGENG
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj -l $(IntDir)\$(InputName).cod
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj -l $(IntDir)\$(InputName).cod
 
 # End Custom Build
 
@@ -615,7 +615,7 @@ InputPath=.\x86\OPNGENG.X86
 InputName=OPNGENG
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -882,7 +882,7 @@ InputPath=.\x86\CPUTYPE.X86
 InputName=CPUTYPE
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -894,7 +894,7 @@ InputPath=.\x86\CPUTYPE.X86
 InputName=CPUTYPE
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -906,7 +906,7 @@ InputPath=.\x86\CPUTYPE.X86
 InputName=CPUTYPE
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -918,7 +918,7 @@ InputPath=.\x86\CPUTYPE.X86
 InputName=CPUTYPE
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -941,7 +941,7 @@ InputPath=.\DCLOCKD.X86
 InputName=DCLOCKD
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -953,7 +953,7 @@ InputPath=.\DCLOCKD.X86
 InputName=DCLOCKD
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -965,7 +965,7 @@ InputPath=.\DCLOCKD.X86
 InputName=DCLOCKD
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -977,7 +977,7 @@ InputPath=.\DCLOCKD.X86
 InputName=DCLOCKD
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -1090,6 +1090,10 @@ SOURCE=..\IO\ARTIC.C
 # End Source File
 # Begin Source File
 
+SOURCE=..\IO\BMSIO.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\IO\CGROM.C
 # End Source File
 # Begin Source File
@@ -1159,6 +1163,10 @@ SOURCE=..\IO\NMIIO.C
 # Begin Source File
 
 SOURCE=..\IO\NP2SYSP.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IO\NP2VASUP.C
 # End Source File
 # Begin Source File
 
@@ -1272,7 +1280,7 @@ InputPath=.\x86\MAKEGRPH.X86
 InputName=MAKEGRPH
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -1284,7 +1292,7 @@ InputPath=.\x86\MAKEGRPH.X86
 InputName=MAKEGRPH
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -1296,7 +1304,7 @@ InputPath=.\x86\MAKEGRPH.X86
 InputName=MAKEGRPH
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -1308,7 +1316,7 @@ InputPath=.\x86\MAKEGRPH.X86
 InputName=MAKEGRPH
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
 
 # End Custom Build
 
@@ -1384,6 +1392,95 @@ SOURCE=..\GENERIC\SOFTKBD.C
 SOURCE=..\GENERIC\UNASM.C
 # End Source File
 # End Group
+# Begin Group "vramva"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\VRAMVA\MAKETEXTVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\PALETTESVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\SCRNDRAWVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\SDRAWVA.C
+# End Source File
+# End Group
+# Begin Group "cpuxva"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\CPUXVA\MEMORYVA.X86
+
+!IF  "$(CFG)" == "np2 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "np2 - Win32 Trace"
+
+!ELSEIF  "$(CFG)" == "np2 - Win32 WaveRec"
+
+!ELSEIF  "$(CFG)" == "np2 - Win32 Debug"
+
+# Begin Custom Build - ±¾ÝÌÞÙ’†... $(InputPath)
+IntDir=.\..\obj\dbg
+InputPath=..\CPUXVA\MEMORYVA.X86
+InputName=MEMORYVA
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	c:\bin\nasm\nasmw -f win32 $(InputPath) -o $(IntDir)\$(InputName).obj
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "biosva"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\BIOSVA\BIOSVA.C
+# End Source File
+# End Group
+# Begin Group "IOVA"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\IOVA\CGROMVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\FDSUBSYS.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\IOCOREVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\MEMCTRLVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\SYSPORTVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\TSP.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\VIDEOVA.C
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\CALENDAR.C
@@ -1416,10 +1513,42 @@ SOURCE=..\TIMING.C
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\IOVA\FDSUBSYS.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\IO\NP2VASUP.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\PALETTESVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\SCRNDRAWVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\VRAMVA\SDRAWVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\TSP.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\VIDEOVA.H
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\ICONS\NEKOP2.BMP
+# End Source File
 # Begin Source File
 
 SOURCE=.\ICONS\Np2.ico
@@ -1427,6 +1556,10 @@ SOURCE=.\ICONS\Np2.ico
 # Begin Source File
 
 SOURCE=.\ICONS\NP2DEBUG.ICO
+# End Source File
+# Begin Source File
+
+SOURCE=.\ICONS\NP2TOOL.BMP
 # End Source File
 # End Group
 # Begin Source File

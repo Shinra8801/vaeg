@@ -41,24 +41,35 @@ typedef struct {
 	REG8	(DMACCALL * extproc)(REG8 action);
 } DMAPROC;
 
+
 typedef struct {
 	union {
 		BYTE	b[4];
 		UINT16	w[2];
 		UINT32	d;
-	} adrs;
+	} adrs;					// アドレスレジスタ(現在値)
 	union {
 		BYTE	b[2];
 		UINT16	w;
-	} leng;
+	} leng;					// カウントレジスタ(現在値)
+#if defined(SUPPORT_PC88VA)
+	BYTE	dmy1;			// adrsorgを4バイト境界に置くためのダミー
+	BYTE	dmy2;
+	union {
+		BYTE	xb[4];
+		UINT16	xw[2];
+		UINT32	xd;
+	} adrsorg;				// アドレスレジスタ(ベース)
+#else
 	union {
 		BYTE	b[2];
 		UINT16	w;
-	} adrsorg;
+	} adrsorg;				// アドレスレジスタ(ベース)
+#endif
 	union {
 		BYTE	b[2];
 		UINT16	w;
-	} lengorg;
+	} lengorg;				// カウントレジスタ(ベース)
 	UINT8	bound;
 	UINT8	action;
 	DMAPROC	proc;
@@ -67,6 +78,7 @@ typedef struct {
 	UINT8	ready;
 	UINT8	mask;
 } _DMACH, *DMACH;
+
 
 typedef struct {
 	UINT8	device;
@@ -78,10 +90,18 @@ typedef struct {
 	int		lh;
 	UINT8	work;
 	UINT8	working;
-	UINT8	mask;
-	UINT8	stat;
+	UINT8	mask;			// bit3-0 1.DMA要求禁止
+	UINT8	stat;			// bit7-4 1.DMAリクエストあり 
+							// bit3-0 1.~ENDまたはターミナルカウント
 	UINT	devices;
 	DMADEV	device[8];
+
+#if defined(SUPPORT_PC88VA)
+	UINT8	selch;			// レジスタの読み書き対象として選択されているチャンネル
+	BOOL	base;			// 0.カレント選択(リード時) カレント/ベース選択(ライト時)
+							// 1.ベース選択
+#endif
+
 } _DMAC, *DMAC;
 
 

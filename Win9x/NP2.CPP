@@ -1151,6 +1151,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			break;
 
 		case WM_KEYDOWN:
+TRACEOUT(("WM_KEYDOWN: wParam = %02x lParam & 0x01000000 = %02x",wParam, lParam & 0x01000000));
 			if (wParam == VK_F11) {
 				np2class_enablemenu(hWndMain, TRUE);
 				return(DefWindowProc(hWnd, WM_SYSKEYDOWN, VK_F10, lParam));
@@ -1175,6 +1176,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			break;
 
 		case WM_SYSKEYDOWN:
+TRACEOUT(("WM_SYSKEYDOWN: wParam = %02x lParam & 0x21000000 = %02x",wParam, lParam & 0x21000000));
 			if (lParam & 0x20000000) {								// ver0.30
 				if ((np2oscfg.shortcut & 1) && (wParam == VK_RETURN)) {
 					changescreen(scrnmode ^ SCRNMODE_FULLSCREEN);

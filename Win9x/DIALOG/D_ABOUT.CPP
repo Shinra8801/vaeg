@@ -11,10 +11,14 @@
 
 static	SIZE	aboutsize;
 
+#if defined(SUPPORT_PC88VA)
+static const char str_np2title[] = "88VA Eternal Grafx\n\n   based on Neko Project II ";
+#else
 #if !defined(SUPPORT_PC9821)
 static const char str_np2title[] = "Neko Project II  ";
 #else
 static const char str_np2title[] = "Neko Project 21  ";
+#endif
 #endif
 static const char np2infostr[] = 								\
 						"CPU: %CPU% %CLOCK%\n"					\

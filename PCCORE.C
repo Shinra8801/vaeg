@@ -13,6 +13,7 @@
 #include	"mpu98ii.h"
 #include	"amd98.h"
 #include	"bios.h"
+#include	"biosva.h"
 #include	"biosmem.h"
 #include	"vram.h"
 #include	"scrndraw.h"
@@ -40,6 +41,10 @@
 #include	"keystat.h"
 #include	"debugsub.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"../vramva/palettesva.h"
+#include	"../vramva/maketextva.h"
+#endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
 
@@ -76,7 +81,8 @@ const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
 						0, 0,
 						PCBASECLOCK25 * PCBASEMULTIPLE};
 
-	UINT8	screenupdate = 3;
+	UINT8	screenupdate = 3;			// bit0=1.画面の一部について描画が必要
+										// bit1=1.画面全体の描画が必要
 	int		screendispflag = 1;
 	int		soundrenewal = 0;
 	BOOL	drawframe;
@@ -112,6 +118,20 @@ static void pccore_set(void) {
 
 	ZeroMemory(&pccore, sizeof(pccore));
 	model = PCMODEL_VX;
+
+#if defined(SUPPORT_PC88VA)
+	pccore.model_va = PCMODEL_NOTVA;
+	if (!milstr_cmp(np2cfg.model, str_VA1)) {
+		model = PCMODEL_VM;
+		pccore.model_va = PCMODEL_VA1;
+	}
+	else if (!milstr_cmp(np2cfg.model, str_VA2)) {
+		model = PCMODEL_VM;
+		pccore.model_va = PCMODEL_VA2;
+	}
+	else
+#endif
+
 	if (!milstr_cmp(np2cfg.model, str_VM)) {
 		model = PCMODEL_VM;
 	}
@@ -214,6 +234,10 @@ void pccore_init(void) {
 	pal_initlcdtable();
 	pal_makelcdpal();
 	pal_makeskiptable();
+#if defined(SUPPORT_PC88VA)
+	palva_maketable();
+	maketextva_initialize();
+#endif
 	dispsync_initialize();
 	sxsi_initialize();
 
@@ -315,6 +339,12 @@ void pccore_reset(void) {
 	if (np2cfg.dipsw[2] & 0x80) {
 		CPU_TYPE = CPUTYPE_V30;
 	}
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		CPU_TYPE = CPUTYPE_V30;
+	}
+#endif
+	
 	if (pccore.model & PCMODEL_EPSON) {			// RAM ctrl
 		CPU_RAM_D000 = 0xffff;
 	}
@@ -360,7 +390,9 @@ void pccore_reset(void) {
 	pal_change(1);
 
 	bios_initialize();
-
+#if defined(SUPPORT_PC88VA)
+	biosva_initialize();
+#endif
 	CS_BASE = 0xf0000;
 	CPU_CS = 0xf000;
 	CPU_IP = 0xfff0;
@@ -501,6 +533,10 @@ static void drawscreen(void) {
 			screenupdate |= 1;
 		}
 	}
+#if defined(SUPPORT_PC88VA)
+	maketextva();
+	screenupdate |= 2;			// 今のところVA用描画ルーチンは全体描画しか実装していない
+#endif
 	if (screenupdate) {
 		screenupdate = scrndraw_draw((BYTE)(screenupdate & 2));
 		drawcount++;
@@ -548,7 +584,7 @@ void screenvsync(NEVENTITEM item) {
 
 // ---------------------------------------------------------------------------
 
-// #define	IPTRACE			(1 << 12)
+#define	IPTRACE			(1 << 12)
 
 #if defined(TRACE) && IPTRACE
 static	UINT	trpos = 0;
@@ -621,6 +657,7 @@ void pccore_exec(BOOL draw) {
 			CPU_SHUT();
 		}
 
+#define SINGLESTEPONLY
 #if !defined(SINGLESTEPONLY)
 		if (CPU_REMCLOCK > 0) {
 			if (!(CPU_TYPE & CPUTYPE_V30)) {
@@ -636,9 +673,14 @@ void pccore_exec(BOOL draw) {
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
 			trpos++;
 #endif
-//			TRACEOUT(("%.4x:%.4x", CPU_CS, CPU_IP));
-			i286x_step();
-//			i286c_step();
+			//TRACEOUT(("%.4x:%.4x", CPU_CS, CPU_IP));
+			if (!(CPU_TYPE & CPUTYPE_V30)) {		// added by Shinra
+				i286x_step();
+//				i286c_step();
+			}
+			else {
+				v30x_step();						// added by Shinra
+			}
 		}
 #endif
 		nevent_progress();

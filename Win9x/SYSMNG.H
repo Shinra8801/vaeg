@@ -48,6 +48,11 @@ void sysmng_hddaccess(BYTE drv);
 #define	sysmng_hddaccess(a)												\
 			toolwin_hddaccess((a));
 
+#if defined(SUPPORT_PC88VA)
+#define sysmng_modeled(a, b)											\
+			toolwin_modeled((a), (b))
+#endif
+
 #endif
 
 
@@ -59,6 +64,10 @@ void sysmng_updatecaption(BYTE flag);
 
 void toolwin_fddaccess(BYTE drv);
 void toolwin_hddaccess(BYTE drv);
+
+#if defined(SUPPORT_PC88VA)
+void toolwin_modeled(BYTE num, BYTE sw);
+#endif
 
 #ifdef __cplusplus
 }

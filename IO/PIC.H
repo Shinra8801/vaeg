@@ -28,6 +28,10 @@ enum {
 	PIC_SLAVE			= 0x80,
 
 	PIC_PRINTER			= 0x01,
+#if defined(SUPPORT_PC88VA)
+	PIC_SGP				= 0x01,
+									// PIC_PRINTERÇÕÇ«Ç±Ç…Ç‡égÇÌÇÍÇƒÇ¢Ç»Ç¢ÇÊÇ§ÇæÅB
+#endif
 	PIC_INT3			= 0x02,
 	PIC_INT41			= 0x04,
 	PIC_INT42			= 0x08,

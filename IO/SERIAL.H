@@ -4,7 +4,12 @@ enum {
 	KB_CTRMASK		= (KB_CTR - 1),
 
 	KB_BUF			= (1 << 7),
-	KB_BUFMASK		= (KB_BUF - 1)
+	KB_BUFMASK		= (KB_BUF - 1),
+
+#if defined(SUPPORT_PC88VA)
+	KB_MAP			= 0x10,
+#endif
+
 };
 
 typedef struct {
@@ -19,6 +24,11 @@ typedef struct {
 	UINT	bufpos;
 	UINT8	ctr[KB_CTR];
 	UINT8	buf[KB_BUF];
+
+#if defined(SUPPORT_PC88VA)
+	UINT8	keymap[KB_MAP];
+#endif
+
 } _KEYBRD, *KEYBRD;
 
 typedef struct {

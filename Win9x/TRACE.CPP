@@ -17,7 +17,13 @@
 #endif
 
 #define	IDC_VIEW		(WM_USER + 100)
+
+#if 0											// Shinra
 #define	VIEW_BUFFERSIZE	4096
+#else
+#define	VIEW_BUFFERSIZE	16384
+#endif
+
 #define	VIEW_FGCOLOR	0x000000
 #define	VIEW_BGCOLOR	0xffffff
 #define	VIEW_TEXT		"ÇlÇr ÉSÉVÉbÉN"

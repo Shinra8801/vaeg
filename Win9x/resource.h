@@ -229,6 +229,8 @@
 #define IDC_MORE                        1198
 #define IDC_NP2INFO                     1199
 #define IDC_NP2STR                      1200
+#define IDC_MODELPC88VA1                1201
+#define IDC_MODELPC88VA2                1202
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003
@@ -253,7 +255,7 @@
 #define IDS_SCSI1                       30022
 #define IDS_SCSI2                       30023
 #define IDS_SCSI3                       30024
-#define	IDS_WAVEREC                     30025
+#define IDS_WAVEREC                     30025
 #define IDS_I286SAVE                    30026
 #define IDS_OPEN                        30027
 #define IDS_EJECT                       30028
@@ -386,7 +388,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40121
-#define _APS_NEXT_CONTROL_VALUE         1201
+#define _APS_NEXT_CONTROL_VALUE         1202
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

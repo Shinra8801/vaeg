@@ -955,7 +955,434 @@ I286 v30_ope0xf7(void) {						// F7:
 }
 
 
+// ----------------------------------------------------------------- 0F
+
+#if defined(SUPPORT_V30ORIGINAL)
+
+
+I286 v30_reserved_0x0f(void) {
+
+		__asm {
+				I286CLOCK(2)
+				//GET_NEXTPRE1		// デバッグの目的のため、IPを進めずに停止させる
+				ret
+		}
+}
+
+I286 v30_ror4_ea8(void) {						// 0F 2A 11/000/reg
+												// 0F 2A mod/000/mem disp
+		__asm {
+									// EAX には命令の2バイト目(0Fの次)が入っている
+
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// PREPART_EA8, MEMORY_EA8などのマクロが、
+									// 2バイトの命令用に作成されているため。
+									// (ROR4は3バイト)
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(25)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					mov		dh, I286_AL
+					mov		ch, dh
+					and		ch, 0f0h
+					mov		dl, byte ptr I286_REG[eax]
+					mov		cl, dl
+					and		cl, 0fh
+					or		cl, ch
+					mov		I286_AL, cl
+					shr		dx, 4
+					mov		byte ptr I286_REG[eax], dl
+
+					GET_NEXTPRE2	// 命令2バイト目、3バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(25)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		ah, I286_AL
+					mov		dh, ah
+					and		dh, 0f0h
+					mov		al, byte ptr I286_MEM[ecx]
+					mov		dl, al
+					and		dl, 0fh
+					or		dl, dh
+					mov		I286_AL, dl
+
+					shr		ax, 4
+					mov		byte ptr I286_MEM[ecx], al
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(バイト)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		ah, I286_AL
+					mov		dh, ah
+					and		dh, 0f0h
+					mov		dl, al
+					and		dl, 0fh
+					or		dl, dh
+					mov		I286_AL, dl
+
+					shr		ax, 4
+					mov		dl, al
+
+					jmp		i286_memorywrite
+		}
+
+}
+
+
+I286 v30_clr1_ea8_cl(void) {					// 0F 12 11/000/reg
+												// 0F 12 mod/000/mem disp
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(5)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					mov		cl, byte ptr I286_REG[eax]
+					btr		cx, dx		// dxビット目をリセット
+					mov		byte ptr I286_REG[eax], cl
+
+					GET_NEXTPRE2		// 命令2～3バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(14)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					mov		al, byte ptr I286_MEM[ecx]
+					btr		ax, dx		// dxビット目をリセット
+					mov		byte ptr I286_MEM[ecx], al
+
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					btr		ax, dx		// dxビット目をリセット
+					mov		dl, al
+					call	i286_memorywrite
+
+					ret
+		}
+}
+
+
+I286 v30_set1_ea8_cl(void) {					// 0F 14 11/000/reg
+												// 0F 14 mod/000/mem disp
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(4)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					mov		cl, byte ptr I286_REG[eax]
+					bts		cx, dx		// dxビット目をセット
+					mov		byte ptr I286_REG[eax], cl
+
+					GET_NEXTPRE2		// 命令2～3バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(13)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					mov		al, byte ptr I286_MEM[ecx]
+					bts		ax, dx		// dxビット目をセット
+					mov		byte ptr I286_MEM[ecx], al
+
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, CPU_CL
+					and		dx, 0007h
+					bts		ax, dx		// dxビット目をセット
+					mov		dl, al
+					call	i286_memorywrite
+
+					ret
+		}
+}
+
+
+I286 v30_clr1_ea8_i3(void) {					// F0 1A 11/000/reg  imm3
+												// F0 1A mod/000/mem disp imm3
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(6)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					movzx	edx, ebx
+					shr		edx, 16
+					and		dx, 0007h	// imm3
+					mov		cl, byte ptr I286_REG[eax]
+					btr		cx, dx		// dxビット目をリセット
+					mov		byte ptr I286_REG[eax], cl
+
+					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(15)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 0007h	// imm3
+					mov		al, byte ptr I286_MEM[ecx]
+					btr		ax, dx		// dxビット目をリセット
+					mov		byte ptr I286_MEM[ecx], al
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 0007h	// imm3
+					btr		ax, dx		// dxビット目をリセット
+					mov		dl, al
+					call	i286_memorywrite
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+		}
+}
+
+I286 v30_clr1_ea16_i4(void) {					// 0F 1B 11/000/reg  imm4
+												// 0F 1B mod/000/mem disp imm4
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA16(6)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					movzx	edx, ebx
+					shr		edx, 16
+					and		dx, 000fh	// imm4
+					btr		word ptr I286_REG[eax], dx	// dxビット目をリセット
+
+					GET_NEXTPRE3	// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA16(15)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 000fh	// imm4
+					btr		word ptr I286_MEM[ecx], dx	// dxビット目をリセット
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+
+				EXTMEM_EA16
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 000fh	// imm4
+					btr		ax, dx		// dxビット目をリセット
+					mov		dx, ax
+					call	i286_memorywrite_w
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+		}
+}
+
+I286 v30_set1_ea8_i3(void) {					// 0F 1C 11/000/reg  imm3
+												// 0F 1C mod/000/mem disp imm3
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(5)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					movzx	edx, ebx
+					shr		edx, 16
+					and		dx, 0007h	// imm3
+					mov		cl, byte ptr I286_REG[eax]
+					bts		cx, dx		// dxビット目をセット
+					mov		byte ptr I286_REG[eax], cl
+
+					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(14)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 0007h	// imm3
+					mov		al, byte ptr I286_MEM[ecx]
+					bts		ax, dx		// dxビット目をセット
+					mov		byte ptr I286_MEM[ecx], al
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 0007h	// imm3
+					bts		ax, dx		// dxビット目をセット
+					mov		dl, al
+					call	i286_memorywrite
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+		}
+}
+
+static const	I286TBL	v30ope0x0f_xtable[64] = {
+			v30_reserved_0x0f,				// 00:
+			v30_reserved_0x0f,				// 01:
+			v30_reserved_0x0f,				// 02:
+			v30_reserved_0x0f,				// 03:
+			v30_reserved_0x0f,				// 04:
+			v30_reserved_0x0f,				// 05:
+			v30_reserved_0x0f,				// 06:
+			v30_reserved_0x0f,				// 07:
+			v30_reserved_0x0f,				// 08:
+			v30_reserved_0x0f,				// 09:
+			v30_reserved_0x0f,				// 0A:
+			v30_reserved_0x0f,				// 0B:
+			v30_reserved_0x0f,				// 0C:
+			v30_reserved_0x0f,				// 0D:
+			v30_reserved_0x0f,				// 0E:
+			v30_reserved_0x0f,				// 0F:
+
+			v30_reserved_0x0f,				// 10:
+			v30_reserved_0x0f,				// 11:
+			v30_clr1_ea8_cl,				// 12:
+			v30_reserved_0x0f,				// 13:
+			v30_set1_ea8_cl,				// 14:
+			v30_reserved_0x0f,				// 15:
+			v30_reserved_0x0f,				// 16:
+			v30_reserved_0x0f,				// 17:
+			v30_reserved_0x0f,				// 18:
+			v30_reserved_0x0f,				// 19:
+			v30_clr1_ea8_i3,				// 1A:
+			v30_clr1_ea16_i4,				// 1B:
+			v30_set1_ea8_i3,				// 1C:
+			v30_reserved_0x0f,				// 1D:
+			v30_reserved_0x0f,				// 1E:
+			v30_reserved_0x0f,				// 1F:
+
+			v30_reserved_0x0f,				// 20:
+			v30_reserved_0x0f,				// 21:
+			v30_reserved_0x0f,				// 22:
+			v30_reserved_0x0f,				// 23:
+			v30_reserved_0x0f,				// 24:
+			v30_reserved_0x0f,				// 25:
+			v30_reserved_0x0f,				// 26:
+			v30_reserved_0x0f,				// 27:
+			v30_reserved_0x0f,				// 28:
+			v30_reserved_0x0f,				// 29:
+			v30_ror4_ea8,					// 2A:
+			v30_reserved_0x0f,				// 2B:
+			v30_reserved_0x0f,				// 2C:
+			v30_reserved_0x0f,				// 2D:
+			v30_reserved_0x0f,				// 2E:
+			v30_reserved_0x0f,				// 2F:
+
+			v30_reserved_0x0f,				// 30:
+			v30_reserved_0x0f,				// 31:
+			v30_reserved_0x0f,				// 32:
+			v30_reserved_0x0f,				// 33:
+			v30_reserved_0x0f,				// 34:
+			v30_reserved_0x0f,				// 35:
+			v30_reserved_0x0f,				// 36:
+			v30_reserved_0x0f,				// 37:
+			v30_reserved_0x0f,				// 38:
+			v30_reserved_0x0f,				// 39:
+			v30_reserved_0x0f,				// 3A:
+			v30_reserved_0x0f,				// 3B:
+			v30_reserved_0x0f,				// 3C:
+			v30_reserved_0x0f,				// 3D:
+			v30_reserved_0x0f,				// 3E:
+			v30_reserved_0x0f,				// 3F:
+};
+
+
+I286 v30_ope0x0f(void) {						// 0F: 
+
+		__asm {
+				test	bh, 0c0h
+				jz		jmpbytbl
+												// 40 以上の命令としては、
+												// FF(BREAKM)があるのみ。
+				jmp		v30_reserved_0x0f
+
+	jmpbytbl:	movzx	eax, bh
+				mov		edi, eax
+				shl		edi, 2
+				jmp		v30ope0x0f_xtable[edi]
+		}
+}
+
+#endif
+
+
+// ----------------------------------------------------------------- patch table
+
+
 static const V30PATCH v30patch_op[] = {
+#if defined(SUPPORT_V30ORIGINAL)
+			{0x0f, v30_ope0x0f},			// 0F:
+#endif
 			{0x17, v30pop_ss},				// 17:	pop		ss
 			{0x26, v30segprefix_es},		// 26:	es:
 			{0x2e, v30segprefix_cs},		// 2E:	cs:
@@ -1185,6 +1612,22 @@ LABEL void v30x(void) {
 
 				align	4
 v30_mnlp:		movzx	eax, bl
+
+/*
+				cmp		esi, 61e3h
+				jnz		goahead
+
+				nop
+	goahead:
+*/
+/*
+
+				cmp		I286_CS, 1ff0h
+				jnz		goahead
+
+				nop
+	goahead:
+*/
 				call	v30op[eax*4]
 				cmp		I286_REMCLOCK, 0
 				jg		v30_mnlp

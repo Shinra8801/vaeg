@@ -31,6 +31,11 @@ enum {
 	IDC_TOOLFDD2EJECT,
 	IDC_TOOLRESET,
 	IDC_TOOLPOWER,
+#if defined(SUPPORT_PC88VA)
+	IDC_TOOLV1MODE,
+	IDC_TOOLV2MODE,
+	IDC_TOOLV3MODE,
+#endif
 	IDC_MAXITEMS,
 
 	IDC_BASE				= 3000,
@@ -72,6 +77,9 @@ typedef struct {
 	HBITMAP			hbmp;
 	BYTE			fddaccess[2];
 	BYTE			hddaccess;
+#if defined(SUPPORT_PC88VA)
+	BYTE			modeled[3];
+#endif
 	BYTE			_padding;
 	int				winflg;
 	int				wingx;
@@ -83,7 +91,11 @@ typedef struct {
 	int				parenty;
 	HFONT			hfont;
 	HDC				hdcfont;
+#if defined(SUPPORT_PC88VA)
+	HBRUSH			access[3];
+#else
 	HBRUSH			access[2];
+#endif
 	HWND			sub[IDC_MAXITEMS];
 	SUBCLASSPROC	subproc[IDC_MAXITEMS];
 } TOOLWIN;
@@ -315,6 +327,21 @@ static void accdraw(HWND hWnd, BYTE count) {
 	EndPaint(hWnd, &ps);
 }
 
+static void modedraw(HWND hWnd, BYTE sw) {
+
+	HDC			hdc;
+	PAINTSTRUCT	ps;
+	RECT		rc;
+	HBRUSH		hbrush;
+
+	hdc = BeginPaint(hWnd, &ps);
+	GetClientRect(hWnd, &rc);
+	hbrush = (HBRUSH)SelectObject(hdc, toolwin.access[(sw)?2:0]);
+	PatBlt(hdc, rc.left, rc.top, rc.right, rc.bottom, PATCOPY);
+	SelectObject(hdc, hbrush);
+	EndPaint(hWnd, &ps);
+}
+
 static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 	UINT	idc;
@@ -379,6 +406,20 @@ static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			accdraw(hWnd, toolwin.fddaccess[1]);
 			return(FALSE);
 		}
+#if defined(SUPPORT_PC88VA)
+		else if (idc == IDC_TOOLV1MODE) {
+			modedraw(hWnd, toolwin.modeled[0]);
+			return(FALSE);
+		}
+		else if (idc == IDC_TOOLV2MODE) {
+			modedraw(hWnd, toolwin.modeled[1]);
+			return(FALSE);
+		}
+		else if (idc == IDC_TOOLV3MODE) {
+			modedraw(hWnd, toolwin.modeled[2]);
+			return(FALSE);
+		}
+#endif
 	}
 	else if (msg == WM_SETFOCUS) {
 		SetWindowLong(GetParent(hWnd), GTWL_FOCUS, idc);
@@ -405,6 +446,9 @@ const char		*cls;
 
 	toolwin.access[0] = CreateSolidBrush(0x000060);
 	toolwin.access[1] = CreateSolidBrush(0x0000ff);
+#if defined(SUPPORT_PC88VA)
+	toolwin.access[2] = CreateSolidBrush(0x00ff00);
+#endif
 
 	p = subitem;
 	for (i=0; i<IDC_MAXITEMS; i++) {
@@ -476,6 +520,9 @@ static void toolwindestroy(void) {
 		}
 		DeleteObject(toolwin.access[0]);
 		DeleteObject(toolwin.access[1]);
+#if defined(SUPPORT_PC88VA)
+		DeleteObject(toolwin.access[2]);
+#endif
 		DeleteObject(toolwin.hdcfont);
 		DeleteObject(toolwin.hfont);
 		DeleteObject(toolwin.hbmp);
@@ -1015,6 +1062,25 @@ void toolwin_hddaccess(BYTE drv) {
 
 	setdiskacc(2, 10);
 }
+
+#if defined(SUPPORT_PC88VA)
+/*
+		num		LED‚Ì”Ô† 0.V1, 1.V2, 3.V3
+		sw		0.OFF, ‚»‚Ì‘¼.ON
+*/
+void toolwin_modeled(BYTE num, BYTE sw) {
+	static const WORD	idc[3] = {IDC_TOOLV1MODE, IDC_TOOLV2MODE, IDC_TOOLV3MODE};
+
+	if (num < 3) {
+		if (sw) sw = 0xff;
+		if (toolwin.modeled[num] != sw) {
+			toolwin.modeled[num] = sw;
+
+			InvalidateRect(toolwin.sub[idc[num]], NULL, TRUE);
+		}
+	}
+}
+#endif
 
 void toolwin_draw(BYTE frame) {
 

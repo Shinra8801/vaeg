@@ -9,8 +9,14 @@
 #include	"cs4231io.h"
 #include	"iocore16.tbl"
 
+#if defined(SUPPORT_PC88VA)
+#include	"iocoreva.h"
+#endif
 
 	_ARTIC		artic;
+#if defined(SUPPORT_BMS)
+	_BMSIO		bmsio;
+#endif
 	_CGROM		cgrom;
 	_CGWINDOW	cgwindow;
 	_CRTC		crtc;
@@ -62,6 +68,9 @@ typedef struct {
 static	_IOCORE		iocore;
 static	UINT8		ioterminate[0x100];
 
+#if defined(SUPPORT_PC88VA)
+		UINT8		iomode_va;
+#endif
 
 // ----
 
@@ -370,6 +379,10 @@ const UINT8	*p;
 			ioterminate[*p++] = (UINT8)(i + 1);
 		} while(--r);
 	}
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_create();
+#endif
 }
 
 void iocore_destroy(void) {
@@ -379,6 +392,10 @@ void iocore_destroy(void) {
 	ioc = &iocore;
 	listarray_destroy(ioc->iotbl);
 	ioc->iotbl = NULL;
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_destroy();
+#endif
 }
 
 BOOL iocore_build(void) {
@@ -417,6 +434,12 @@ BOOL iocore_build(void) {
 			ioc->base[i] = cmn;
 		}
 	}
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_build();
+#endif
+
+	
 	return(SUCCESS);
 
 icbld_err:
@@ -440,8 +463,19 @@ static const IOCBFN resetfn[] = {
 			// extend
 			artic_reset,		egc_reset,			np2sysp_reset,
 			necio_reset,		epsonio_reset,		emsio_reset,
+#if defined(SUPPORT_BMS)
+			bmsio_reset,
+#endif
 #if defined(SUPPORT_PC9821)
 			pcidev_reset,
+#endif
+#if defined(SUPPORT_PC88VA)
+			memctrlva_reset,
+			np2vasup_reset,
+			tsp_reset,
+			videova_reset,
+			fdsubsys_reset,
+			systemportva_reset,
 #endif
 		};
 
@@ -459,8 +493,19 @@ static const IOCBFN bindfn[] = {
 			// extend
 			artic_bind,			egc_bind,			np2sysp_bind,
 			necio_bind,			epsonio_bind,		emsio_bind,
+#if defined(SUPPORT_BMS)
+			bmsio_bind,
+#endif
 #if defined(SUPPORT_PC9821)
 			pcidev_bind,
+#endif
+#if defined(SUPPORT_PC88VA)
+			memctrlva_bind,
+			np2vasup_bind,
+			tsp_bind,
+			videova_bind,
+			fdsubsys_bind,
+			systemportva_bind,
 #endif
 		};
 
@@ -488,6 +533,14 @@ void IOOUTCALL iocore_out8(UINT port, REG8 dat) {
 
 	IOFUNC	iof;
 
+#if defined(SUPPORT_PC88VA)
+	if (iomode_va) {
+		iocoreva_out8(port, dat);
+		return;
+	}
+#endif
+
+
 //	TRACEOUT(("iocore_out8(%.2x, %.2x)", port, dat));
 	CPU_REMCLOCK -= iocore.busclock;
 	iof = iocore.base[(port >> 8) & 0xff];
@@ -499,6 +552,12 @@ REG8 IOINPCALL iocore_inp8(UINT port) {
 	IOFUNC	iof;
 	REG8	ret;
 
+#if defined(SUPPORT_PC88VA)
+	if (iomode_va) {
+		return iocoreva_inp8(port);
+	}
+#endif
+
 	CPU_REMCLOCK -= iocore.busclock;
 	iof = iocore.base[(port >> 8) & 0xff];
 	ret = iof->ioinp[port & 0xff](port);
@@ -509,6 +568,13 @@ REG8 IOINPCALL iocore_inp8(UINT port) {
 void IOOUTCALL iocore_out16(UINT port, REG16 dat) {
 
 	IOFUNC	iof;
+
+#if defined(SUPPORT_PC88VA)
+	if (iomode_va) {
+		iocoreva_out16(port, dat);
+		return;
+	}
+#endif
 
 //	TRACEOUT(("iocore_out16(%.4x, %.4x)", port, dat));
 	CPU_REMCLOCK -= iocore.busclock;
@@ -547,6 +613,12 @@ REG16 IOINPCALL iocore_inp16(UINT port) {
 
 	IOFUNC	iof;
 	REG8	ret;
+
+#if defined(SUPPORT_PC88VA)
+	if (iomode_va) {
+		return iocoreva_inp16(port);
+	}
+#endif
 
 	CPU_REMCLOCK -= iocore.busclock;
 #if defined(SUPPORT_IDEIO)

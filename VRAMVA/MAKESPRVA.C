@@ -13,6 +13,7 @@
 //#include	"dispsync.h"
 
 #include	"memoryva.h"
+#include	"tsp.h"
 #include	"makesprva.h"
 
 enum {
@@ -22,10 +23,12 @@ enum {
 	TEXTSPR_WIDTH	= SPRVA_MAXWIDTH,
 };
 
+/*
 typedef struct {
 	UINT16	sprtable;			// スプライト制御テーブル(TVRAM先頭からのオフセット)
 	//BOOL	mg;					// 縦2倍拡大
 } _TSP, *TSP;
+*/
 
 typedef struct {
 	BOOL	sw;					// 表示スイッチ
@@ -36,11 +39,12 @@ typedef struct {
 } _SPRVA, *SPRVA;
 
 typedef struct {
-	UINT	y;					// 現在処理中のラスタ
+	UINT	screeny;			// 現在処理中のラスタ(画面共通の座標系で)
+	UINT	y;					// 現在処理中のラスタ(スプライトの座標系で)
 	_SPRVA	_spr[SPRVA_SPRS];
 } _SPRVAWORK;
 
-static	_TSP	tsp;
+//static	_TSP	tsp;
 static	_SPRVAWORK	work;
 //		BYTE sprraster[SURFACE_WIDTH];
 		BYTE sprraster[TEXTSPR_WIDTH];
@@ -48,7 +52,9 @@ static	_SPRVAWORK	work;
 											// 各ピクセルはパレット番号(0～15)
 
 void makesprva_initialize(void) {
+/*
 	tsp.sprtable = 0x7e00;
+*/
 }
 
 
@@ -172,6 +178,7 @@ void makesprva_begin(void) {
 	BYTE *sprinfo;
 
 	work.y = 0;
+	work.screeny = 0;
 
 	sprinfo = textmem + tsp.sprtable;
 	for (i = 0; i < SPRVA_SPRS; i++) {
@@ -188,6 +195,11 @@ void makesprva_begin(void) {
 		else d <<= 1;
 		work._spr[i].spda = d;
 
+		// カーソルの点滅
+		if (i == tsp.curn && tsp.be && (tsp.blinkcnt2 & 0x08)) {
+			work._spr[i].sw = FALSE;
+		}
+
 		sprinfo += 8;
 	}
 
@@ -198,20 +210,24 @@ void makesprva_raster(void) {
 	BYTE *sprinfo;
 	SPRVA s;
 
-	ZeroMemory(sprraster, sizeof(sprraster));
-	sprinfo = textmem + tsp.sprtable + SPRVA_SPRS * 8;
-	s = &work._spr[SPRVA_SPRS];
-	for (i = 0; i < SPRVA_SPRS; i++) {
-		s--;
-		sprinfo -= 8;
+	if (!tsp.mg || (work.screeny & 1) == 0) { 
 
-		if (s->sw && ((work.y - s->yp) & 0x01ff) < s->vlines ) {
+		ZeroMemory(sprraster, sizeof(sprraster));
+		sprinfo = textmem + tsp.sprtable + SPRVA_SPRS * 8;
+		s = &work._spr[SPRVA_SPRS];
+		for (i = 0; i < SPRVA_SPRS; i++) {
+			s--;
+			sprinfo -= 8;
 
-			drawraster(s, sprinfo);
+			if (s->sw && ((work.y - s->yp) & 0x01ff) < s->vlines ) {
+
+				drawraster(s, sprinfo);
+			}
+		
 		}
-	
-	}
 
-	work.y++;
+		work.y++;
+	}
+	work.screeny++;
 
 }

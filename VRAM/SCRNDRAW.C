@@ -9,7 +9,6 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/scrndrawva.h"
-#include	"../vramva/palettesva.h"
 #endif
 
 	BYTE	renewal_line[SURFACE_HEIGHT];

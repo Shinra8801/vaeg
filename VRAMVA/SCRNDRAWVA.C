@@ -14,18 +14,12 @@
 	BYTE	colorlevel5[32];			// 出力レベル変換 5bit→8bit
 	BYTE	colorlevel6[64];			// 出力レベル変換 6bit→8bit
 
-#if 0
-	BYTE	np2_tbitmap[SURFACE_SIZE];
-#endif
 
 static int	initialized = 0;
 
 void scrndrawva_initialize(void) {
 	int i;
 
-#if 0
-	ZeroMemory(np2_tbitmap, sizeof(np2_tbitmap));
-#endif
 	ZeroMemory(vabitmap, sizeof(vabitmap));
 
 	for (i=0; i<32; i++) {

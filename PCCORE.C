@@ -42,12 +42,12 @@
 #include	"debugsub.h"
 
 #if defined(SUPPORT_PC88VA)
-#include	"../vramva/palettesva.h"
 #include	"../vramva/maketextva.h"
 #include	"../vramva/makesprva.h"
 #include	"scrnmng.h"
 #include	"../vramva/scrndrawva.h"
 #include	"memoryva.h"
+#include	"tsp.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -586,6 +586,12 @@ void screenvsync(NEVENTITEM item) {
 	gdc_work(GDCWORK_MASTER);
 	gdc.vsync = 0x20;
 #if defined(SUPPORT_PC88VA)
+	
+	if (--tsp.blinkcnt == 0) {
+		tsp.blinkcnt = tsp.blink;
+		tsp.blinkcnt2++;
+	}
+
 	if (gdc.vsyncint || pccore.model_va != PCMODEL_NOTVA) {
 #else
 	if (gdc.vsyncint) {

@@ -10,6 +10,7 @@
 
 #include	"cgromva.h"
 #include	"memoryva.h"
+#include	"tsp.h"
 #include	"maketextva.h"
 
 enum {
@@ -36,13 +37,14 @@ typedef struct {
 
 typedef void (*SYNATTRFN)(BYTE, CHARATTR);	// アトリビュート合成ルーチン
 
-
+/*
 typedef struct {
 	UINT16	texttable;			// テキスト画面制御テーブル(TVRAM先頭からのオフセット)
 	UINT16	attroffset;			// アトリビュート領域(TVRAM先頭からのオフセット)
 	UINT8	lineheight;
 	UINT8	hlinepos;
 } _TSP, *TSP;
+*/
 
 typedef struct {		// テキスト分割画面制御テーブル(のコピー)
 	UINT16	vw;			// フレームバッファ横幅(バイト)
@@ -78,7 +80,7 @@ typedef struct {
 
 static	_TEXTVAWORK	work;
 
-static	_TSP	tsp;
+//static	_TSP	tsp;
 
 static	BYTE linebitmap[SURFACE_WIDTH * TEXTVA_LINEHEIGHTMAX];	// テキスト1行分のbitmap
 
@@ -92,10 +94,12 @@ static	BYTE linebitmap[SURFACE_WIDTH * TEXTVA_LINEHEIGHTMAX];	// テキスト1行分の
 
 
 void maketextva_initialize(void) {
+/*
 	tsp.texttable = 0x7f00;
 	tsp.attroffset = 0x8000;
 	tsp.lineheight = 16;
 	tsp.hlinepos = 15;
+*/
 }
 
 

@@ -1,0 +1,136 @@
+
+BODY {
+  COLOR: #000000;
+  BACKGROUND: #ffffee;
+  FONT-FAMILY: ‚l‚r ‚oƒSƒVƒbƒN, MS UI Gothic;
+  FONT-SIZE: 90%;
+}
+
+A:link {
+  COLOR: blue;
+}
+
+A:visited {
+  COLOR: purple;
+}
+
+A:active {
+  COLOR: red;
+}
+
+A:hover {
+  COLOR: red;
+}
+
+H2 {
+  TEXT-INDENT: 0;
+  COLOR: #000000;
+  FONT-SIZE: 150%;
+  BORDER: outset thin;
+  BORDER-TOP: 0;
+  BORDER-LEFT: 0;
+  BORDER-RIGHT: 0;
+}
+
+H3 {
+  COLOR: #000000;
+  FONT-SIZE: 125%;
+  BORDER: outset thin;
+  BORDER-TOP: 0;
+  BORDER-LEFT: 0;
+  BORDER-RIGHT: 0;
+}
+
+H4 {
+  COLOR: #000080;
+  FONT-SIZE: 105%;
+  BORDER: outset thin;
+  BORDER-TOP: 0;
+  BORDER-LEFT: 0;
+  BORDER-RIGHT: 0;
+}
+
+P {
+  MARGIN-BOTTOM: 0.75em;
+  MARGIN-TOP: 0.75em;
+}
+
+DT {
+  MARGIN-TOP: 2em;
+}
+
+DD {
+  MARGIN-LEFT: 1.5em;
+  MARGIN-BOTTOM: 0em;
+}
+
+UL {
+  LIST-STYLE: disc;
+  MARGIN-LEFT: 1.5em;
+}
+
+LI {
+  MARGIN-LEFT: 0em;
+  MARGIN-BOTTOM: 0.5em;
+}
+
+LI.nopad {
+  MARGIN-LEFT: 0em;
+  MARGIN-BOTTOM: 0em;
+}
+
+TABLE {
+  FONT-SIZE: 95%;
+  MARGIN-TOP: 0.5em;
+  MARGIN-BOTTOM: 0.5em;
+}
+
+TABLE.dummy {
+  FONT-SIZE: 100%;
+  MARGIN-TOP: 0.5em;
+  MARGIN-BOTTOM: 0.5em;
+}
+
+TH {
+  BACKGROUND: #e0e0e0;
+  VERTICAL-ALIGN: top;
+}
+
+TD {
+  BACKGROUND: #ffffff;
+  VERTICAL-ALIGN: top;
+}
+
+TD.topic {
+  BACKGROUND: #ffffff;
+  TEXT-ALIGN: center;
+  VERTICAL-ALIGN: top;
+}
+
+TD.topicv {
+  BACKGROUND: #ffffff;
+  TEXT-ALIGN: left;
+  VERTICAL-ALIGN: middle;
+}
+
+TD.bottomr {
+  BACKGROUND: #ffffff;
+  TEXT-ALIGN: right;
+  VERTICAL-ALIGN: top;
+}
+
+TD.dummy {
+  BACKGROUND: #ffffee;
+  VERTICAL-ALIGN: top;
+}
+
+TD.spec1 {
+  BACKGROUND: #ffffee;
+  VERTICAL-ALIGN: top;
+}
+
+TD.spec2 {
+  BACKGROUND: #ffffff;
+  VERTICAL-ALIGN: top;
+}
+

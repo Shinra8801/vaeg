@@ -1,0 +1,40 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+  <META HTTP-EQUIV="Content-Type" CONTENT="text/html;charset=Shift_JIS">
+  <TITLE>ねこープロジェクトII 機能仕様</TITLE>
+  <LINK REL="stylesheet" TYPE="text/css" HREF="common.css">
+</HEAD>
+<BODY BGCOLOR="#ffffee" TEXT="#000000" LINK="blue" VLINK="purple" ALINK="red">
+
+<BR><BR>
+
+<H3><B>ねこープロジェクトII 機能仕様</B></H3>
+
+<DL>
+<DD><TABLE CELLPADDING="2" CELLSPACING="0" BORDER="1">
+<TR><TD CLASS="spec1" COLSPAN="2">CPU</TD><TD CLASS="spec2">μPD70116相当品(i80286共通命令のみ) クロック2～76MHz<BR>i80286相当品(リアルモードのみ) クロック2～76MHz</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">ROM</TD><TD CLASS="spec2">BIOS ROM 96KB, ITF-ROM 32KB, サウンドROM 16KB<BR>(N88-BASIC(86)/モニタROM/サウンドROMは外部ファイルより供給)</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">メモリ</TD><TD CLASS="spec2">ユーザーズメモリ 640KB<BR>テキスト用VRAM 12KB<BR>グラフィック用VRAM 256KB</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">ディスプレイ</TD><TD CLASS="spec2">水平走査周波数: 15.98kHz / 24.83kHz<BR>垂直走査周波数: 61.22Hz / 56.42Hz (40.8～65.7Hz)<BR><BR>アナログディスプレイ,<BR>プラズマディスプレイ,<BR>液晶ディスプレイ　いずれか選択。</TD></TR>
+<TR><TD CLASS="spec1" ROWSPAN="3">表示</TD><TD CLASS="spec1" BGCOLOR="#ffffee">テキスト表示</TD><TD CLASS="spec2">80文字x25行, 80文字x20行<BR>40文字x25行, 40文字x20行　いずれか選択。<BR>リバース, ブリング, シークレット (キャラクタ単位に指定可)<BR>カラー８色 (キャラクタ単位に指定可)</TD></TR>
+<TR><TD CLASS="spec1">グラフ表示</TD><TD CLASS="spec2">640x200ドット (モノクロ16画面, カラー4画面)<BR>640x400ドット (モノクロ8画面, カラー2画面)<BR>カラー 8色 (デジタル RGBディスプレイ使用時)<BR>4096色中16色 (アナログ RGBディスプレイ使用時)</TD></TR>
+<TR><TD CLASS="spec1">日本語表示</TD><TD CLASS="spec2">JIS(78)第１水準, 第２水準漢字ROM標準装備<BR>JIS第１水準漢字 2965字<BR>JIS第２水準漢字 3384字<BR>非漢字 885種<BR>ユーザ定義文字 118種<BR>(外部フォントファイルにより変更可能)</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">キーボード</TD><TD CLASS="spec2">JIS標準配列根拠<BR>(但し @ ^ キーは ATキーボードに従う)</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">５インチミニ<BR>フロッピィディスク</TD><TD VALIGN="top">２ドライブ内蔵(1MB/640KB兼用ドライブ)<BR>(設定により 3モードドライブ対応)</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">マウスインタフェース</TD><TD CLASS="spec2">内蔵</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">プリンタインタフェース</TD><TD CLASS="spec2">－－</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">シリアルインタフェース</TD><TD CLASS="spec2">RS-232C規格に準拠(但しWindowsの制限あり)</TD></TR>
+<TR><TD CLASS="spec1" COLSPAN="2">カレンダ時計</TD><TD CLASS="spec2">プログラム可能カレンダ</TD></TR>
+<TR><TD CLASS="spec1" ROWSPAN="5">拡張スロット</TD><TD CLASS="spec1">FM</TD>
+<TD CLASS="spec2">PC-9801-14, PC-9801-26K, PC-9801-86, PC-9801-118<BR>Speak Board, Spark Board, AMD98, ちびおと</TD></TR>
+<TR><TD CLASS="spec1">MIDI</TD><TD CLASS="spec2">Roland MPU-PC98II</TD></TR>
+<TR><TD CLASS="spec1">Serial</TD><TD CLASS="spec2">PC-9861K</TD></TR>
+<TR><TD CLASS="spec1">SASI</TD><TD CLASS="spec2">PC-9801-27</TD></TR>
+<TR><TD CLASS="spec1">SCSI</TD><TD CLASS="spec2">PC-9801-55</TD></TR>
+</TABLE></DD>
+</DL>
+
+</BODY>
+</HTML>
+

@@ -15,6 +15,9 @@
 #include	"iocore.h"
 #include	"bios.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"viewvabank.h"
+#endif
 
 char viewcmn_hex[16] = {
 				'0', '1', '2', '3', '4', '5', '6', '7',
@@ -119,6 +122,12 @@ void viewcmn_setmode(NP2VIEW_T *dst, NP2VIEW_T *src, BYTE type) {
 		case VIEWMODE_SND:
 			viewsnd_init(dst, src);
 			break;
+
+#if defined(SUPPORT_PC88VA)
+		case VIEWMODE_VABANK:
+			viewvabank_init(dst, src);
+			break;
+#endif
 	}
 	viewmenu_mode(dst);
 }
@@ -144,6 +153,11 @@ LRESULT CALLBACK viewcmn_dispat(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 			case VIEWMODE_SND:
 				return(viewsnd_proc(dbg, hwnd, msg, wp, lp));
+
+#if defined(SUPPORT_PC88VA)
+			case VIEWMODE_VABANK:
+				return(viewvabank_proc(dbg, hwnd, msg, wp, lp));
+#endif
 		}
 	}
 	return(0L);

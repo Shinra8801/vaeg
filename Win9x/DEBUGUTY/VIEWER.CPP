@@ -92,6 +92,11 @@ LRESULT CALLBACK ViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 					viewer_segmode(hWnd, VIEWMODE_SND);
 					break;
 
+#if defined(SUPPORT_PC88VA)
+				case IDM_VIEWMODEVABANK:
+					viewer_segmode(hWnd, VIEWMODE_VABANK);
+					break;
+#endif
 				default:
 					return(viewcmn_dispat(hWnd, msg, wParam, lParam));
 			}

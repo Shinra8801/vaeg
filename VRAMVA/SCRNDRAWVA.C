@@ -64,7 +64,7 @@ void scrndrawva_draw_sub(const SCRNSURF	*surf) {
 	sdraw.y = 0;
 	sdraw.xalign = surf->xalign;
 	sdraw.yalign = surf->yalign;
-	sdrawfn(&sdraw, height);
+	if (sdrawfn) sdrawfn(&sdraw, height);
 }
 
 typedef struct {

@@ -7,6 +7,10 @@
 #include	"fmboard.h"
 #include	"s98.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"iocoreva.h"
+#endif
+
 
 static void IOOUTCALL spb_o188(UINT port, REG8 dat) {
 
@@ -203,6 +207,17 @@ void boardspb_bind(void) {
 	rhythm_bind(&rhythm);
 	sound_streamregist(&adpcm, (SOUNDCB)adpcm_getpcm);
 	cbuscore_attachsndex(0x188 - opn.base, spb_o, spb_i);
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_attachinp(0x044, spb_i188);
+	iocoreva_attachinp(0x045, spb_i18a);
+	iocoreva_attachinp(0x046, spb_i188);
+	iocoreva_attachinp(0x047, spb_i18e);
+	iocoreva_attachout(0x044, spb_o188);
+	iocoreva_attachout(0x045, spb_o18a);
+	iocoreva_attachout(0x046, spb_o18c);
+	iocoreva_attachout(0x047, spb_o18e);
+#endif
 }
 
 

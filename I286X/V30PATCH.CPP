@@ -1136,6 +1136,63 @@ I286 v30_set1_ea8_cl(void) {					// 0F 14 11/000/reg
 		}
 }
 
+I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
+												// F0 18 mod/000/mem disp imm3
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(4)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					movzx	ecx, ebx
+					shr		ecx, 16
+					and		cx, 0007h	// imm3
+					mov		al, byte ptr I286_REG[eax]
+					mov		dx, 1
+					shl		dx, cl
+					test	al, dl		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(13)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		al, byte ptr I286_MEM[ecx]
+					mov		cl, bl
+					and		cl, 0007h	// imm3
+					mov		dx, 1
+					shl		dx, cl
+					test	al, dl		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		cl, bl
+					and		cl, 0007h	// imm3
+					mov		dx, 1
+					shl		dx, cl
+					test	al, dl		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE1		// imm3 の分、IPを進める
+					ret
+		}
+}
+
+
 
 I286 v30_clr1_ea8_i3(void) {					// F0 1A 11/000/reg  imm3
 												// F0 1A mod/000/mem disp imm3
@@ -1286,6 +1343,53 @@ I286 v30_set1_ea8_i3(void) {					// 0F 1C 11/000/reg  imm3
 		}
 }
 
+I286 v30_set1_ea16_i4(void) {					// 0F 1D 11/000/reg  imm4
+												// 0F 1D mod/000/mem disp imm4
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA16(5)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					movzx	edx, ebx
+					shr		edx, 16
+					and		dx, 000fh	// imm4
+					bts		word ptr I286_REG[eax], dx	// dxビット目をセット
+
+					GET_NEXTPRE3	// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA16(14)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 000fh	// imm4
+					bts		word ptr I286_MEM[ecx], dx	// dxビット目をセット
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+
+				EXTMEM_EA16
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		dl, bl
+					and		dx, 000fh	// imm4
+					bts		ax, dx		// dxビット目をセット
+					mov		dx, ax
+					call	i286_memorywrite_w
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+		}
+}
+
 static const	I286TBL	v30ope0x0f_xtable[64] = {
 			v30_reserved_0x0f,				// 00:
 			v30_reserved_0x0f,				// 01:
@@ -1312,12 +1416,12 @@ static const	I286TBL	v30ope0x0f_xtable[64] = {
 			v30_reserved_0x0f,				// 15:
 			v30_reserved_0x0f,				// 16:
 			v30_reserved_0x0f,				// 17:
-			v30_reserved_0x0f,				// 18:
+			v30_test1_ea8_i3,				// 18:
 			v30_reserved_0x0f,				// 19:
 			v30_clr1_ea8_i3,				// 1A:
 			v30_clr1_ea16_i4,				// 1B:
 			v30_set1_ea8_i3,				// 1C:
-			v30_reserved_0x0f,				// 1D:
+			v30_set1_ea16_i4,				// 1D:
 			v30_reserved_0x0f,				// 1E:
 			v30_reserved_0x0f,				// 1F:
 

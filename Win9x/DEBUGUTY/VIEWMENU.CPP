@@ -17,6 +17,9 @@ void viewmenu_mode(NP2VIEW_T *view) {
 	CheckMenuItem(hmenu, IDM_VIEWMODE1MB, MFCHECK(view->type == VIEWMODE_1MB));
 	CheckMenuItem(hmenu, IDM_VIEWMODEASM, MFCHECK(view->type == VIEWMODE_ASM));
 	CheckMenuItem(hmenu, IDM_VIEWMODESND, MFCHECK(view->type == VIEWMODE_SND));
+#if defined(SUPPORT_PC88VA)
+	CheckMenuItem(hmenu, IDM_VIEWMODEVABANK, MFCHECK(view->type == VIEWMODE_VABANK));
+#endif
 }
 
 

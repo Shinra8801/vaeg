@@ -909,6 +909,7 @@ BEGIN
         MENUITEM "&Main Memory Dump",           IDM_VIEWMODE1MB
         MENUITEM "&Unassemble",                 IDM_VIEWMODEASM
         MENUITEM "&Sound Register",             IDM_VIEWMODESND
+        MENUITEM "&Bank Register (88VA)",       IDM_VIEWMODEVABANK
         MENUITEM SEPARATOR
         MENUITEM "&Lock",                       IDM_VIEWMODELOCK
     END

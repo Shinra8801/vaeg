@@ -11,33 +11,62 @@
 
 #if defined(SUPPORT_PC88VA)
 
+enum {
+	PORT_PAL = 0x300,
+};
+
+	_VIDEOVA	videova;
+
+
+
+static int port2pal(UINT port) {
+	return (port - PORT_PAL) / 2;
+}
+
+static void adjustpal(int palno) {
+	WORD c;
+
+	c = videova.palette[palno];
+
+	if (c & 0xf000) c |= 0x0c00;
+	if (c & 0x03c0) c |= 0x0020;
+	if (c & 0x001e) c |= 0x0001;
+
+	videova.palette[palno] = c;
+}
+
 // ---- I/O
 
-/*
-static void IOOUTCALL memctrlva_o152(UINT port, REG8 dat) {
-	rom0_bank = ((dat & 0x40) >> 2) | dat & 0x0f;
-	rom1_bank = (dat & 0xb0) >> 4;
-	(void)port;
+static void IOOUTCALL videova_o_palette_l(UINT port, REG8 dat) {
+	int n;
+	
+	n = port2pal(port);
+	videova.palette[n] = videova.palette[n] & 0xff00 | dat;
+	adjustpal(n);
 }
 
-static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
-	sysm_bank = dat & 0x0f;
-	(void)port;
+static void IOOUTCALL videova_o_palette_h(UINT port, REG8 dat) {
+	int n;
+	
+	n = port2pal(port);
+	videova.palette[n] = videova.palette[n] & 0x00ff | (dat << 8);
+	adjustpal(n);
 }
-*/
+
 
 // ---- I/F
 
 void videova_reset(void) {
+	// ToDo: ƒpƒŒƒbƒg‚Ì‰Šú‰»
 }
 
 void videova_bind(void) {
-	/*
-	iocoreva_attachout(0x152, memctrlva_o152);
-	iocoreva_attachout(0x153, memctrlva_o153);
-	iocoreva_attachout(0x198, memctrlva_o198);
-	iocoreva_attachout(0x19a, memctrlva_o19a);
-	*/
+	int i;
+
+	for (i = 0; i < VIDEOVA_PALETTES * 2; i+=2) {
+		iocoreva_attachout(PORT_PAL + i, videova_o_palette_l);
+		iocoreva_attachout(PORT_PAL + i+1, videova_o_palette_h);
+	}
 }
 
 #endif

@@ -1454,6 +1454,10 @@ SOURCE=..\BIOSVA\BIOSVA.C
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\IOVA\BKUPMEMVA.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\IOVA\CGROMVA.C
 # End Source File
 # Begin Source File
@@ -1467,6 +1471,10 @@ SOURCE=..\IOVA\IOCOREVA.C
 # Begin Source File
 
 SOURCE=..\IOVA\MEMCTRLVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\MOUSEIFVA.C
 # End Source File
 # Begin Source File
 

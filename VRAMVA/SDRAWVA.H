@@ -2,11 +2,11 @@
 
 typedef struct {
 	BYTE	*dst;
-	int		width;
-	int		xbytes;
+	int		width;					// 画面幅(pixel)
+	int		xbytes;					// 画面幅(byte)
 	int		y;
-	int		xalign;
-	int		yalign;
+	int		xalign;					// 1ピクセルのバイト数
+	int		yalign;					// 1ラスタのバイト数
 	BYTE	dirty[SURFACE_WIDTH];
 } _SDRAWVA, *SDRAWVA;
 

@@ -7,6 +7,7 @@
 #include	"palettesva.h"
 
 #if defined(SUPPORT_PC88VA)
+#if 0
 
 
 		RGB32		np2_palva32[NP2PALVA_TOTAL];
@@ -54,5 +55,7 @@ void palva_make(RGB32 *pal) {
 #endif
 
 }
+
+#endif
 
 #endif

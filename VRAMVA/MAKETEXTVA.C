@@ -44,7 +44,8 @@ static _TSP tsp;
 static BYTE linebitmap[SURFACE_WIDTH * TEXTVA_LINEHEIGHTMAX];
 
 
-
+	BYTE textraster[SURFACE_WIDTH];		// 1ラスタ分のピクセルデータ
+										// 各ピクセルはパレット番号(0～15)
 
 
 
@@ -128,6 +129,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 
 }
 
+#if 0
 void maketextva(void) {
 	UINT	x;
 	UINT	y;
@@ -175,4 +177,64 @@ void maketextva(void) {
 
 
 }
+#endif
 
+
+typedef struct {
+	UINT	y;
+	UINT	raster;
+	UINT	texty;
+	UINT16	rsa;		// 分割画面スタートアドレス
+	UINT16	vw;			// フレームバッファの横幅(バイト)
+	UINT16	rw;			// 分割画面の横幅(ドット) 32の倍数 この値/8+2 文字表示される
+	UINT16	rwchar;		// 分割画面の横幅(文字) = rw / 8 + 2 
+	BOOL	linebitmap_ready;
+} _TEXTVAWORK;
+
+static _TEXTVAWORK	work;
+
+
+void maketextva_begin(void) {
+	work.linebitmap_ready = FALSE;
+	work.rsa = 0;
+	work.vw = 80*2;
+	work.rw = 640;
+	work.rwchar = work.rw / 8 + 2;
+	work.raster = 0;
+	work.texty = 0;
+	work.y = 0;
+}
+
+void maketextva_raster(void) {
+	UINT	x;
+	BYTE	*v;			// TVRAM
+	BYTE	*b;			// bitmap
+	BYTE	*lb;		// linebitmap
+
+	if (work.y >= SURFACE_HEIGHT) return;
+
+		if (!work.linebitmap_ready) {
+			v = textmem + work.rsa + work.vw * work.texty;
+			makeline(v, work.rwchar);
+
+			work.texty++;
+			work.linebitmap_ready = TRUE;
+		}
+
+		b = textraster;
+		lb = linebitmap + SURFACE_WIDTH * work.raster;
+		for (x = 0; x < SURFACE_WIDTH; x++) {
+			*b = *lb;
+			b++;
+			lb++;
+		}
+
+		work.raster++;
+		if (work.raster >= tsp.lineheight) {
+			work.linebitmap_ready = FALSE;
+			work.raster = 0;
+		}
+
+	work.y++;
+
+}

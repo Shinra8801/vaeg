@@ -246,6 +246,7 @@ const SDRAWFN	*sdrawfn;
 	}
 
 #if defined(SUPPORT_PC88VA)
+	/*
 	{
 		RGB32 vapal[NP2PALVA_TOTAL];
 		int n;
@@ -272,6 +273,7 @@ const SDRAWFN	*sdrawfn;
 		}
 		palva_make(vapal);
 	}
+	*/
 	scrndrawva_draw_sub(surf);
 #endif
 

@@ -3,13 +3,51 @@
 #include	"scrnmng.h"
 #include	"scrndraw.h"
 #include	"sdrawva.h"
+#include	"scrndrawva.h"
 
 #include	"palettesva.h"
 
 #if defined(SUPPORT_PC88VA)
 
-extern	BYTE np2_tbitmap[];
 
+
+
+
+static void SCRNCALL _sdrawva32(SDRAWVA sdraw, int maxy) {
+
+	const WORD	*p;
+	BYTE	*q;
+	int		y;
+	int		x;
+
+	p = vabitmap;
+	q = sdraw->dst;
+	y = sdraw->y;
+	do {
+		if (1) {
+			*(UINT32 *)q = 0;
+			for (x=0; x<sdraw->width; x++) {
+				WORD c;
+
+				q += sdraw->xalign;
+				c = p[x];
+				*(UINT32 *)q = RGB32D(
+					colorlevel5[(c & 0x03e0) >> 5], 
+					colorlevel6[(c & 0xfc00) >> 10],
+					colorlevel5[c & 0x1f]);
+			}
+			q -= sdraw->xbytes;
+		}
+		p += SURFACE_WIDTH;
+		q += sdraw->yalign;
+	} while(++y < maxy);
+
+	// –{“–‚ÍAsrc‚à•Û‘¶‚Å‚«‚È‚¢‚Æƒ_ƒ
+	sdraw->dst = q;
+	sdraw->y = y;
+}
+
+#if 0
 static void SCRNCALL sdrawva32(SDRAWVA sdraw, int maxy) {
 
 	const BYTE	*p;
@@ -47,9 +85,17 @@ static void SCRNCALL sdrawva32(SDRAWVA sdraw, int maxy) {
 static const SDRAWFNVA tbl[] = {
 	sdrawva32
 };
+
+#endif
+
+static const SDRAWFNVA _tbl[] = {
+	_sdrawva32
+};
+
 const SDRAWFNVA sdrawva_getproctbl(const SCRNSURF *surf) {
 
-	return tbl[0];
+//	return tbl[0];
+	return _tbl[0];
 }
 
 #endif

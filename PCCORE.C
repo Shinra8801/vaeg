@@ -44,6 +44,8 @@
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/palettesva.h"
 #include	"../vramva/maketextva.h"
+#include	"scrnmng.h"
+#include	"../vramva/scrndrawva.h"
 #include	"memoryva.h"
 #endif
 
@@ -236,7 +238,7 @@ void pccore_init(void) {
 	pal_makelcdpal();
 	pal_makeskiptable();
 #if defined(SUPPORT_PC88VA)
-	palva_maketable();
+//	palva_maketable();
 	maketextva_initialize();
 #endif
 	dispsync_initialize();
@@ -535,7 +537,17 @@ static void drawscreen(void) {
 		}
 	}
 #if defined(SUPPORT_PC88VA)
-	maketextva();
+	//maketextva();
+	{
+		int y;
+
+		maketextva_begin();
+		scrndrawva_compose_begin();
+		for (y = 0; y < SURFACE_HEIGHT; y++) {
+			maketextva_raster();
+			scrndrawva_compose_raster();
+		}
+	}
 	screenupdate |= 2;			// ¡‚Ì‚Æ‚±‚ëVA—p•`‰æƒ‹[ƒ`ƒ“‚Í‘S‘Ì•`‰æ‚µ‚©ŽÀ‘•‚µ‚Ä‚¢‚È‚¢
 #endif
 	if (screenupdate) {

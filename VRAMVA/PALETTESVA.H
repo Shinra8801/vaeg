@@ -1,5 +1,7 @@
 #if defined(SUPPORT_PC88VA)
 
+#if 0
+
 enum {
 	// np2_palva??[] のインデックス番号
 	//NP2PALVA_SET1		= 0,	// パレットセット1
@@ -25,5 +27,6 @@ void palva_make(RGB32 *pal);
 }
 #endif
 
+#endif
 
 #endif

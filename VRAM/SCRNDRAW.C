@@ -291,6 +291,13 @@ sddr_exit1:
 
 void scrndraw_redraw(void) {
 
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		scrndrawva_redraw();
+		return;
+	}
+#endif
+
 	scrnmng_allflash();
 	pal_change(1);
 	dispsync_renewalmode();

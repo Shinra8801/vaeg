@@ -1490,6 +1490,10 @@ SOURCE=..\IOVA\MOUSEIFVA.C
 # End Source File
 # Begin Source File
 
+SOURCE=..\IOVA\SGP.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\IOVA\SYSPORTVA.C
 # End Source File
 # Begin Source File
@@ -1556,6 +1560,10 @@ SOURCE=..\VRAMVA\SCRNDRAWVA.H
 # Begin Source File
 
 SOURCE=..\VRAMVA\SDRAWVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\SGP.H
 # End Source File
 # Begin Source File
 

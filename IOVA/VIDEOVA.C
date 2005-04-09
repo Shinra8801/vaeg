@@ -37,6 +37,22 @@ static void adjustpal(int palno) {
 
 // ---- I/O
 
+static REG8 IOINPCALL videova_i100(UINT port) {
+	return videova.grmode & 0xff;
+}
+
+static REG8 IOINPCALL videova_i101(UINT port) {
+	return videova.grmode >> 8;
+}
+
+static void IOOUTCALL videova_o100(UINT port, REG8 dat) {
+	videova.grmode = videova.grmode & 0xff00 | dat;
+}
+
+static void IOOUTCALL videova_o101(UINT port, REG8 dat) {
+	videova.grmode = videova.grmode & 0x00ff | (dat << 8);
+}
+
 static void IOOUTCALL videova_o_palette_l(UINT port, REG8 dat) {
 	int n;
 	
@@ -57,6 +73,8 @@ static void IOOUTCALL videova_o_palette_h(UINT port, REG8 dat) {
 // ---- I/F
 
 void videova_reset(void) {
+	ZeroMemory(&videova, sizeof(videova));
+
 	// ToDo: ƒpƒŒƒbƒg‚Ì‰Šú‰»
 }
 
@@ -67,6 +85,11 @@ void videova_bind(void) {
 		iocoreva_attachout(PORT_PAL + i, videova_o_palette_l);
 		iocoreva_attachout(PORT_PAL + i+1, videova_o_palette_h);
 	}
+
+	iocoreva_attachinp(0x100, videova_i100);
+	iocoreva_attachinp(0x101, videova_i101);
+	iocoreva_attachout(0x100, videova_o100);
+	iocoreva_attachout(0x101, videova_o101);
 }
 
 #endif

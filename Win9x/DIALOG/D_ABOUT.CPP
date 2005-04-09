@@ -47,7 +47,7 @@ static void about_init(HWND hWnd) {
 #if defined(SUPPORT_PC88VA)
 	milstr_ncpy(work, str_vaegtitle, sizeof(work));
 	milstr_ncat(work, VAEGREL_CORE, sizeof(work));
-	milstr_ncat(work, "\nToo\n  Based on ", sizeof(work));
+	milstr_ncat(work, "\n\n  Based on ", sizeof(work));
 	milstr_ncat(work, str_np2title, sizeof(work));
 #else
 	milstr_ncpy(work, str_np2title, sizeof(work));

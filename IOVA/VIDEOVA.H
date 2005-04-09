@@ -7,7 +7,8 @@ enum {
 };
 
 typedef struct {
-	WORD palette[VIDEOVA_PALETTES];
+	WORD	grmode;			// 表示画面制御レジスタ
+	WORD	palette[VIDEOVA_PALETTES];
 } _VIDEOVA, *VIDEOVA;
 
 

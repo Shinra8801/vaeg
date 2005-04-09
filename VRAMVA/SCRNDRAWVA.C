@@ -5,6 +5,7 @@
 #include	"iocoreva.h"
 #include	"scrndraw.h"
 #include	"sdrawva.h"
+#include	"dispsync.h"
 #include	"maketextva.h"
 #include	"makesprva.h"
 
@@ -27,18 +28,21 @@ enum {
 
 
 
-void scrndrawva_initialize(void) {
+static void scrndrawva_initialize(void) {
 	static int	initialized = 0;
-	BYTE	colorlevel5[32];			// 出力レベル変換 5bit→8bit
-	BYTE	colorlevel6[64];			// 出力レベル変換 6bit→8bit
-	int i;
-	int c;
 
 	if (initialized) return;
 	initialized=1;
 
 
 	ZeroMemory(vabitmap, sizeof(vabitmap));
+}
+
+static void scrndrawva_makedrawcolor(void) {
+	BYTE	colorlevel5[32];			// 出力レベル変換 5bit→8bit
+	BYTE	colorlevel6[64];			// 出力レベル変換 6bit→8bit
+	int i;
+	int c;
 
 	for (i=0; i<32; i++) {
 		colorlevel5[i]= (i << 3) | ((i) ?  0x07 : 0);
@@ -106,28 +110,14 @@ sddr_exit1:
 
 }
 
-/*
-void scrndrawva_draw_sub(const SCRNSURF	*surf) {
-	SDRAWFNVA	sdrawfn;
-	_SDRAWVA		sdraw;
-	int				height;
 
-	if (!initialized) {
-		scrndrawva_initialize();
-		initialized=1;
-	}
-	sdrawfn = sdrawva_getproctbl(surf);
-	height = surf->height;
+void scrndrawva_redraw(void) {
 
-	sdraw.dst = surf->ptr;
-	sdraw.width = surf->width;
-	sdraw.xbytes = surf->xalign * surf->width;
-	sdraw.y = 0;
-	sdraw.xalign = surf->xalign;
-	sdraw.yalign = surf->yalign;
-	if (sdrawfn) sdrawfn(&sdraw, height);
+	scrnmng_allflash();
+	dispsync_renewalmode();
+	scrndrawva_makedrawcolor();
+	scrndrawva_draw(1);
 }
-*/
 
 typedef struct {
 	WORD *bp;			// vabitmap

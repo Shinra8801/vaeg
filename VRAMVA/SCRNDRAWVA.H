@@ -13,6 +13,7 @@ extern	RGB16	drawcolor16[];
 #endif
 
 BYTE scrndrawva_draw(BYTE redraw);
+BYTE scrndrawva_redraw(void);
 
 void scrndrawva_compose_begin(void);
 void scrndrawva_compose_raster(void);

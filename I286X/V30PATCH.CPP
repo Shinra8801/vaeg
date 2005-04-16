@@ -959,12 +959,278 @@ I286 v30_ope0xf7(void) {						// F7:
 
 #if defined(SUPPORT_V30ORIGINAL)
 
+/*
+	以下は破壊してはいけない。
+	esi		IP
+	ebx		プリフェッチされたデータ
+*/
 
 I286 v30_reserved_0x0f(void) {
 
 		__asm {
 				I286CLOCK(2)
 				//GET_NEXTPRE1		// デバッグの目的のため、IPを進めずに停止させる
+				ret
+		}
+}
+
+I286 v30_add4s(void) {							// 0F 20
+		__asm {
+				push	ebx
+				push	esi
+				push	edi
+
+				I286CLOCK((7+19))
+
+				xor		esi, esi
+				mov		si, I286_SI
+				add		esi, DS_BASE
+				xor		edi, edi
+				mov		di, I286_DI
+				add		edi, ES_BASE
+
+
+				//----ここから1回目
+				push	esi
+				push	edi
+
+				mov		ecx, esi
+
+				push	edi
+				call	i286_memoryread
+				pop		edi
+
+				push	ax
+
+				mov		ecx, edi
+				call	i286_memoryread
+
+				pop		dx
+
+				add		al, dl
+				daa
+				lahf
+				mov		bh, ah				//bh=フラグ
+				mov		bl, bh
+				or		bl, ~40h			//以降、daaで一度でもZF=0となると、bl=0bfhとなる
+
+				mov		dl, al
+				call	i286_memorywrite
+
+				pop		edi
+				pop		esi
+				//---- ここまで1回目
+
+				mov		cl, I286_CL
+				inc		cl
+				shr		cl,1
+				dec		cl
+				and		ecx,007fh
+				jcxz	add4s_endloop
+
+			add4s_loop:
+				I286CLOCK(19)
+				push	ecx
+				inc		esi
+				inc		edi
+				push	esi
+				push	edi
+
+				mov		ecx, esi
+
+				push	edi
+				call	i286_memoryread
+				pop		edi
+
+				push	ax
+
+				mov		ecx, edi
+				call	i286_memoryread
+
+				pop		dx
+
+				mov		ah, bh
+				sahf	
+				adc		al, dl
+				daa
+				lahf
+				and		ah, bl
+				mov		bh, ah
+				mov		bl, bh
+				or		bl, ~40h
+
+				mov		dl, al
+				call	i286_memorywrite
+
+				pop		edi
+				pop		esi
+				pop		ecx
+				loop	add4s_loop
+
+			add4s_endloop:
+
+				test	bh, 1		//CF
+				jz		cf_zero
+	
+				//CF=1
+				mov		bh, 93h		//SF,AF,CF=1 ほかは0
+				jmp		add4s_end
+
+			cf_zero:
+				//CF=0
+				test	bh, 40h		//ZF
+				jz		zf_zero
+	
+				//ZF=1
+				mov		bh, 46h		//ZF,PF=1 ほかは0
+				jmp		add4s_end
+
+			zf_zero:
+				//CF=0, ZF=0
+				mov		bh, 02h		//すべて0
+
+			add4s_end:
+
+				mov		I286_FLAGL, bh
+				and		I286_FLAGH, 0f7h		;OF=0
+
+				pop		edi
+				pop		esi
+				pop		ebx
+
+				GET_NEXTPRE2
+
+				ret
+		}
+}
+
+
+I286 v30_sub4s(void) {							// 0F 22
+		__asm {
+				push	ebx
+				push	esi
+				push	edi
+
+				I286CLOCK((7+19))
+
+				xor		esi, esi
+				mov		si, I286_SI
+				add		esi, DS_BASE
+				xor		edi, edi
+				mov		di, I286_DI
+				add		edi, ES_BASE
+
+
+				//----ここから1回目
+				push	esi
+				push	edi
+
+				mov		ecx, esi
+
+				push	edi
+				call	i286_memoryread
+				pop		edi
+
+				push	ax
+
+				mov		ecx, edi
+				call	i286_memoryread
+
+				pop		dx
+
+				sub		al, dl
+				das
+				lahf
+				mov		bh, ah				//bh=フラグ
+				mov		bl, bh
+				or		bl, ~40h			//以降、daaで一度でもZF=0となると、bl=0bfhとなる
+
+				mov		dl, al
+				call	i286_memorywrite
+
+				pop		edi
+				pop		esi
+				//---- ここまで1回目
+
+				mov		cl, I286_CL
+				inc		cl
+				shr		cl,1
+				dec		cl
+				and		ecx,007fh
+				jcxz	add4s_endloop
+
+			add4s_loop:
+				I286CLOCK(19)
+				push	ecx
+				inc		esi
+				inc		edi
+				push	esi
+				push	edi
+
+				mov		ecx, esi
+
+				push	edi
+				call	i286_memoryread
+				pop		edi
+
+				push	ax
+
+				mov		ecx, edi
+				call	i286_memoryread
+
+				pop		dx
+
+				mov		ah, bh
+				sahf	
+				sbb		al, dl
+				das
+				lahf
+				and		ah, bl
+				mov		bh, ah
+				mov		bl, bh
+				or		bl, ~40h
+
+				mov		dl, al
+				call	i286_memorywrite
+
+				pop		edi
+				pop		esi
+				pop		ecx
+				loop	add4s_loop
+
+			add4s_endloop:
+
+				test	bh, 1		//CF
+				jz		cf_zero
+	
+				//CF=1
+				mov		bh, 93h		//SF,AF,CF=1 ほかは0
+				jmp		add4s_end
+
+			cf_zero:
+				//CF=0
+				test	bh, 40h		//ZF
+				jz		zf_zero
+	
+				//ZF=1
+				mov		bh, 46h		//ZF,PF=1 ほかは0
+				jmp		add4s_end
+
+			zf_zero:
+				//CF=0, ZF=0
+				mov		bh, 02h		//すべて0
+
+			add4s_end:
+
+				mov		I286_FLAGL, bh
+				and		I286_FLAGH, 0f7h		;OF=0
+
+				pop		edi
+				pop		esi
+				pop		ebx
+
+				GET_NEXTPRE2
+
 				ret
 		}
 }
@@ -1425,9 +1691,9 @@ static const	I286TBL	v30ope0x0f_xtable[64] = {
 			v30_reserved_0x0f,				// 1E:
 			v30_reserved_0x0f,				// 1F:
 
-			v30_reserved_0x0f,				// 20:
+			v30_add4s,						// 20:
 			v30_reserved_0x0f,				// 21:
-			v30_reserved_0x0f,				// 22:
+			v30_sub4s,						// 22:
 			v30_reserved_0x0f,				// 23:
 			v30_reserved_0x0f,				// 24:
 			v30_reserved_0x0f,				// 25:

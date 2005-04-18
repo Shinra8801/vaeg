@@ -6,6 +6,7 @@
 #include	"cpucore.h"
 
 
+
 static	char		np2viewclass[] = "NP2-ViewWindow";
 		NP2VIEW_T	np2view[NP2VIEW_MAX];
 extern	HINSTANCE	hInst;
@@ -97,6 +98,7 @@ LRESULT CALLBACK ViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 					viewer_segmode(hWnd, VIEWMODE_VABANK);
 					break;
 #endif
+
 				default:
 					return(viewcmn_dispat(hWnd, msg, wParam, lParam));
 			}
@@ -192,6 +194,7 @@ LRESULT CALLBACK ViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // -----------------------------------------------------------------------
 
+// viewerの初期化。np2起動後1回のみ実行
 BOOL viewer_init(HINSTANCE hPreInst) {
 
 	WNDCLASS	np2vc;
@@ -221,7 +224,7 @@ void viewer_term(void) {
 
 }
 
-
+// 新しくウィンドウを開く
 void viewer_open(void) {
 
 	int			i;

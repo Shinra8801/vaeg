@@ -1,5 +1,7 @@
 #define	NP2VIEW_MAX	8
 
+#define	EXT	1		// Shinra
+
 typedef struct {
 	BYTE	vram;
 	BYTE	itf;
@@ -38,6 +40,7 @@ typedef struct {
 	void	*ptr;
 } VIEWMEMBUF;
 
+// 各ウィンドウごとに持つデータ
 typedef struct {
 	HWND		hwnd;
 	VIEWMEMBUF	buf1;
@@ -54,6 +57,9 @@ typedef struct {
 	WORD		off;
 	VIEWMEM_T	dmem;
 	SCROLLINFO	si;
+#if EXT
+	HWND		hDialogWnd;		// ダイアログのウィンドウ
+#endif
 } NP2VIEW_T;
 
 extern	NP2VIEW_T	np2view[NP2VIEW_MAX];

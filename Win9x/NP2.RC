@@ -586,6 +586,17 @@ BEGIN
                     ES_WANTRETURN | WS_VSCROLL
 END
 
+IDD_VIEW_ADDRESS DIALOG DISCARDABLE  0, 0, 187, 93
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "ÀÞ²±Û¸Þ"
+FONT 9, "‚l‚r ‚oƒSƒVƒbƒN"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,130,7,50,14
+    PUSHBUTTON      "·¬Ý¾Ù",IDCANCEL,130,24,50,14
+    EDITTEXT        IDC_SEG,36,7,40,14,ES_AUTOHSCROLL
+    LTEXT           "Address",IDC_STATIC,7,7,25,14,SS_CENTERIMAGE
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -717,6 +728,14 @@ BEGIN
         VERTGUIDE, 28
         BOTTOMMARGIN, 79
         HORZGUIDE, 6
+    END
+
+    IDD_VIEW_ADDRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 86
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -916,7 +935,7 @@ BEGIN
     END
     POPUP "&Edit"
     BEGIN
-        MENUITEM "Enter &Address...",           IDM_SETSEG, GRAYED
+        MENUITEM "Enter &Address...",           IDM_SETSEG
         MENUITEM SEPARATOR
         MENUITEM "Seg = &CS",                   IDM_SEGCS
         MENUITEM "Seg = &DS",                   IDM_SEGDS

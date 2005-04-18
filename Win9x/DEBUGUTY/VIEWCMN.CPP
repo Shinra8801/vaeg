@@ -99,6 +99,21 @@ NP2VIEW_T *viewcmn_find(HWND hwnd) {
 	return(NULL);
 }
 
+#if EXT
+NP2VIEW_T *viewcmn_findbydialog(HWND hwnd) {
+
+	int			i;
+	NP2VIEW_T	*view;
+
+	view = np2view;
+	for (i=0; i<NP2VIEW_MAX; i++, view++) {
+		if ((view->alive) && (view->hDialogWnd == hwnd)) {
+			return(view);
+		}
+	}
+	return(NULL);
+}
+#endif
 
 void viewcmn_setmode(NP2VIEW_T *dst, NP2VIEW_T *src, BYTE type) {
 
@@ -247,3 +262,78 @@ void viewcmn_paint(NP2VIEW_T *view, DWORD bkgcolor,
 	DeleteDC(hmemdc);
 	EndPaint(view->hwnd, &ps);
 }
+
+
+// -----
+
+#if EXT
+
+LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+
+
+	switch (msg) {
+		case WM_INITDIALOG:
+			{
+				char work[16];
+				NP2VIEW_T	*view;
+
+				view = (NP2VIEW_T *)lp;
+				if (view) {
+					view->hDialogWnd = hWnd;
+					wsprintf(work, "%04x", view->seg);
+					SetDlgItemText(hWnd, IDC_SEG, work);
+				}
+			}
+			return(FALSE);
+
+		case WM_COMMAND:
+			switch (LOWORD(wp)) {
+				case IDOK:
+					{
+						NP2VIEW_T	*view;
+						char work[16];
+						unsigned long l;
+						int result = IDCANCEL;
+
+						view = viewcmn_findbydialog(hWnd);
+						if (view) {
+							GetDlgItemText(hWnd, IDC_SEG, work, sizeof(work));
+							l = strtoul(work, NULL, 16);
+							if (l < 0x10000) {
+								view->seg = (WORD)l;
+								result = IDOK;
+							}
+							view->hDialogWnd = 0;
+						}
+						EndDialog(hWnd, result);
+					}
+					break;
+
+				case IDCANCEL:
+					{
+						NP2VIEW_T	*view;
+
+						view = viewcmn_findbydialog(hWnd);
+						if (view) {
+							view->hDialogWnd = 0;
+						}
+						EndDialog(hWnd, IDCANCEL);
+					}
+					break;
+
+				default:
+					return(FALSE);
+			}
+			break;
+
+		case WM_CLOSE:
+			PostMessage(hWnd, WM_COMMAND, IDCANCEL, 0);
+			break;
+
+		default:
+			return(FALSE);
+	}
+	return(TRUE);
+}
+
+#endif

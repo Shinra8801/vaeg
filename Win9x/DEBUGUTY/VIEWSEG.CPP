@@ -27,6 +27,9 @@ static void viewseg_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	BYTE	*p;
 	BYTE	buf[16];
 	char	str[16];
+#if EXT
+	char	str2[2];
+#endif
 	HFONT	hfont;
 
 	hfont = CreateFont(16, 0, 0, 0, 0, 0, 0, 0, 
@@ -72,9 +75,25 @@ static void viewseg_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 			str[0] = viewcmn_hex[*p >> 4];
 			str[1] = viewcmn_hex[*p & 15];
 			str[2] = 0;
+#if EXT
+			if (*p < 0x20 || *p >= 0x80) {
+				str2[0] = '.';
+			}
+			else {
+				str2[0] = *p;
+			}
+			str2[1] = 0;
+			p++;
+			TextOut(hdc, (10 + x*3 + (x >= 8 ? 2 : 0))*8, y, str, 2);
+			TextOut(hdc, (10 + 16*3 + 2 + 1 + x)*8, y, str2, 1);
+#else
 			p++;
 			TextOut(hdc, (10 + x*3)*8, y, str, 2);
+#endif
 		}
+#if EXT
+		TextOut(hdc, (10 + 8*3)*8, y, "-", 1);
+#endif
 	}
 	DeleteObject(SelectObject(hdc, hfont));
 }
@@ -112,6 +131,21 @@ LRESULT CALLBACK viewseg_proc(NP2VIEW_T *view,
 					viewcmn_putcaption(view);
 					InvalidateRect(hwnd, NULL, TRUE);
 					break;
+
+#if EXT
+				case IDM_SETSEG:
+					view = viewcmn_find(hwnd);
+					if (view) {
+						int	ret;
+						ret = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_VIEW_ADDRESS),
+									hwnd, (DLGPROC)ViewerAddressDialogProc, (long)view);
+						if (ret == IDOK) {
+							InvalidateRect(hwnd, NULL, TRUE);
+						}
+					}
+					break;
+#endif
+
 			}
 			break;
 

@@ -29,6 +29,7 @@
 #define IDD_SNDPAD1                     125
 #define IDD_CALENDAR                    126
 #define IDD_ABOUT                       127
+#define IDD_VIEW_ADDRESS                130
 #define IDC_BASECLOCK                   1001
 #define IDC_MULTIPLE                    1002
 #define IDC_CLOCKMSG                    1003
@@ -231,6 +232,7 @@
 #define IDC_NP2STR                      1200
 #define IDC_MODELPC88VA1                1201
 #define IDC_MODELPC88VA2                1202
+#define IDC_SEG                         1202
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003
@@ -388,9 +390,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         40123
-#define _APS_NEXT_CONTROL_VALUE         1202
+#define _APS_NEXT_CONTROL_VALUE         1203
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

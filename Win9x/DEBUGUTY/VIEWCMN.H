@@ -19,3 +19,9 @@ void viewcmn_setvscroll(HWND hWnd, NP2VIEW_T *view);
 
 void viewcmn_paint(NP2VIEW_T *view, DWORD bkgcolor,
 						void (*callback)(NP2VIEW_T *view, RECT *rc, HDC hdc));
+
+#if EXT
+NP2VIEW_T *viewcmn_findbydialog(HWND hwnd);
+
+LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
+#endif

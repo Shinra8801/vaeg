@@ -191,6 +191,10 @@ void iptrace_out(void);
 extern	int		treafter;
 #endif
 
+//@@@@@
+void pccore_debugint(UINT32 no);
+//@@@@@
+
 #ifdef __cplusplus
 }
 #endif

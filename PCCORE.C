@@ -619,7 +619,7 @@ static void drawscreenva(void) {
 	screenupdate |= 2;			// 今のところVA用描画ルーチンは全体描画しか実装していない
 
 	if (screenupdate) {
-		screenupdate = scrndraw_draw((BYTE)(screenupdate & 2));
+		screenupdate = scrndrawva_draw((BYTE)(screenupdate & 2));
 		drawcount++;
 	}
 }
@@ -672,6 +672,45 @@ void screenvsyncva(NEVENTITEM item) {
 
 
 // ---------------------------------------------------------------------------
+
+//@@@@@@
+
+// ブレークポイント
+typedef struct {
+	BOOL	enabled;
+	UINT16	seg;
+	UINT16	off;
+} BREAKADDR;
+
+
+enum {
+	BREAKADDR_MAX = 16,
+};
+		BOOL	stopexec = FALSE;					// 実行を停止する
+		BOOL	breakpointflag = FALSE;				// ブレークポイントを有効にする
+		BREAKADDR	breakaddrx[BREAKADDR_MAX] = {	// ブレークポイント
+			{FALSE, 0xe000, 0x9213},
+			{FALSE, 0xe000, 0xb577},
+		};
+
+void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
+/*
+	int	x = 0;
+
+    if (data) {
+		x=op+addr+data;
+	}
+*/
+}
+
+void pccore_debugint(UINT32 no) {
+	if (no != 0x82 && !(no == 0x83 && CPU_AX==0x2e00) && no != 0x96) {
+		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
+		no, CPU_CS, CPU_IP,  rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
+	}
+}
+
+//@@@@@@
 
 #if defined(USEIPTRACE)					// Shinra
 #define	IPTRACE			(1 << 12)
@@ -789,19 +828,27 @@ void pccore_exec(BOOL draw) {
 #endif
 			trpos++;
 #endif
-			//TRACEOUT(("%.4x:%.4x", CPU_CS, CPU_IP));
-			if (!(CPU_TYPE & CPUTYPE_V30)) {		// added by Shinra
-				i286x_step();
-//				i286c_step();
-			}
-			else {
-				v30x_step();						// added by Shinra
-/*
-				if (CPU_CS == 0xef70 && CPU_IP==0x19cc) {
-					iptrace_out();
+//@@@@@@
+			
+			if (breakpointflag) {
+				int	i;
+				BREAKADDR *ba;
+
+				ba = breakaddrx;
+				for (i = 0; i < BREAKADDR_MAX; i++, ba++) {
+					if (ba->enabled) {
+						if (ba->seg == CPU_CS && ba->off == CPU_IP) {
+							stopexec = TRUE;
+						}
+					}
 				}
-*/
 			}
+			
+			while (stopexec) {
+				int x = 0;
+				x++;
+			}
+//@@@@@@
 
 #if defined(IPTRACE)	// Shinra
 			if (treafter) {
@@ -816,6 +863,15 @@ void pccore_exec(BOOL draw) {
 				}
 			}
 #endif
+
+			//TRACEOUT(("%.4x:%.4x", CPU_CS, CPU_IP));
+			if (!(CPU_TYPE & CPUTYPE_V30)) {		// added by Shinra
+				i286x_step();
+//				i286c_step();
+			}
+			else {
+				v30x_step();						// added by Shinra
+			}
 		}
 #endif
 		nevent_progress();

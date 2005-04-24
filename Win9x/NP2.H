@@ -27,7 +27,7 @@ typedef struct {
 	BYTE	NOWAIT;
 	BYTE	DRAW_SKIP;
 
-	BYTE	background;
+	BYTE	background;		// bit0..ウィンドウinactive時にエミュレーション停止
 	BYTE	DISPCLK;
 	BYTE	KEYBOARD;
 	BYTE	F12COPY;
@@ -74,8 +74,8 @@ enum {
 };
 
 enum {
-	NP2BREAK_MAIN		= 0x01,
-	NP2BREAK_DEBUG		= 0x02
+	NP2BREAK_MAIN		= 0x01,		// ウィンドウがinactiveになったのでエミュレーションを停止せよ
+	NP2BREAK_DEBUG		= 0x02		// DebugUtilityがactiveになったのでエミュレーションを停止せよ
 };
 
 enum {

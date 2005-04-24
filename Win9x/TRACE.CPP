@@ -21,7 +21,7 @@
 #if 0											// Shinra
 #define	VIEW_BUFFERSIZE	4096
 #else
-#define	VIEW_BUFFERSIZE	8192
+#define	VIEW_BUFFERSIZE	16384
 #endif
 
 #define	VIEW_FGCOLOR	0x000000

@@ -3621,15 +3621,14 @@ I286 int_03(void) {								// CC: int 3
 
 
 I286 int_data8(void) {							// CD: int DATA8
-#if 1
-		static BYTE data8;
-
+#if 1	// Shinra
 		__asm {
-			mov	data8, bh
-		}
-		if (data8 != 0x82 && data8 != 0x83 && data8 != 0x96) {
-			TRACEOUT(("cpu: int 0x%02x %04x:%04x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
-			data8, I286_CS, I286_IP,  I286_AX, I286_BX, I286_CX, I286_DX, I286_SI, I286_DI, I286_BP, I286_SP, I286_DS, I286_ES, I286_SS));
+			pushad
+			movzx	eax, bh
+			push	eax
+			call	pccore_debugint
+			add		esp, 4
+			popad
 		}
 #endif
 

@@ -52,7 +52,35 @@ ROM1MEMORY	equ		_rom1mem
 
 
 
+USEDEBUGCALL	equ		1
 
+%if USEDEBUGCALL
+extern		_pccore_debugmem
+
+%macro	DEBUGCALL		0
+			pushad
+			push	edx
+			push	ecx
+			push	dword 0000h
+			call	_pccore_debugmem
+			add		esp, 4*3
+			popad
+%endmacro
+%macro	DEBUGCALL_W		0
+			pushad
+			push	edx
+			push	ecx
+			push	dword 0001h
+			call	_pccore_debugmem
+			add		esp, 4*3
+			popad
+%endmacro
+%else
+%macro	DEBUGCALL		0
+%endmacro
+%macro	DEBUGCALL_W		0
+%endmacro
+%endif
 
 
 section .text
@@ -556,6 +584,7 @@ section .text
 @i286_memorywrite_va@8:
 
 					MEMTRACE
+					DEBUGCALL
 					push	ebx
 					mov		ebx, ecx
 					shr		ebx, 14
@@ -567,6 +596,7 @@ section .text
 @i286_memorywrite_va_w@8:
 
 					MEMTRACE_W
+					DEBUGCALL_W
 					push	ebx
 					mov		ebx, ecx
 					inc		ebx

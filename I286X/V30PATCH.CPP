@@ -24,6 +24,9 @@ static	I286TBL	v30op_repe[256];
 static	I286TBL	v30ope0xf6_xtable[8];
 static	I286TBL v30ope0xf7_xtable[8];
 
+#if defined(SUPPORT_V30ORIGINAL)
+static	I286TBL	v30op_repc[256];
+#endif
 
 static const BYTE shiftbase16[256] =
 				{0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,
@@ -172,6 +175,15 @@ I286 v30pop_sp(void) {							// 5C: pop sp
 				ret
 		}
 }
+
+#if defined(SUPPORT_V30ORIGINAL)
+I286 v30_repc(void) {							// 65: repc
+
+		__asm {
+				I286PREFIX(v30op_repc)
+		}
+}
+#endif
 
 I286 v30mov_seg_ea(void) {						// 8E: mov segrem, EA
 
@@ -955,9 +967,12 @@ I286 v30_ope0xf7(void) {						// F7:
 }
 
 
-// ----------------------------------------------------------------- 0F
 
 #if defined(SUPPORT_V30ORIGINAL)
+
+
+
+// ----------------------------------------------------------------- 0F
 
 /*
 	以下は破壊してはいけない。
@@ -1761,8 +1776,13 @@ static const V30PATCH v30patch_op[] = {
 			{0x54, v30push_sp},				// 54:	push	sp
 			{0x5c, v30pop_sp},				// 5C:	pop		sp
 			{0x63, v30_reserved},			// 63:	reserved
+#if defined(SUPPORT_V30ORIGINAL)
+			{0x64, v30_reserved_0x0f},		// 64:	repnc
+			{0x65, v30_repc},				// 65:	repc
+#else
 			{0x64, v30_reserved},			// 64:	reserved
 			{0x65, v30_reserved},			// 65:	reserved
+#endif
 			{0x66, v30_reserved},			// 66:	reserved
 			{0x67, v30_reserved},			// 67:	reserved
 			{0x8e, v30mov_seg_ea},			// 8E:	mov		segrem, EA
@@ -1939,6 +1959,102 @@ static const V30PATCH v30patch_repne[] = {
 			{0xf6, v30_ope0xf6},			// F6: 
 			{0xf7, v30_ope0xf7}};			// F7: 
 
+#if defined(SUPPORT_V30ORIGINAL)
+// ----------------------------------------------------------------- repc
+I286 v30_reserved_repc(void) {
+
+		__asm {
+				I286CLOCK(2)
+				//GET_NEXTPRE1		// デバッグの目的のため、IPを進めずに停止させる
+				mov		esi, I286_REPPOSBAK
+				RESET_XPREFETCH
+				ret
+		}
+}
+
+I286 v30repc_segprefix_es(void) {
+
+		__asm {
+				mov		eax, ES_BASE
+				mov		DS_FIX, eax
+				mov		SS_FIX, eax
+				GET_NEXTPRE1
+				movzx	eax, bl
+				jmp		v30op_repc[eax*4]
+		}
+}
+
+I286 v30repc_segprefix_cs(void) {
+
+		__asm {
+				mov		eax, CS_BASE
+				mov		DS_FIX, eax
+				mov		SS_FIX, eax
+				GET_NEXTPRE1
+				movzx	eax, bl
+				jmp		v30op_repc[eax*4]
+		}
+}
+
+I286 v30repc_segprefix_ss(void) {
+
+		__asm {
+				mov		eax, SS_BASE
+				mov		DS_FIX, eax
+				mov		SS_FIX, eax
+				GET_NEXTPRE1
+				movzx	eax, bl
+				jmp		v30op_repc[eax*4]
+		}
+}
+
+I286 v30repc_segprefix_ds(void) {
+
+		__asm {
+				mov		eax, DS_BASE
+				mov		DS_FIX, eax
+				mov		SS_FIX, eax
+				GET_NEXTPRE1
+				movzx	eax, bl
+				jmp		v30op_repc[eax*4]
+		}
+}
+
+
+I286EXT v30repc_xscasb(void) {							// AE 
+
+		__asm {
+				cmp		I286_CX, 0
+				je		scasb_ed
+				mov		edi, ES_BASE
+				movzx	ebp, I286_DI
+zscasb_lp:		I286CLOCK(8)
+				lea		ecx, [edi + ebp]
+				call	i286_memoryread
+				cmp		I286_AL, al
+				FLAG_STORE_OF
+				STRING_DIR
+				add		bp, ax
+				dec		I286_CX
+				je		zscasb_ed
+				test	I286_FLAG, C_FLAG
+				jne		zscasb_lp
+zscasb_ed:		mov		I286_DI, bp
+scasb_ed:		I286CLOCK(5)
+				GET_NEXTPRE1
+				ret
+		}
+}
+
+static const V30PATCH v30patch_repc[] = {
+			{0x26, v30repc_segprefix_es},	// 26:	repc es:
+			{0x2e, v30repc_segprefix_cs},	// 2E:	repc cs:
+			{0x36, v30repc_segprefix_ss},	// 36:	repc ss:
+			{0x3e, v30repc_segprefix_ds},	// 3E:	repc ds:
+			{0xae, v30repc_xscasb},			// AE:	repc scasb
+};
+#endif
+
 
 // ---------------------------------------------------------------------------
 
@@ -1966,6 +2082,16 @@ void v30xinit(void) {
 	CopyMemory(v30ope0xf7_xtable, ope0xf7_xtable, sizeof(v30ope0xf7_xtable));
 	v30ope0xf7_xtable[6] = v30div_ea16;
 	v30ope0xf7_xtable[7] = v30idiv_ea16;
+
+#if defined(SUPPORT_V30ORIGINAL)
+	{
+		int	i;
+		for (i = 0; i < 256; i++) {
+			v30op_repc[i] = v30_reserved_repc;
+		}
+		V30PATCHING(v30op_repc, v30patch_repc);
+	}
+#endif
 }
 
 LABEL void v30x(void) {

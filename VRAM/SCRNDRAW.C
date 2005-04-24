@@ -137,12 +137,6 @@ const SDRAWFN	*sdrawfn;
 	int			i;
 	int			height;
 
-#if defined(SUPPORT_PC88VA)
-	if (pccore.model_va != PCMODEL_NOTVA) {
-		return scrndrawva_draw(redraw);
-	}
-#endif
-
 	if (redraw) {
 		updateallline(0x80808080);
 	}

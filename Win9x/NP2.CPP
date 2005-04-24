@@ -64,6 +64,7 @@ static	char		szClassName[] = "NP2-MainWindow";
 		HINSTANCE	hPrev;
 		int			mmxflag;
 		BYTE		np2break = 0;									// ver0.30
+										// 各bitの意味はNP2BREAK_MAIN, NP2BREAK_DEBUG
 		BOOL		winui_en;
 
 		NP2OSCFG	np2oscfg = {
@@ -97,6 +98,9 @@ static	UINT		framecnt = 0;
 static	UINT		waitcnt = 0;
 static	UINT		framemax = 1;
 static	BYTE		np2stopemulate = 0;
+										// 0..通常実行
+										// 1..停止 次のメッセージを受け取るまでsleep
+										// 2..停止 絶えずnp2stopemulateを監視
 static	int			np2opening = 1;
 static	int			np2quitmsg = 0;
 static	HMENU		hStat = NULL;
@@ -1732,6 +1736,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 				(PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE))) {
 			if (!GetMessage(&msg, NULL, 0, 0)) {
 				break;
+														// WM_QUITを受信したらbreak
 			}
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);

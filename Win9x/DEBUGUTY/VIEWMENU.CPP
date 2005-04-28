@@ -19,6 +19,7 @@ void viewmenu_mode(NP2VIEW_T *view) {
 	CheckMenuItem(hmenu, IDM_VIEWMODESND, MFCHECK(view->type == VIEWMODE_SND));
 #if defined(SUPPORT_PC88VA)
 	CheckMenuItem(hmenu, IDM_VIEWMODEVABANK, MFCHECK(view->type == VIEWMODE_VABANK));
+	CheckMenuItem(hmenu, IDM_VIEWMODEVIDEOVA, MFCHECK(view->type == VIEWMODE_VIDEOVA));
 #endif
 }
 

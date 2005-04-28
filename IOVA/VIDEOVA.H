@@ -4,12 +4,29 @@
 
 enum {
 	VIDEOVA_PALETTES = 32, 
+	VIDEOVA_FRAMEBUFFERS = 4,
 };
 
 typedef struct {
-	WORD	grmode;			// 表示画面制御レジスタ
+	DWORD	fsa;			// スタートアドレス (下位2bit=0,#1には設定不可)
+	WORD	fbw;			// 横幅 (下位2bit=0)
+	WORD	fbl;			// 縦幅 (#1には設定不可)
+	WORD	dot;			// ドットアドレス 
+	WORD	ofx;			// 実表示画面のXオフセット(10bit,下位2bit=0, #1には設定不可)
+	WORD	ofy;			// 実表示画面のYオフセット(10bit,#1には設定不可)
+	DWORD	dsa;			// 実表示画面の表示開始アドレス(下位2bit=0)
+	WORD	dsh;			// サブ画面高さ (9bit)
+	WORD	dsp;			// サブ画面表示位置 (9bit)
+} _FRAMEBUFFER, *FRAMEBUFFER;
+
+typedef struct {
+	WORD	grmode;			// 100h 表示画面制御レジスタ
+	WORD	grres;			// 102h グラフィック画面制御レジスタ
 	WORD	palette[VIDEOVA_PALETTES];
+
+	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];
 } _VIDEOVA, *VIDEOVA;
+
 
 
 #ifdef __cplusplus

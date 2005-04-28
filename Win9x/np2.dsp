@@ -857,6 +857,10 @@ SOURCE=.\DEBUGUTY\VIEWSND.CPP
 
 SOURCE=.\DEBUGUTY\VIEWVABANK.CPP
 # End Source File
+# Begin Source File
+
+SOURCE=.\DEBUGUTY\VIEWVIDEOVA.CPP
+# End Source File
 # End Group
 # Begin Source File
 
@@ -1572,6 +1576,10 @@ SOURCE=..\IOVA\TSP.H
 # Begin Source File
 
 SOURCE=..\IOVA\VIDEOVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=.\DEBUGUTY\VIEWVIDEOVA.H
 # End Source File
 # End Group
 # Begin Group "Resource Files"

@@ -384,6 +384,7 @@
 #define IDM_A20LINE                     40120
 #define IDM_VIEWMODEVABANK              40121
 #define IDM_SOUNDBOARD2                 40122
+#define IDM_VIEWMODEVIDEOVA             40123
 
 // Next default values for new objects
 // 
@@ -391,7 +392,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        131
-#define _APS_NEXT_COMMAND_VALUE         40123
+#define _APS_NEXT_COMMAND_VALUE         40124
 #define _APS_NEXT_CONTROL_VALUE         1203
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

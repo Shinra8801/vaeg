@@ -17,6 +17,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"viewvabank.h"
+#include	"viewvideova.h"
 #endif
 
 char viewcmn_hex[16] = {
@@ -142,6 +143,11 @@ void viewcmn_setmode(NP2VIEW_T *dst, NP2VIEW_T *src, BYTE type) {
 		case VIEWMODE_VABANK:
 			viewvabank_init(dst, src);
 			break;
+
+		case VIEWMODE_VIDEOVA:
+			viewvideova_init(dst, src);
+			break;
+
 #endif
 	}
 	viewmenu_mode(dst);
@@ -172,6 +178,9 @@ LRESULT CALLBACK viewcmn_dispat(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 #if defined(SUPPORT_PC88VA)
 			case VIEWMODE_VABANK:
 				return(viewvabank_proc(dbg, hwnd, msg, wp, lp));
+
+			case VIEWMODE_VIDEOVA:
+				return(viewvideova_proc(dbg, hwnd, msg, wp, lp));
 #endif
 		}
 	}

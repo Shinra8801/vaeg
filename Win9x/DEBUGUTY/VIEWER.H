@@ -16,6 +16,7 @@ enum {
 	VIEWMODE_SND,
 #if defined(SUPPORT_PC88VA)
 	VIEWMODE_VABANK,
+	VIEWMODE_VIDEOVA,
 #endif
 };
 
@@ -28,6 +29,7 @@ enum {
 	ALLOCTYPE_SND,
 #if defined(SUPPORT_PC88VA)
 	ALLOCTYPE_VABANK,
+	ALLOCTYPE_VIDEOVA,
 #endif
 
 	ALLOCTYPE_ERROR = 0xffffffff

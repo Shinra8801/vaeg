@@ -930,6 +930,7 @@ BEGIN
         MENUITEM "&Unassemble",                 IDM_VIEWMODEASM
         MENUITEM "&Sound Register",             IDM_VIEWMODESND
         MENUITEM "&Bank Register (88VA)",       IDM_VIEWMODEVABANK
+        MENUITEM "&Video (88VA)",               IDM_VIEWMODEVIDEOVA
         MENUITEM SEPARATOR
         MENUITEM "&Lock",                       IDM_VIEWMODELOCK
     END

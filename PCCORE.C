@@ -44,6 +44,7 @@
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/maketextva.h"
 #include	"../vramva/makesprva.h"
+#include	"../vramva/makegrphva.h"
 #include	"scrnmng.h"
 #include	"../vramva/scrndrawva.h"
 #include	"memoryva.h"
@@ -610,10 +611,12 @@ static void drawscreenva(void) {
 
 	maketextva_begin();
 	makesprva_begin();
+	makegrphva_begin();
 	scrndrawva_compose_begin();
 	for (y = 0; y < SURFACE_HEIGHT; y++) {
 		maketextva_raster();
 		makesprva_raster();
+		makegrphva_raster();
 		scrndrawva_compose_raster();
 	}
 	screenupdate |= 2;			// ¡‚Ì‚Æ‚±‚ëVA—p•`‰æƒ‹[ƒ`ƒ“‚Í‘S‘Ì•`‰æ‚µ‚©ŽÀ‘•‚µ‚Ä‚¢‚È‚¢
@@ -821,7 +824,7 @@ void pccore_exec(BOOL draw) {
 		}
 #else
 		while(CPU_REMCLOCK > 0) {
-#if IPTRACE
+#if defined(TRACE) && IPTRACE
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
 #if defined(SUPPORT_PC88VA)
 			trerom0bank[trpos & (IPTRACE - 1)] = rom0_bank;
@@ -850,7 +853,7 @@ void pccore_exec(BOOL draw) {
 			}
 //@@@@@@
 
-#if defined(IPTRACE)	// Shinra
+#if defined(TRACE) && defined(IPTRACE)	// Shinra
 			if (treafter) {
 				if (treafter < 0) {
 					iptrace_out();

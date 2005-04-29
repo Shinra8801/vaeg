@@ -90,6 +90,7 @@ section .text
 	extern	@i286_wt
 	extern	@i286_wn
 	extern	@bms_wt
+	extern	@gvram_wt@8
 
 
 ; System memory area
@@ -105,6 +106,15 @@ section .text
 @tvram_wt:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		[TEXTMEMORY + ebx], dl
+					pop		ebx
+					ret
+
+; GVRAM
+					align	16
+@gvram_wt:			push	ecx
+					sub		ecx, CPUADDR_SYSM
+					call	@gvram_wt@8
+					pop		ecx
 					pop		ebx
 					ret
 
@@ -130,6 +140,7 @@ knj2_wt9:			pop		ebx
 	extern	@i286w_wt
 	extern	@i286_wn
 	extern	@bmsw_wt
+	extern	@gvramw_wt@8
 
 
 ; System memory area
@@ -145,6 +156,15 @@ knj2_wt9:			pop		ebx
 @tvramw_wt:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		[TEXTMEMORY + ebx], dx
+					pop		ebx
+					ret
+
+; GVRAM
+					align	16
+@gvramw_wt:			push	ecx
+					sub		ecx, CPUADDR_SYSM
+					call	@gvramw_wt@8
+					pop		ecx
 					pop		ebx
 					ret
 
@@ -171,6 +191,7 @@ knj2w_wt3:			dec		cx
 
 	extern	@i286_rd
 	extern	@bms_rd
+	extern	@gvram_rd@4
 
 ; System memory area
 					align	16
@@ -185,6 +206,15 @@ knj2w_wt3:			dec		cx
 @tvram_rd:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		al, [TEXTMEMORY + ebx]
+					pop		ebx
+					ret
+
+; GVRAM
+					align	16
+@gvram_rd:			push	ecx
+					sub		ecx, CPUADDR_SYSM
+					call	@gvram_rd@4
+					pop		ecx
 					pop		ebx
 					ret
 
@@ -276,6 +306,7 @@ rom1invalid_rd9:	pop		ebx
 
 	extern	@i286w_rd
 	extern	@bmsw_rd
+	extern	@gvramw_rd@4
 
 ; System memory area
 					align	16
@@ -290,6 +321,15 @@ rom1invalid_rd9:	pop		ebx
 @tvramw_rd:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		ax, [TEXTMEMORY + ebx]
+					pop		ebx
+					ret
+
+; GVRAM
+					align	16
+@gvramw_rd:			push	ecx
+					sub		ecx, CPUADDR_SYSM
+					call	@gvramw_rd@4
+					pop		ecx
 					pop		ebx
 					ret
 
@@ -445,7 +485,7 @@ _sysmbyte_write	dd	@i286_wn		;0
 				dd	@tvram_wt		;1
 				dd	@i286_wn		;2
 				dd	@i286_wn		;3
-				dd	@i286_wn	;@gvram_wt		;4
+				dd	@gvram_wt		;4
 				dd	@i286_wn		;5
 				dd	@i286_wn		;6
 				dd	@i286_wn		;7
@@ -482,7 +522,7 @@ _sysmword_write	dd	@i286_wn		;0
 				dd	@tvramw_wt		;1
 				dd	@i286_wn		;2
 				dd	@i286_wn		;3
-				dd	@i286_wn	;@gvramw_wt		;4
+				dd	@gvramw_wt		;4
 				dd	@i286_wn		;5
 				dd	@i286_wn		;6
 				dd	@i286_wn		;7
@@ -519,7 +559,7 @@ _sysmbyte_read	dd	@i286_rn		;0
 				dd	@tvram_rd		;1
 				dd	@i286_rn		;2
 				dd	@i286_rn		;3
-				dd	@i286_rn	;@gvram_rd		;4
+				dd	@gvram_rd		;4
 				dd	@i286_rn		;5
 				dd	@i286_rn		;6
 				dd	@i286_rn		;7
@@ -556,7 +596,7 @@ _sysmword_read	dd	@i286w_rn		;0
 				dd	@tvramw_rd		;1
 				dd	@i286w_rn		;2
 				dd	@i286w_rn		;3
-				dd	@i286w_rn	;@gvramw_rd		;4
+				dd	@gvramw_rd		;4
 				dd	@i286w_rn		;5
 				dd	@i286w_rn		;6
 				dd	@i286w_rn		;7

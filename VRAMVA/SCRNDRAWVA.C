@@ -8,6 +8,7 @@
 #include	"dispsync.h"
 #include	"maketextva.h"
 #include	"makesprva.h"
+#include	"makegrphva.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -139,6 +140,8 @@ void scrndrawva_compose_raster(void) {
 	for (x = 0; x < SURFACE_WIDTH; x++) {
 		c = sprraster[x];
 		if (c == 0) c = textraster[x];
+		if (c == 0) c = grph1p_raster[x];
+		if (c == 0) c = grph0p_raster[x];
 
 		*bp = videova.palette[c];
 		bp++;

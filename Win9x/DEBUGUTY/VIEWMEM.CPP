@@ -9,6 +9,7 @@
 #include	"pccore.h"
 #include	"bmsio.h"
 #include	"memoryva.h"
+#include	"gvramva.h"
 
 //extern	_BMSIO		bmsio;
 
@@ -59,9 +60,9 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 	case 1:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, textmem);
 		break;
-//	ToDo:
-//	case 4:
-//		break;
+	case 4:
+		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, grphmem);
+		break;
 	case 8:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, fontmem);
 		break;

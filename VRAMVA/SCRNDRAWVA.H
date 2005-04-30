@@ -12,6 +12,9 @@ extern	RGB32	drawcolor32[];
 extern	RGB16	drawcolor16[];
 #endif
 
+
+RGB32 scrndrawva_drawcolor32(WORD colorva16);
+
 BYTE scrndrawva_draw(BYTE redraw);
 BYTE scrndrawva_redraw(void);
 

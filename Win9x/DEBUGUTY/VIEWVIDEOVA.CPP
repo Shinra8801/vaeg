@@ -8,6 +8,7 @@
 #include	"viewmem.h"
 #include	"viewvideova.h"
 #include	"videova.h"
+#include	"../vramva/scrndrawva.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -15,21 +16,42 @@ typedef struct {
 	_VIDEOVA	videova;
 } _STAT, *STAT;
 
+typedef struct {
+	int		y;
+	int		lineheight;
+	HDC		hdc;
+} _VIEWSCRN, *VIEWSCRN;
+
+static void println(VIEWSCRN viewscrn, const char *format, ...) {
+	char	str[256];
+	va_list	args;
+
+	va_start(args, format);
+
+	wvsprintf(str, format, args);
+	TextOut(viewscrn->hdc, 0, viewscrn->y * viewscrn->lineheight, str, strlen(str));
+	viewscrn->y++;
+}
+
 static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	static		char *mes_lines[4] = {"400", "408", "200", "204"};
 	static		char *mes_rsm[4] = {"non-interlace 0", "non-interlace 1", 
 									"interlace 0", "interlace 1"};
 	static		char *mes_bpp[4] = {"1", "4", "8", "16"};
+	static		char *mes_palmode[4] = {
+							"use palette-set 0", "use plaette-set 1",
+							"use mixed-mode", "use 32 palettes"};
+	static		char *mes_scrn[4] = {"text", "sprite", "graphics 0", "graphics 1"};
 	int			i;
 	LONG		y;
 	int			lh;
 	DWORD		pos;
-	char		str[128];
 	HFONT		hfont;
 	STAT		r;
 	_STAT		_stat;
 	FRAMEBUFFER	f;
 	WORD		dw;
+	_VIEWSCRN	vs;
 
 	hfont = CreateFont(16, 0, 0, 0, 0, 0, 0, 0, 
 					SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -65,83 +87,75 @@ static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 
 	y = - (LONG)view->pos;
 	lh = 16;
+	vs.lineheight = 16;
+	vs.y = - (LONG)view->pos;
+	vs.hdc = hdc;
 
 	dw = r->videova.grmode;
-	wsprintf(str, "GrMode (100h) = %.4xh", dw);
-	TextOut(hdc, 0, y * lh, str, strlen(str));
-	y++;
-
-	wsprintf(str, "  %s lines, %s, %s, %s",
+	println(&vs, "GrMode  (100h) = %.4xh", dw);
+	println(&vs, "  %s lines, %s, %s, %s",
 		mes_lines[dw & 0x0003],
 		mes_rsm[(dw >> 6) & 0x0003],
 		(dw & 0x0400) ? "Single plane" : "Multi plane",
 		(dw & 0x0800) ? "2 screens" : "1 screen");
-	TextOut(hdc, 0, y * lh, str, strlen(str));
-	y++;
-
-	wsprintf(str, "GrRes  (102h) = %.4xh", r->videova.grres);
-	TextOut(hdc, 0, y * lh, str, strlen(str));
-	y++;
 
 	dw = r->videova.grres;
-	wsprintf(str, "  Screen 0: %d dots %s bit/pixel",
+	println(&vs, "GrRes   (102h) = %.4xh", dw);
+	println(&vs, "  Screen 0: %d dots, %s bit/pixel",
 		(dw & 0x0010) ? 320 : 640,
 		mes_bpp[dw & 3]);
-	TextOut(hdc, 0, y * lh, str, strlen(str));
-	y++;
-
-	wsprintf(str, "  Screen 1: %d dots %s bit/pixel",
+	println(&vs, "  Screen 1: %d dots, %s bit/pixel",
 		(dw & 0x1000) ? 320 : 640,
 		mes_bpp[(dw >> 8) & 3]);
-	TextOut(hdc, 0, y * lh, str, strlen(str));
-	y++;
 
-	y++;
+	dw = r->videova.palmode;
+	println(&vs, "PalMode (10ch) = %.4xh", dw);
+	println(&vs, "  %s, assign palette-set 1 to %s (in mixed-mode)",
+		mes_palmode[(dw >> 6) & 3],
+		mes_scrn[(dw >> 4) & 3]);
+
+	vs.y++;
 	f = r->videova.framebuffer;
 	for (i = 0; i < VIDEOVA_FRAMEBUFFERS; i++, f++) {
 
-		wsprintf(str, "Frame buffer %d", i);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
+		println(&vs, "Frame buffer %d", i);
+		println(&vs, "  FSA = %.8lxh", f->fsa);
+		println(&vs, "  FBW = %.4xh (%d)", f->fbw, f->fbw);
+		println(&vs, "  FBL = %.4xh (%d)", f->fbl, f->fbl);
+		println(&vs, "  DOT = %.4xh (%d)", f->dot, f->dot);
+		println(&vs, "  OFX = %.4xh (%d)", f->ofx, f->ofx);
+		println(&vs, "  OFY = %.4xh (%d)", f->ofy, f->ofy);
+		println(&vs, "  DSA = %.8lxh", f->dsa);
+		println(&vs, "  DSH = %.4xh (%d)", f->dsh, f->dsh);
+		println(&vs, "  DSP = %.4xh (%d)", f->dsp, f->dsp);
+		vs.y++;
+	}
 
-		wsprintf(str, "  FSA = %.8lxh", f->fsa);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
+	println(&vs, "Palettes");
+	for (i = 0; i < VIDEOVA_PALETTES/2; i++) {
+		RGB32	rgb;
+		RECT	rect;
+		HBRUSH	hbr;
 
-		wsprintf(str, "  FBW = %.4xh (%d)", f->fbw, f->fbw);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
+		rect.top  = vs.y * vs.lineheight;
+		rect.bottom = rect.top + 15;
+		println(&vs, "  #%02d = %.4xh     #%02d = %.4xh", 
+			i, r->videova.palette[i],
+			i + VIDEOVA_PALETTES/2, r->videova.palette[i + VIDEOVA_PALETTES/2]);
 
-		wsprintf(str, "  FBL = %.4xh (%d)", f->fbl, f->fbl);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
+		rect.left = 14 * 8;
+		rect.right = rect.left + 15;
+		rgb = scrndrawva_drawcolor32(r->videova.palette[i]);
+		hbr = CreateSolidBrush(RGB(rgb.p.r, rgb.p.g, rgb.p.b));
+		FillRect(hdc, &rect, hbr);
+		DeleteObject(hbr);
 
-		wsprintf(str, "  DOT = %.4xh (%d)", f->dot, f->dot);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		wsprintf(str, "  OFX = %.4xh (%d)", f->ofx, f->ofx);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		wsprintf(str, "  OFY = %.4xh (%d)", f->ofy, f->ofy);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		wsprintf(str, "  DSA = %.8lxh", f->dsa);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		wsprintf(str, "  DSH = %.4xh (%d)", f->dsh, f->dsh);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		wsprintf(str, "  DSP = %.4xh (%d)", f->dsp, f->dsp);
-		TextOut(hdc, 0, y * lh, str, strlen(str));
-		y++;
-
-		y++;
-
+		rect.left += 15 * 8;
+		rect.right = rect.left + 15;
+		rgb = scrndrawva_drawcolor32(r->videova.palette[i + VIDEOVA_PALETTES/2]);
+		hbr = CreateSolidBrush(RGB(rgb.p.r, rgb.p.g, rgb.p.b));
+		FillRect(hdc, &rect, hbr);
+		DeleteObject(hbr);
 	}
 
 	DeleteObject(SelectObject(hdc, hfont));
@@ -177,7 +191,7 @@ LRESULT CALLBACK viewvideova_proc(NP2VIEW_T *view,
 void viewvideova_init(NP2VIEW_T *dst, NP2VIEW_T *src) {
 
 	dst->type = VIEWMODE_VIDEOVA;
-	dst->maxline = 11 * VIDEOVA_FRAMEBUFFERS + 6;
+	dst->maxline = 11 * VIDEOVA_FRAMEBUFFERS + 8 + 17;
 	dst->mul = 1;
 	dst->pos = 0;
 }

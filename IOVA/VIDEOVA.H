@@ -5,6 +5,15 @@
 enum {
 	VIDEOVA_PALETTES = 32, 
 	VIDEOVA_FRAMEBUFFERS = 4,
+
+	VIDEOVA_TEXTSCREEN = 0,
+	VIDEOVA_SPRITESCREEN = 1,
+	VIDEOVA_GRAPHICSCREEN0 = 2,
+	VIDEOVA_GRAPHICSCREEN1 = 3,
+	VIDEOVA_SCREENS = 4,
+
+	VIDEOVA_PALETTE_SCREENS = 4,				// パレット制御画面に指定可能な画面数
+	VIDEOVA_RGB_SCREENS		= 2,				// 直接色指定画面に指定可能な画面数
 };
 
 typedef struct {
@@ -22,6 +31,13 @@ typedef struct {
 typedef struct {
 	WORD	grmode;			// 100h 表示画面制御レジスタ
 	WORD	grres;			// 102h グラフィック画面制御レジスタ
+	WORD	colcomp;		// 106h パレット指定画面制御レジスタ
+	WORD	rgbcomp;		// 108h 直接色指定画面制御レジスタ
+	WORD	palmode;		// 10Ch パレットモードレジスタ
+	WORD	dropcol;		// 10Eh バックドロップカラー
+	WORD	xpar_g0;		// 124h グラフィック画面0透明色レジスタ
+	WORD	xpar_g1;		// 126h グラフィック画面1透明色レジスタ
+	WORD	xpar_txtspr;	// 12eh テキスト/スプライト透明色レジスタ
 	WORD	palette[VIDEOVA_PALETTES];
 
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];

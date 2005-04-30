@@ -11,6 +11,11 @@
 
 #if defined(SUPPORT_PC88VA)
 
+#define SETLOWBYTE(x, y) (x) = ( (x) & 0xff00 | (y) )
+#define SETHIGHBYTE(x, y) (x) = ( (x) & 0x00ff | ((WORD)(y) << 8) )
+#define LOWBYTE(x)  ( (x) & 0xff )
+#define HIGHBYTE(x) ( (x) >> 8 )
+
 enum {
 	PORT_FRAMEBUFFER = 0x200,
 	PORT_PALETTE = 0x300,
@@ -24,45 +29,148 @@ static int port2pal(UINT port) {
 	return (port - PORT_PALETTE) / 2;
 }
 
-static void adjustpal(int palno) {
-	WORD c;
-
-	c = videova.palette[palno];
-
+static WORD adjustcolor12(WORD c) {
 	if (c & 0xf000) c |= 0x0c00;
 	if (c & 0x03c0) c |= 0x0020;
 	if (c & 0x001e) c |= 0x0001;
+	return c;
+}
 
-	videova.palette[palno] = c;
+static void adjustpal(int palno) {
+	videova.palette[palno] = adjustcolor12(videova.palette[palno]);
 }
 
 // ---- I/O
 
+//    表示画面制御レジスタ
+
 static REG8 IOINPCALL videova_i100(UINT port) {
-	return videova.grmode & 0xff;
+//	return videova.grmode & 0xff;
+	return LOWBYTE(videova.grmode);
 }
 
 static REG8 IOINPCALL videova_i101(UINT port) {
-	return videova.grmode >> 8;
+//	return videova.grmode >> 8;
+	return HIGHBYTE(videova.grmode);
 }
 
 static void IOOUTCALL videova_o100(UINT port, REG8 dat) {
-	videova.grmode = videova.grmode & 0xff00 | dat;
+//	videova.grmode = videova.grmode & 0xff00 | dat;
+	SETLOWBYTE(videova.grmode, dat);
 }
 
 static void IOOUTCALL videova_o101(UINT port, REG8 dat) {
-	videova.grmode = videova.grmode & 0x00ff | ((WORD)dat << 8);
+//	videova.grmode = videova.grmode & 0x00ff | ((WORD)dat << 8);
+	SETHIGHBYTE(videova.grmode, dat);
 }
 
+//    グラフィック画面制御レジスタ
+
+static REG8 IOINPCALL videova_i102(UINT port) {
+//	return videova.grres & 0xff;
+	return LOWBYTE(videova.grres);
+}
+
+static REG8 IOINPCALL videova_i103(UINT port) {
+//	return videova.grres >> 8;
+	return HIGHBYTE(videova.grres);
+}
 
 static void IOOUTCALL videova_o102(UINT port, REG8 dat) {
-	videova.grres = videova.grres & 0xff00 | dat;
+//	videova.grres = videova.grres & 0xff00 | dat;
+	SETLOWBYTE(videova.grres, dat);
 }
 
 static void IOOUTCALL videova_o103(UINT port, REG8 dat) {
-	videova.grres = videova.grres & 0x00ff | ((WORD)dat << 8);
+//	videova.grres = videova.grres & 0x00ff | ((WORD)dat << 8);
+	SETHIGHBYTE(videova.grres, dat);
 }
 
+//    パレット指定画面制御レジスタ
+
+static void IOOUTCALL videova_o106(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.colcomp, dat);
+}
+
+static void IOOUTCALL videova_o107(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.colcomp, dat);
+}
+
+//    直接色指定画面制御レジスタ
+
+static void IOOUTCALL videova_o108(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.rgbcomp, dat);
+}
+
+static void IOOUTCALL videova_o109(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.rgbcomp, dat);
+}
+
+//    カラーパレットモードレジスタ
+
+static REG8 IOINPCALL videova_i10c(UINT port) {
+//	return videova.palmode & 0xff;
+	return LOWBYTE(videova.palmode);
+}
+
+static REG8 IOINPCALL videova_i10d(UINT port) {
+//	return videova.palmode >> 8;
+	return HIGHBYTE(videova.palmode);
+}
+
+static void IOOUTCALL videova_o10c(UINT port, REG8 dat) {
+//	videova.palmode = videova.palmode & 0xff00 | dat;
+	SETLOWBYTE(videova.palmode, dat);
+}
+
+static void IOOUTCALL videova_o10d(UINT port, REG8 dat) {
+//	videova.palmode = videova.palmode & 0x00ff | ((WORD)dat << 8);
+	SETHIGHBYTE(videova.palmode, dat);
+}
+
+//   バックドロップカラー
+static void IOOUTCALL videova_o10e(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.dropcol, dat);
+	videova.dropcol = adjustcolor12(videova.dropcol);
+}
+
+static void IOOUTCALL videova_o10f(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.dropcol, dat);
+	videova.dropcol = adjustcolor12(videova.dropcol);
+}
+
+//   グラフィック画面0透明色レジスタ
+
+static void IOOUTCALL videova_o124(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.xpar_g0, dat);
+}
+
+static void IOOUTCALL videova_o125(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.xpar_g0, dat);
+}
+
+//   グラフィック画面1透明色レジスタ
+
+static void IOOUTCALL videova_o126(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.xpar_g1, dat);
+}
+
+static void IOOUTCALL videova_o127(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.xpar_g1, dat);
+}
+
+//   テキスト/スプライト透明色レジスタ
+
+static void IOOUTCALL videova_o12e(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.xpar_txtspr, dat | 0x0001);
+}
+
+static void IOOUTCALL videova_o12f(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.xpar_txtspr, dat);
+}
+
+
+//   パレット
 
 static void IOOUTCALL videova_o_palette_l(UINT port, REG8 dat) {
 	int n;
@@ -80,6 +188,8 @@ static void IOOUTCALL videova_o_palette_h(UINT port, REG8 dat) {
 	adjustpal(n);
 }
 
+
+//   フレームバッファ制御
 
 #define fbno(x) ((x>>5) & 3)
 
@@ -263,24 +373,44 @@ void videova_reset(void) {
 	videova.framebuffer[1].fbl = 0xffff;
 	videova.framebuffer[1].ofx = 0xffff;
 	videova.framebuffer[1].ofy = 0xffff;
+
+	videova.xpar_txtspr = 0x0001;
+
 	// ToDo: パレットの初期化
 }
 
 void videova_bind(void) {
 	int i;
 
-	for (i = 0; i < VIDEOVA_PALETTES * 2; i+=2) {
-		iocoreva_attachout(PORT_PALETTE + i, videova_o_palette_l);
-		iocoreva_attachout(PORT_PALETTE + i+1, videova_o_palette_h);
-	}
-
 	iocoreva_attachinp(0x100, videova_i100);
 	iocoreva_attachinp(0x101, videova_i101);
-
 	iocoreva_attachout(0x100, videova_o100);
 	iocoreva_attachout(0x101, videova_o101);
+
+	iocoreva_attachinp(0x102, videova_i102);
+	iocoreva_attachinp(0x103, videova_i103);
 	iocoreva_attachout(0x102, videova_o102);
 	iocoreva_attachout(0x103, videova_o103);
+
+	iocoreva_attachout(0x106, videova_o106);
+	iocoreva_attachout(0x107, videova_o107);
+	iocoreva_attachout(0x108, videova_o108);
+	iocoreva_attachout(0x109, videova_o109);
+
+	iocoreva_attachinp(0x10c, videova_i10c);
+	iocoreva_attachinp(0x10d, videova_i10d);
+	iocoreva_attachout(0x10c, videova_o10c);
+	iocoreva_attachout(0x10d, videova_o10d);
+
+	iocoreva_attachout(0x10e, videova_o10e);
+	iocoreva_attachout(0x10f, videova_o10f);
+
+	iocoreva_attachout(0x124, videova_o124);
+	iocoreva_attachout(0x125, videova_o125);
+	iocoreva_attachout(0x126, videova_o126);
+	iocoreva_attachout(0x127, videova_o127);
+	iocoreva_attachout(0x12e, videova_o12e);
+	iocoreva_attachout(0x12f, videova_o12f);
 
 	for (i = 0; i < VIDEOVA_FRAMEBUFFERS; i++) {
 		int base;
@@ -313,6 +443,12 @@ void videova_bind(void) {
 		iocoreva_attachout(base + 0x16, videova_o_fb_16);
 		iocoreva_attachout(base + 0x17, videova_o_fb_17);
 	}
+
+	for (i = 0; i < VIDEOVA_PALETTES * 2; i+=2) {
+		iocoreva_attachout(PORT_PALETTE + i, videova_o_palette_l);
+		iocoreva_attachout(PORT_PALETTE + i+1, videova_o_palette_h);
+	}
+
 }
 
 #endif

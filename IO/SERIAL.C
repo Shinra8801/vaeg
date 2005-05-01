@@ -8,7 +8,6 @@
 #if defined(SUPPORT_PC88VA)
 /*
   ToDo: 
-    SFT RT, RET 10, PC, ‘SŠp ‚ª“ü—Í‚Å‚«‚È‚¢
 	Port 197h (RESET‚¾‚¯‚ÍŽÀ‘•Ï‚Ý)
 */
 
@@ -147,7 +146,7 @@ void keyboard_callback(NEVENTITEM item) {
 					keybrd.data = keybrd.buf[keybrd.bufpos];
 					keybrd.bufpos = (keybrd.bufpos + 1) & KB_BUFMASK;
 #if defined(SUPPORT_PC88VA)
-					updatekeymap(keybrd.data);
+					//updatekeymap(keybrd.data);
 #endif
 				}
 				//TRACEOUT(("recv -> %02x", keybrd.data));
@@ -311,6 +310,7 @@ void keyboard_send(REG8 data) {
 #if defined(SUPPORT_PC88VA)
 	data = convertmodeldependent(data);
 	if (data == 0xff) return;
+	updatekeymap(data);
 #endif
 
 	if (keybrd.buffers < KB_BUF) {

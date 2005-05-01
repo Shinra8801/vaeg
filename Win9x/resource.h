@@ -233,6 +233,7 @@
 #define IDC_MODELPC88VA1                1201
 #define IDC_MODELPC88VA2                1202
 #define IDC_SEG                         1202
+#define IDC_OFF                         1203
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003

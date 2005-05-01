@@ -291,6 +291,8 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 					view->hDialogWnd = hWnd;
 					wsprintf(work, "%04x", view->seg);
 					SetDlgItemText(hWnd, IDC_SEG, work);
+					wsprintf(work, "%04x", view->off);
+					SetDlgItemText(hWnd, IDC_OFF, work);
 				}
 			}
 			return(FALSE);
@@ -301,15 +303,18 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 					{
 						NP2VIEW_T	*view;
 						char work[16];
-						unsigned long l;
+						unsigned long seg, off;
 						int result = IDCANCEL;
 
 						view = viewcmn_findbydialog(hWnd);
 						if (view) {
 							GetDlgItemText(hWnd, IDC_SEG, work, sizeof(work));
-							l = strtoul(work, NULL, 16);
-							if (l < 0x10000) {
-								view->seg = (WORD)l;
+							seg = strtoul(work, NULL, 16);
+							GetDlgItemText(hWnd, IDC_OFF, work, sizeof(work));
+							off = strtoul(work, NULL, 16);
+							if (seg < 0x10000 && off < 0x10000) {
+								view->seg = (WORD)seg;
+								view->off = (WORD)off;
 								result = IDOK;
 							}
 							view->hDialogWnd = 0;

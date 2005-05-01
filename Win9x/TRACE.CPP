@@ -7,6 +7,8 @@
 
 #ifdef TRACE
 
+#define	EXT										// Shinra
+
 #define FILEBUFSIZE			(1 << 20)
 // #define FILELASTBUFONLY
 
@@ -18,10 +20,13 @@
 
 #define	IDC_VIEW		(WM_USER + 100)
 
-#if 0											// Shinra
-#define	VIEW_BUFFERSIZE	4096
+#if defined(EXT)
+#define	VIEW_BUFFERSIZE	20488
+#define VIEW_DROPPEDSIZE 16384		// < VIEW_BUFFERSIZE
+#define VIEW_TIMER	1
+#define VIEW_DELAY	250				// (msec)
 #else
-#define	VIEW_BUFFERSIZE	16384
+#define	VIEW_BUFFERSIZE	4096
 #endif
 
 #define	VIEW_FGCOLOR	0x000000
@@ -78,6 +83,26 @@ static const INITBL	initbl[4] = {
 			{"width",	INITYPE_SINT32,	&tracecfg.width,	0},
 			{"height",	INITYPE_SINT32,	&tracecfg.height,	0}};
 
+#if defined(EXT)
+static	BOOL		timerrunning = FALSE;
+#endif
+
+#if defined(EXT)
+static void starttimer(void) {
+	if (!timerrunning) {
+		timerrunning = TRUE;
+		if (!SetTimer(tracewin.hwnd , VIEW_TIMER, VIEW_DELAY, NULL)) {
+			timerrunning = FALSE;
+		}
+	}
+}
+
+static void killtimer(void) {
+	KillTimer(tracewin.hwnd, VIEW_TIMER);
+	timerrunning = FALSE;
+}
+#endif
+
 static void View_ScrollToBottom(HWND hWnd) {
 
 	int		MinPos;
@@ -94,12 +119,15 @@ static void View_ClrString(void) {
 }
 
 static void View_AddString(const char *lpszString) {
-
 	int		len, vlen;
 	char	*p;
 
 	len = strlen(lpszString);
+#if defined(EXT)
+	if ((!len) || ((len + 3) > VIEW_DROPPEDSIZE)) {
+#else
 	if ((!len) || ((len + 3) > VIEW_BUFFERSIZE)) {
+#endif
 		return;
 	}
 	vlen = strlen(szView);
@@ -107,7 +135,11 @@ static void View_AddString(const char *lpszString) {
 		p = szView;
 		while(*p) {
 			vlen--;
+#if defined(EXT)
+			if ((*p++ == 0x0a) && ((vlen + len + 3) <= VIEW_DROPPEDSIZE)) {
+#else
 			if ((*p++ == 0x0a) && ((vlen + len + 3) <= VIEW_BUFFERSIZE)) {
+#endif
 				break;
 			}
 		}
@@ -115,8 +147,12 @@ static void View_AddString(const char *lpszString) {
 	}
 	strcat(szView, lpszString);
 	strcat(szView, crlf);
+#if defined(EXT)
+	starttimer();
+#else
 	SetWindowText(hView, szView);
 	View_ScrollToBottom(hView);
+#endif
 }
 
 
@@ -339,6 +375,14 @@ static LRESULT CALLBACK traceproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 		case WM_ERASEBKGND:
 			return(FALSE);
+#endif
+
+#if defined(EXT)
+		case WM_TIMER:
+			killtimer();
+			SetWindowText(hView, szView);
+			View_ScrollToBottom(hView);
+			break;
 #endif
 		default:
 			return(DefWindowProc(hWnd, msg, wp, lp));

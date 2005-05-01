@@ -45,6 +45,15 @@ static void IOOUTCALL sysp_o010(UINT port, REG8 dat) {
 	// ToDo: プリンタ 未実装
 }
 
+static void IOOUTCALL sysp_o032(UINT port, REG8 dat) {
+	// ToDo: サウンド割り込みマスク
+}
+
+static REG8 IOINPCALL sysp_i032(UINT port) {
+	// ToDo: サウンド割り込みマスク
+	return 0xff;
+}
+
 /*
 	bit7	FBEEP
 	bit6	JOP1
@@ -179,6 +188,8 @@ void systemportva_reset(void) {
 void systemportva_bind(void) {
 
 	iocoreva_attachout(0x010, sysp_o010);
+	iocoreva_attachout(0x032, sysp_o032);
+	iocoreva_attachinp(0x032, sysp_i032);
 	iocoreva_attachout(0x040, sysp_o040);
 	iocoreva_attachinp(0x040, sysp_i040);
 

@@ -216,7 +216,7 @@ REG16 IOINPCALL iocoreva_inp16(UINT port) {
 	port++;
 	iof = iocore.base[(port >> 8) & 0xff];
 	ret = ((UINT16)((iof->ioinp[port & 0xff](port) << 8) + ret));
-//	TRACEOUT(("iocoreva_inp16(%.4x) -> %.4x", port, ret));
+//	TRACEOUT(("iocoreva_inp16(%.4x) -> %.4x", port-1, ret));
 	return(ret);
 }
 

@@ -170,6 +170,19 @@ LRESULT CALLBACK viewasm_proc(NP2VIEW_T *view,
 					viewcmn_putcaption(view);
 					InvalidateRect(hwnd, NULL, TRUE);
 					break;
+#if EXT
+				case IDM_SETSEG:
+					view = viewcmn_find(hwnd);
+					if (view) {
+						int	ret;
+						ret = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_VIEW_ADDRESS),
+									hwnd, (DLGPROC)ViewerAddressDialogProc, (long)view);
+						if (ret == IDOK) {
+							InvalidateRect(hwnd, NULL, TRUE);
+						}
+					}
+					break;
+#endif
 			}
 			break;
 

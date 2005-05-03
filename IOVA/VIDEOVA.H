@@ -35,6 +35,7 @@ typedef struct {
 	WORD	rgbcomp;		// 108h 直接色指定画面制御レジスタ
 	WORD	palmode;		// 10Ch パレットモードレジスタ
 	WORD	dropcol;		// 10Eh バックドロップカラー
+	WORD	pagemsk;		// 110h カラーコード/プレーンマスクレジスタ
 	WORD	xpar_g0;		// 124h グラフィック画面0透明色レジスタ
 	WORD	xpar_g1;		// 126h グラフィック画面1透明色レジスタ
 	WORD	xpar_txtspr;	// 12eh テキスト/スプライト透明色レジスタ

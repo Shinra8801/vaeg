@@ -145,6 +145,11 @@ typedef struct {
 
 static	_COMPOSEWORK	work;
 
+static	BYTE	tstextraster[SURFACE_WIDTH];
+static	BYTE	tssprraster[SURFACE_WIDTH];
+												// 1ラスタ分のピクセルデータ
+												// 各ピクセルはパレット番号(0～15)
+
 void scrndrawva_compose_begin(void) {
 	work.bp = vabitmap;
 }
@@ -158,7 +163,9 @@ void scrndrawva_compose_raster(void) {
 	int type;
 	WORD *bp;
 	COMPSCRN scrn;
+	BYTE palcode;
 	WORD c;
+	WORD tscr;
 	DWORD dd;
 //	BYTE *palscrn[4];
 //	BYTE pri[VIDEOVA_SCREENS];
@@ -169,6 +176,24 @@ void scrndrawva_compose_raster(void) {
 	pri[VIDEOVA_GRAPHICSCREEN0] = 3;
 	pri[VIDEOVA_GRAPHICSCREEN1] = 2;
 */
+	// テキストとスプライトの出力を重ね合わせ、
+	// テキスト/スプライト判別境界カラーで分離する
+	tscr = videova.pagemsk >> 12;	// テキスト/スプライト判別境界カラー
+	for (x = 0; x < SURFACE_WIDTH; x++) {
+		palcode = sprraster[x];
+		if (palcode == 0) palcode = textraster[x];
+		if (palcode > tscr) {
+			// テキスト
+			tstextraster[x] = palcode;
+			tssprraster[x] = 0;
+		}
+		else {
+			// スプライト
+			tstextraster[x] = 0;
+			tssprraster[x] = palcode;
+		}
+	}
+
 	palmode = (videova.palmode >> 6) & 3;
 	defaultflip = palmode == 1 ? 0x10 : 0x00;
 	palset1scrn = (videova.palmode >> 4) & 3;
@@ -202,11 +227,11 @@ void scrndrawva_compose_raster(void) {
 
 		switch (type) {
 		case VIDEOVA_TEXTSCREEN:
-			scrn->raster = textraster;
+			scrn->raster = tstextraster;
 			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
 			break;
 		case VIDEOVA_SPRITESCREEN:
-			scrn->raster = sprraster;
+			scrn->raster = tssprraster;
 			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
 			break;
 		case VIDEOVA_GRAPHICSCREEN0:
@@ -238,10 +263,10 @@ void scrndrawva_compose_raster(void) {
 		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) {
 			scrn = &work.scrn[i];
 			if (scrn->raster != NULL) {
-				c = scrn->raster[x] ^ scrn->palflip;
-				if ((scrn->xpar & (1 << c)) == 0) {
+				palcode = scrn->raster[x] ^ scrn->palflip;
+				if ((scrn->xpar & (1 << palcode)) == 0) {
 					// 不透明色
-					c = videova.palette[c];
+					c = videova.palette[palcode];
 					goto opaque;
 				}
 			}

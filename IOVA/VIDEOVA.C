@@ -139,6 +139,22 @@ static void IOOUTCALL videova_o10f(UINT port, REG8 dat) {
 	videova.dropcol = adjustcolor12(videova.dropcol);
 }
 
+//   カラーコード/プレーンマスクレジスタ
+//     bit15-12 テキスト/スプライト判別境界カラー(1～設定値 がスプライト)
+//     bit11- 8 シングルプレーン1bit/pixel時のフォアグラウンドカラー
+//     bit 7    マルチプレーン 4bit/pixel プレーン3 スイッチ(1でON)
+//     bit 6    グラフィック表示回路モード(1でV1/V2)
+//     bit 5- 4 0
+//     bit 3- 0 マルチプレーン 1bit/pixel プレーンn画面スイッチ
+static void IOOUTCALL videova_o110(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.pagemsk, dat);
+}
+
+static void IOOUTCALL videova_o111(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.pagemsk, dat);
+}
+
+
 //   グラフィック画面0透明色レジスタ
 
 static void IOOUTCALL videova_o124(UINT port, REG8 dat) {
@@ -404,6 +420,9 @@ void videova_bind(void) {
 
 	iocoreva_attachout(0x10e, videova_o10e);
 	iocoreva_attachout(0x10f, videova_o10f);
+
+	iocoreva_attachout(0x110, videova_o110);
+	iocoreva_attachout(0x111, videova_o111);
 
 	iocoreva_attachout(0x124, videova_o124);
 	iocoreva_attachout(0x125, videova_o125);

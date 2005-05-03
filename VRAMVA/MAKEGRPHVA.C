@@ -110,7 +110,7 @@ static void drawraster(SCREEN screen) {
 			}
 
 			if (screen->r320dots) {
-
+				// 320 dots
 				d = LOADINTELWORD(grphmem + addr);
 				d2 = LOADINTELWORD(grphmem + addr + 2);
 				addr = addr18(screen, addr + 4);
@@ -170,6 +170,52 @@ static void drawraster(SCREEN screen) {
 					b += 2;
 				}
 			}
+			else {
+				// 640 dots
+
+				d = LOADINTELWORD(grphmem + addr);
+				d2 = LOADINTELWORD(grphmem + addr + 2);
+				addr = addr18(screen, addr + 4);
+
+				switch (screen->framebuffer->dot & 0x13) {
+				case 0:
+					*b++ = (d >>  4) & 0x0f;
+				case 1:
+					*b++ = (d      ) & 0x0f;
+				case 2:
+					*b++ = (d >> 12) & 0x0f;
+				case 3:
+					*b++ = (d >>  8) & 0x0f;
+				case 0x10:
+					*b++ = (d2 >>  4) & 0x0f;
+				case 0x11:
+					*b++ = (d2      ) & 0x0f;
+				case 0x12:
+					*b++ = (d2 >> 12) & 0x0f;
+				case 0x13:
+					*b++ = (d2 >>  8) & 0x0f;
+				}
+				for (xp = 0; xp < 640/8; xp++) {
+					wrapcount -= 4;
+					if (wrapcount == 0) {
+						addr = screen->wrappedaddr;
+					}
+
+					d = LOADINTELWORD(grphmem + addr);
+					d2 = LOADINTELWORD(grphmem + addr + 2);
+					addr = addr18(screen, addr + 4);
+
+					*b++ = (d >>  4) & 0x0f;
+					*b++ = (d      ) & 0x0f;
+					*b++ = (d >> 12) & 0x0f;
+					*b++ = (d >>  8) & 0x0f;
+
+					*b++ = (d2 >>  4) & 0x0f;
+					*b++ = (d2      ) & 0x0f;
+					*b++ = (d2 >> 12) & 0x0f;
+					*b++ = (d2 >>  8) & 0x0f;
+				}
+			}
 			screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
 			screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
 		}
@@ -204,8 +250,34 @@ void makegrphva_begin(void) {
 
 void makegrphva_raster(void) {
 
-	drawraster(&work.screen[0]);
-	drawraster(&work.screen[1]);
+	if (videova.grmode & 0x0400) {
+		// シングルプレーンモード
+		switch (videova.grres & 0x0003) {
+		case 0:
+			break;
+		case 1:
+			drawraster(&work.screen[0]);
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		}
+		switch ((videova.grres >> 8) & 0x0003) {
+		case 0:
+			break;
+		case 1:
+			drawraster(&work.screen[1]);
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		}
+	}
+	else {
+		// マルチプレーンモード
+	}
 	
 	work.screeny++;
 }

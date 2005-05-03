@@ -111,6 +111,7 @@ static void drawraster(SPRVA s, BYTE *sprinfo) {
 		for (; xbytes > 0; xbytes--) {
 			d = *sprdata;
 			sprdata++;
+			// ToDo: 0ˆÈŠO‚Ì“§–¾F‚Ìê‡‚Éd‚Ë‚ª‚«‚µ‚È‚¢‚æ‚¤‚É‚·‚é
 			if (d & 0xf0) sprraster[xp] = d >> 4;
 			xp = (xp + 1) & 0x3ff;
 			if (d &= 0x0f) sprraster[xp] = (BYTE)d;

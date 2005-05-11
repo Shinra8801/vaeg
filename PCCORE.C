@@ -49,6 +49,7 @@
 #include	"../vramva/scrndrawva.h"
 #include	"memoryva.h"
 #include	"tsp.h"
+#include	"sgp.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -825,8 +826,15 @@ void pccore_exec(BOOL draw) {
 			else {
 				CPU_EXECV30();
 			}
+#if defined(SUPPORT_PC88VA)
+			if (pccore.model_va != PCMODEL_NOTVA) {
+				sgp_step();
+			}
+#endif
 		}
-#else
+
+#else	// SINGLESTEPONLY
+
 		while(CPU_REMCLOCK > 0) {
 #if defined(TRACE) && IPTRACE
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
@@ -879,8 +887,14 @@ void pccore_exec(BOOL draw) {
 			else {
 				v30x_step();						// added by Shinra
 			}
-		}
+#if defined(SUPPORT_PC88VA)
+			if (pccore.model_va != PCMODEL_NOTVA) {
+				sgp_step();
+			}
 #endif
+		}
+#endif	// SINGLESTEPONLY
+
 		nevent_progress();
 	}
 	artic_callback();

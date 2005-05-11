@@ -9,7 +9,7 @@
 
 // ---- write byte
 
-static void MEMCALL _gvram_wt(UINT32 address, REG8 value) {
+void MEMCALL _gvram_wt(UINT32 address, REG8 value) {
 	grphmem[address] = (BYTE)value;
 }
 
@@ -21,7 +21,7 @@ void MEMCALL gvram_wt(UINT32 address, REG8 value) {
 
 // ---- read byte
 
-static REG8 MEMCALL _gvram_rd(UINT32 address) {	
+REG8 MEMCALL _gvram_rd(UINT32 address) {	
 	return(grphmem[address]);
 }
 

@@ -13,6 +13,7 @@ extern	BYTE	backupmem_wp;
 extern	BYTE	sysm_bank;
 extern	BYTE	rom1_bank;
 extern	BYTE	rom0_bank;
+extern	BYTE	dma_sysm_bank;
 
 #ifdef __cplusplus
 }

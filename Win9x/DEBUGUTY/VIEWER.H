@@ -6,6 +6,12 @@ typedef struct {
 	BYTE	vram;
 	BYTE	itf;
 	BYTE	A20;
+#if defined(SUPPORT_PC88VA)
+	BYTE	sysm_bank;
+	BYTE	rom1_bank;
+	BYTE	rom0_bank;
+	BYTE	lock;
+#endif
 } VIEWMEM_T;
 
 enum {

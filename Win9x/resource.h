@@ -234,6 +234,10 @@
 #define IDC_MODELPC88VA2                1202
 #define IDC_SEG                         1202
 #define IDC_OFF                         1203
+#define IDC_SYSMBANK                    1204
+#define IDC_ROM0BANK                    1205
+#define IDC_ROM1BANK                    1206
+#define IDC_LOCKBANK                    1207
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003
@@ -386,6 +390,7 @@
 #define IDM_VIEWMODEVABANK              40121
 #define IDM_SOUNDBOARD2                 40122
 #define IDM_VIEWMODEVIDEOVA             40123
+#define IDM_F12ZENKAKU                  40124
 
 // Next default values for new objects
 // 
@@ -393,8 +398,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        131
-#define _APS_NEXT_COMMAND_VALUE         40124
-#define _APS_NEXT_CONTROL_VALUE         1203
+#define _APS_NEXT_COMMAND_VALUE         40125
+#define _APS_NEXT_CONTROL_VALUE         1208
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

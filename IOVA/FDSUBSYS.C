@@ -62,6 +62,7 @@ enum {
 	CMD_SET_BOUNDARY_MODE	= 0x21,
 	CMD_DRIVE_READY_CHECK	= 0x23,
 	CMD_SLEEP				= 0x25,
+	CMD_ACTIVE				= 0x26,
 
 	// サブシステムワークメモリのアドレス
 	WORK_DATA_BUF			= 0x4000,		// リード/ライトバッファ
@@ -320,6 +321,10 @@ static void subsys_cmd_received(void) {
 		recvdatacnt = 1;
 		recvbuf = parambuf;
 		break;
+	case CMD_ACTIVE:
+		recvdatacnt = 2;
+		recvbuf = parambuf;
+		break;
 	default:
 		break;
 	}
@@ -338,7 +343,8 @@ static void config_fdc_by_disk_mode(int drv, int track) {
 	fdc.rpm[drv] = 0;	// 1.44ではない。 (ToDo: 設定方法は正しい？)
 	switch ((mode >> 4) & 0x03) {
 	case 0:	// 1D/2D
-		// ToDo: いまはとりあえず2DD
+		// ToDo: いまはとりあえず2DD (DISKTYPE_2Dにすると、ソーサリアンが起動できない。)
+		//       (VAで起動時にディスクモード1xhは使っていない。2DDの起動はできないのか？)
 		CTRL_FDMEDIA = DISKTYPE_2DD;
 		break;
 	case 1: // 1DD/2DD
@@ -379,8 +385,12 @@ static void set_command_status(BYTE status) {
 */
 static void subsys_exec_initialize(void) {
 	TRACEOUT(("fdsubsys: initialize command"));
+	/* 以下の場合、初代VAだと2Dで読めたと勘違いしてV1/V2に移行しようとする
 	subsysmem[WORK_DISK_MODE + 0] = 0xff;
 	subsysmem[WORK_DISK_MODE + 1] = 0xff;
+	*/
+	subsysmem[WORK_DISK_MODE + 0] = 0x01;
+	subsysmem[WORK_DISK_MODE + 1] = 0x01;
 }
 
 /*
@@ -585,6 +595,13 @@ static void subsys_exec_sleep(void) {
 }
 
 /*
+0x26 アクティブ
+*/
+static void subsys_exec_active(void) {
+	TRACEOUT(("fdsubsys: active: port1b2h=0x%0x, moter=%d", parambuf[0], parambuf[1]));
+}
+
+/*
 	出力:
 		state
 		senddatacnt
@@ -627,6 +644,9 @@ static void subsys_exec_cmd(void) {
 		break;
 	case CMD_SLEEP:
 		subsys_exec_sleep();
+		break;
+	case CMD_ACTIVE:
+		subsys_exec_active();
 		break;
 	}
 }

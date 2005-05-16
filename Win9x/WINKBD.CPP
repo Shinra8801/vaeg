@@ -170,9 +170,13 @@ static const UINT8 key106ext[256] = {
 			//	    ,    ,    ,    ,    ,    ,    ,    		; 0xf8
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC};
 
+#if defined(SUPPORT_PC88VA)
+static const UINT8 f12keys[] = {
+			0x61, 0x60, 0x4d, 0x4f, 0x76, 0x77, 0x5b};
+#else
 static const UINT8 f12keys[] = {
 			0x61, 0x60, 0x4d, 0x4f, 0x76, 0x77};
-
+#endif
 
 void winkbd_keydown(WPARAM wParam, LPARAM lParam) {
 

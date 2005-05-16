@@ -83,6 +83,19 @@ extern		_pccore_debugmem
 %endif
 
 
+%macro	JMPSYSMBANK		1
+			xor		ebx, ebx
+			mov		bl, [_dma_sysm_bank]
+			test	bl, [_dma_access]
+			jnz		%%selbank
+			mov		bl, [_sysm_bank]
+%%selbank:	and		bl, 0fh
+			shl		ebx, 2
+			jmp		[ebx + %1]
+%endmacro
+
+
+
 section .text
 
 ; ----------------------------------------------------------------- write byte
@@ -95,11 +108,12 @@ section .text
 
 ; System memory area
 					align	16
-@sysm_wt:			xor		ebx, ebx
-					mov		bl, [_sysm_bank]
-					and		bl, 0fh
-					shl		ebx, 2
-					jmp		[ebx + _sysmbyte_write]
+@sysm_wt:			JMPSYSMBANK	_sysmbyte_write
+;					xor		ebx, ebx
+;					mov		bl, [_sysm_bank]
+;					and		bl, 0fh
+;					shl		ebx, 2
+;					jmp		[ebx + _sysmbyte_write]
 
 ; TVRAM
 					align	16
@@ -145,11 +159,12 @@ knj2_wt9:			pop		ebx
 
 ; System memory area
 					align	16
-@sysmw_wt:			xor		ebx, ebx
-					mov		bl, [_sysm_bank]
-					and		bl, 0fh
-					shl		ebx, 2
-					jmp		[ebx + _sysmword_write]
+@sysmw_wt:			JMPSYSMBANK	_sysmword_write
+;					xor		ebx, ebx
+;					mov		bl, [_sysm_bank]
+;					and		bl, 0fh
+;					shl		ebx, 2
+;					jmp		[ebx + _sysmword_write]
 
 ; TVRAM
 					align	16
@@ -195,11 +210,12 @@ knj2w_wt3:			dec		cx
 
 ; System memory area
 					align	16
-@sysm_rd:			xor		ebx, ebx
-					mov		bl, [_sysm_bank]
-					and		bl, 0fh
-					shl		ebx, 2
-					jmp		[ebx + _sysmbyte_read]
+@sysm_rd:			JMPSYSMBANK	_sysmbyte_read
+;					xor		ebx, ebx
+;					mov		bl, [_sysm_bank]
+;					and		bl, 0fh
+;					shl		ebx, 2
+;					jmp		[ebx + _sysmbyte_read]
 
 ; TVRAM
 					align	16
@@ -310,11 +326,12 @@ rom1invalid_rd9:	pop		ebx
 
 ; System memory area
 					align	16
-@sysmw_rd:			xor		ebx, ebx
-					mov		bl, [_sysm_bank]
-					and		bl, 0fh
-					shl		ebx, 2
-					jmp		[ebx + _sysmword_read]
+@sysmw_rd:			JMPSYSMBANK	_sysmword_read
+;					xor		ebx, ebx
+;					mov		bl, [_sysm_bank]
+;					and		bl, 0fh
+;					shl		ebx, 2
+;					jmp		[ebx + _sysmword_read]
 
 ; TVRAM
 					align	16
@@ -451,12 +468,19 @@ section	.data
 	global	_sysm_bank
 	global	_rom0_bank
 	global	_rom1_bank
+	global	_dma_sysm_bank
+	global	_dma_access
 	global	_backupmem_wp
 
 _sysm_bank		db 1
 _rom0_bank		db 0				;bit5  バススロットに開放
 _rom1_bank		db 0				;bit4  バススロットに開放
 									;bit3  常に0
+_dma_sysm_bank	db 0				;bit7   0..CPUバンクに従う
+									;bit6-4 常に0
+									;bit3-0 バンク
+_dma_access		db 0				;bit7   1..DMAからのメモリアクセスである
+									;bit6-0 常に0
 _backupmem_wp	db 0				;バックアップメモリ ライトプロテクト
 
 

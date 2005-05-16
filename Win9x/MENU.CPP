@@ -380,7 +380,11 @@ void xmenu_setf12copy(BYTE value) {
 
 	HMENU	hmenu;
 
+#if defined(SUPPORT_PC88VA)
+	if (value > 7) {
+#else
 	if (value > 6) {
+#endif
 		value = 0;
 	}
 	np2oscfg.F12COPY = value;
@@ -392,6 +396,9 @@ void xmenu_setf12copy(BYTE value) {
 	CheckMenuItem(hmenu, IDM_F12COMMA, MFCHECK(value == 4));
 	CheckMenuItem(hmenu, IDM_USERKEY1, MFCHECK(value == 5));
 	CheckMenuItem(hmenu, IDM_USERKEY2, MFCHECK(value == 6));
+#if defined(SUPPORT_PC88VA)
+	CheckMenuItem(hmenu, IDM_F12ZENKAKU, MFCHECK(value == 7));
+#endif
 }
 
 void xmenu_setbeepvol(BYTE value) {

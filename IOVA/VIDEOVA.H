@@ -33,12 +33,17 @@ typedef struct {
 	WORD	grres;			// 102h グラフィック画面制御レジスタ
 	WORD	colcomp;		// 106h パレット指定画面制御レジスタ
 	WORD	rgbcomp;		// 108h 直接色指定画面制御レジスタ
+	WORD	mskmode;		// 10ah 画面マスクモードレジスタ
 	WORD	palmode;		// 10Ch パレットモードレジスタ
 	WORD	dropcol;		// 10Eh バックドロップカラー
 	WORD	pagemsk;		// 110h カラーコード/プレーンマスクレジスタ
 	WORD	xpar_g0;		// 124h グラフィック画面0透明色レジスタ
 	WORD	xpar_g1;		// 126h グラフィック画面1透明色レジスタ
 	WORD	xpar_txtspr;	// 12eh テキスト/スプライト透明色レジスタ
+	WORD	mskleft;		// 130h 画面マスクパラメータ
+	WORD	mskrit;			// 132h
+	WORD	msktop;			// 134h
+	WORD	mskbot;			// 136h
 	WORD	palette[VIDEOVA_PALETTES];
 
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];

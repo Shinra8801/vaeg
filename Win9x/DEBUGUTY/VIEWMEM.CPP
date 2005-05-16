@@ -7,7 +7,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"pccore.h"
-#include	"bmsio.h"
+//#include	"bmsio.h"
 #include	"memoryva.h"
 #include	"gvramva.h"
 
@@ -56,7 +56,7 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 //	cpmem(&adrs, &buf, &size, 0x80000, 0xa0000, bmsio.addr);
 	cpmem(&adrs, &buf, &size, 0x80000, 0xa0000, NULL);
 	// システムメモリエリア
-	switch(sysm_bank) {
+	switch(cfg->sysm_bank) {
 	case 1:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, textmem);
 		break;
@@ -81,14 +81,14 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 	}
 	// ROMエリア0
 	src = NULL;
-	if (rom0_bank < 0x0a) {
-		src = rom0mem + 0x10000 * rom0_bank;
+	if (cfg->rom0_bank < 0x0a) {
+		src = rom0mem + 0x10000 * cfg->rom0_bank;
 	}
 	cpmem(&adrs, &buf, &size, 0xe0000, 0xf0000, src);
 	// ROMエリア1
 	src = NULL;
-	if (rom1_bank < 0x02) {
-		src = rom1mem + 0x10000 * rom1_bank;
+	if (cfg->rom1_bank < 0x02) {
+		src = rom1mem + 0x10000 * cfg->rom1_bank;
 	}
 	cpmem(&adrs, &buf, &size, 0xf0000, 0x100000, src);
 

@@ -680,6 +680,15 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			update |= SYS_UPDATEOSCFG;
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case IDM_F12ZENKAKU:
+			xmenu_setf12copy(7);
+			winkbd_resetf12();
+			winkbd_setf12(7);
+			update |= SYS_UPDATEOSCFG;
+			break;
+#endif
+
 		case IDM_BEEPOFF:
 			xmenu_setbeepvol(0);
 			beep_setvol(0);

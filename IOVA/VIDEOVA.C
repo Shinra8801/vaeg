@@ -106,6 +106,16 @@ static void IOOUTCALL videova_o109(UINT port, REG8 dat) {
 	SETHIGHBYTE(videova.rgbcomp, dat);
 }
 
+//    画面マスクモードレジスタ
+
+static void IOOUTCALL videova_o10a(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.mskmode, dat);
+}
+
+static void IOOUTCALL videova_o10b(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.mskmode, dat);
+}
+
 //    カラーパレットモードレジスタ
 
 static REG8 IOINPCALL videova_i10c(UINT port) {
@@ -185,6 +195,40 @@ static void IOOUTCALL videova_o12f(UINT port, REG8 dat) {
 	SETHIGHBYTE(videova.xpar_txtspr, dat);
 }
 
+//    画面マスクパラメータ
+
+static void IOOUTCALL videova_o130(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.mskleft, dat);
+}
+
+static void IOOUTCALL videova_o131(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.mskleft, dat & 0x03ff);
+}
+
+static void IOOUTCALL videova_o132(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.mskrit, dat);
+}
+
+static void IOOUTCALL videova_o133(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.mskrit, dat & 0x3ff);
+}
+
+static void IOOUTCALL videova_o134(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.msktop, dat);
+}
+
+static void IOOUTCALL videova_o135(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.msktop, dat & 0xff);
+}
+
+static void IOOUTCALL videova_o136(UINT port, REG8 dat) {
+	SETLOWBYTE(videova.mskbot, dat);
+}
+
+static void IOOUTCALL videova_o137(UINT port, REG8 dat) {
+	SETHIGHBYTE(videova.mskbot, dat & 0xff);
+}
+
 
 //   パレット
 
@@ -236,6 +280,8 @@ static void IOOUTCALL videova_o_fb_02(UINT port, REG8 dat) {
 		videova.framebuffer[n].fsa & 0xff00ffffL | (((DWORD)dat & 0x03) << 16);
 }
 
+static void IOOUTCALL videova_o_fb_03(UINT port, REG8 dat) {
+}
 
 static void IOOUTCALL videova_o_fb_04(UINT port, REG8 dat) {
 	int n;
@@ -278,6 +324,9 @@ static void IOOUTCALL videova_o_fb_08(UINT port, REG8 dat) {
 
 	n = fbno(port);
 	videova.framebuffer[n].dot = dat & 0x1f;
+}
+
+static void IOOUTCALL videova_o_fb_09(UINT port, REG8 dat) {
 }
 
 
@@ -343,6 +392,9 @@ static void IOOUTCALL videova_o_fb_10(UINT port, REG8 dat) {
 	n = fbno(port);
 	videova.framebuffer[n].dsa =
 		videova.framebuffer[n].dsa & 0xff00ffffL | (((DWORD)dat & 0x03) << 16);
+}
+
+static void IOOUTCALL videova_o_fb_11(UINT port, REG8 dat) {
 }
 
 
@@ -413,6 +465,9 @@ void videova_bind(void) {
 	iocoreva_attachout(0x108, videova_o108);
 	iocoreva_attachout(0x109, videova_o109);
 
+	iocoreva_attachout(0x10a, videova_o10a);
+	iocoreva_attachout(0x10b, videova_o10b);
+
 	iocoreva_attachinp(0x10c, videova_i10c);
 	iocoreva_attachinp(0x10d, videova_i10d);
 	iocoreva_attachout(0x10c, videova_o10c);
@@ -431,12 +486,22 @@ void videova_bind(void) {
 	iocoreva_attachout(0x12e, videova_o12e);
 	iocoreva_attachout(0x12f, videova_o12f);
 
+	iocoreva_attachout(0x130, videova_o130);
+	iocoreva_attachout(0x131, videova_o131);
+	iocoreva_attachout(0x132, videova_o132);
+	iocoreva_attachout(0x133, videova_o133);
+	iocoreva_attachout(0x134, videova_o134);
+	iocoreva_attachout(0x135, videova_o135);
+	iocoreva_attachout(0x136, videova_o136);
+	iocoreva_attachout(0x137, videova_o137);
+
 	for (i = 0; i < VIDEOVA_FRAMEBUFFERS; i++) {
 		int base;
 		base = PORT_FRAMEBUFFER + 0x20 * i;
 		iocoreva_attachout(base + 0x00, videova_o_fb_00);
 		iocoreva_attachout(base + 0x01, videova_o_fb_01);
 		iocoreva_attachout(base + 0x02, videova_o_fb_02);
+		iocoreva_attachout(base + 0x03, videova_o_fb_03);
 
 		iocoreva_attachout(base + 0x04, videova_o_fb_04);
 		iocoreva_attachout(base + 0x05, videova_o_fb_05);
@@ -445,6 +510,7 @@ void videova_bind(void) {
 		iocoreva_attachout(base + 0x07, videova_o_fb_07);
 
 		iocoreva_attachout(base + 0x08, videova_o_fb_08);
+		iocoreva_attachout(base + 0x09, videova_o_fb_09);
 
 		iocoreva_attachout(base + 0x0a, videova_o_fb_0a);
 		iocoreva_attachout(base + 0x0b, videova_o_fb_0b);
@@ -455,6 +521,7 @@ void videova_bind(void) {
 		iocoreva_attachout(base + 0x0e, videova_o_fb_0e);
 		iocoreva_attachout(base + 0x0f, videova_o_fb_0f);
 		iocoreva_attachout(base + 0x10, videova_o_fb_10);
+		iocoreva_attachout(base + 0x11, videova_o_fb_11);
 
 		iocoreva_attachout(base + 0x12, videova_o_fb_12);
 		iocoreva_attachout(base + 0x13, videova_o_fb_13);

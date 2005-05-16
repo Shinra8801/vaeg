@@ -15,7 +15,12 @@
 #include	"iocore.h"
 #include	"bios.h"
 
+#if EXT
+#include	"dialogs.h"
+#endif
+
 #if defined(SUPPORT_PC88VA)
+#include	"memoryva.h"
 #include	"viewvabank.h"
 #include	"viewvideova.h"
 #endif
@@ -195,6 +200,13 @@ void viewcmn_setbank(NP2VIEW_T *view) {
 	dmem->vram = gdcs.disp;
 	dmem->itf = CPU_ITFBANK;
 	dmem->A20 = (BYTE)((CPU_ADRSMASK >> 20) & 1);
+#if defined(SUPPORT_PC88VA)
+	if (!dmem->lock) {
+		dmem->sysm_bank = sysm_bank;
+		dmem->rom0_bank = rom0_bank;
+		dmem->rom1_bank = rom1_bank;
+	}
+#endif
 }
 
 
@@ -293,6 +305,15 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 					SetDlgItemText(hWnd, IDC_SEG, work);
 					wsprintf(work, "%04x", view->off);
 					SetDlgItemText(hWnd, IDC_OFF, work);
+#if defined(SUPPORT_PC88VA)
+					wsprintf(work, "%d", view->dmem.sysm_bank);
+					SetDlgItemText(hWnd, IDC_SYSMBANK, work);
+					wsprintf(work, "%d", view->dmem.rom0_bank);
+					SetDlgItemText(hWnd, IDC_ROM0BANK, work);
+					wsprintf(work, "%d", view->dmem.rom1_bank);
+					SetDlgItemText(hWnd, IDC_ROM1BANK, work);
+					SetDlgItemCheck(hWnd, IDC_LOCKBANK, view->dmem.lock);
+#endif
 				}
 			}
 			return(FALSE);
@@ -304,6 +325,7 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 						NP2VIEW_T	*view;
 						char work[16];
 						unsigned long seg, off;
+						BYTE sbank, r0bank, r1bank;
 						int result = IDCANCEL;
 
 						view = viewcmn_findbydialog(hWnd);
@@ -312,9 +334,19 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 							seg = strtoul(work, NULL, 16);
 							GetDlgItemText(hWnd, IDC_OFF, work, sizeof(work));
 							off = strtoul(work, NULL, 16);
-							if (seg < 0x10000 && off < 0x10000) {
+							GetDlgItemText(hWnd, IDC_SYSMBANK, work, sizeof(work));
+							sbank = (BYTE)strtoul(work, NULL, 10);
+							GetDlgItemText(hWnd, IDC_ROM0BANK, work, sizeof(work));
+							r0bank = (BYTE)strtoul(work, NULL, 10);
+							GetDlgItemText(hWnd, IDC_ROM1BANK, work, sizeof(work));
+							r1bank = (BYTE)strtoul(work, NULL, 10);
+							if (seg < 0x10000 && off < 0x10000 && sbank < 0x10 && r0bank < 0x10 && r1bank < 0x04) {
 								view->seg = (WORD)seg;
 								view->off = (WORD)off;
+								view->dmem.sysm_bank = sbank;
+								view->dmem.rom0_bank = r0bank;
+								view->dmem.rom1_bank = r1bank;
+								view->dmem.lock = GetDlgItemCheck(hWnd, IDC_LOCKBANK);
 								result = IDOK;
 							}
 							view->hDialogWnd = 0;

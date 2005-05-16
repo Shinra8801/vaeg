@@ -33,15 +33,34 @@ static void println(VIEWSCRN viewscrn, const char *format, ...) {
 	viewscrn->y++;
 }
 
+static void drawcolorsample(HDC hdc, int x, int y, WORD color) {
+	RGB32	rgb;
+	RECT	rect;
+	HBRUSH	hbr;
+
+	rect.top  = y;
+	rect.bottom = y + 15;
+	rect.left = x;
+	rect.right = x + 15;
+	rgb = scrndrawva_drawcolor32(color);
+	hbr = CreateSolidBrush(RGB(rgb.p.r, rgb.p.g, rgb.p.b));
+	FillRect(hdc, &rect, hbr);
+	DeleteObject(hbr);
+}
+
 static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
-	static		char *mes_lines[4] = {"400", "408", "200", "204"};
-	static		char *mes_rsm[4] = {"non-interlace 0", "non-interlace 1", 
+	static char	*mes_lines[4] = {"400", "408", "200", "204"};
+	static char	*mes_rsm[4] = {"non-interlace 0", "non-interlace 1", 
 									"interlace 0", "interlace 1"};
-	static		char *mes_bpp[4] = {"1", "4", "8", "16"};
-	static		char *mes_palmode[4] = {
+	static char	*mes_bpp[4] = {"1", "4", "8", "16"};
+	static char	*mes_palmode[4] = {
 							"use palette-set 0", "use plaette-set 1",
 							"use mixed-mode", "use 32 palettes"};
-	static		char *mes_scrn[4] = {"text", "sprite", "graphics 0", "graphics 1"};
+	static char	*mes_scrn[4] = {"text", "sprite", "graphics 0", "graphics 1"};
+	static char	*mes_gmp[4] = {"0-1", "1-2", "2-3", "3-4"};
+	static char	*mes_mkm[4] = {"do not mask", "mask the next screen", 
+							   "mask upper screens", "mask lower screens"};
+
 	int			i;
 	LONG		y;
 	int			lh;
@@ -108,11 +127,23 @@ static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 		(dw & 0x1000) ? 320 : 640,
 		mes_bpp[(dw >> 8) & 3]);
 
+	println(&vs, "ColComp (106h) = %.4xh", r->videova.colcomp);
+	println(&vs, "RGBComp (108h) = %.4xh", r->videova.rgbcomp);
+
 	dw = r->videova.palmode;
 	println(&vs, "PalMode (10ch) = %.4xh", dw);
 	println(&vs, "  %s, assign palette-set 1 to %s (in mixed-mode)",
 		mes_palmode[(dw >> 6) & 3],
 		mes_scrn[(dw >> 4) & 3]);
+
+	dw = r->videova.mskmode;
+	println(&vs, "MskMode (10ah) = %.4xh", dw);
+	println(&vs, "  position %s, %s (inside), %s (outside)" ,
+				mes_gmp[(dw >> 4) & 3], mes_mkm[dw & 3], mes_mkm[(dw >> 2) & 3]);
+
+	println(&vs, "MskArea (130h, 134h, 132h, 136h) = (%4d,%4d)-(%4d,%4d)",
+				r->videova.mskleft, r->videova.msktop,
+				r->videova.mskrit, r->videova.mskbot);
 
 	vs.y++;
 	f = r->videova.framebuffer;
@@ -133,16 +164,21 @@ static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 
 	println(&vs, "Palettes");
 	for (i = 0; i < VIDEOVA_PALETTES/2; i++) {
-		RGB32	rgb;
-		RECT	rect;
-		HBRUSH	hbr;
+//		RGB32	rgb;
+//		RECT	rect;
+//		HBRUSH	hbr;
+		int		coly;
 
-		rect.top  = vs.y * vs.lineheight;
-		rect.bottom = rect.top + 15;
+		coly = vs.y;
+//		rect.top  = vs.y * vs.lineheight;
+//		rect.bottom = rect.top + 15;
 		println(&vs, "  #%02d = %.4xh     #%02d = %.4xh", 
 			i, r->videova.palette[i],
 			i + VIDEOVA_PALETTES/2, r->videova.palette[i + VIDEOVA_PALETTES/2]);
 
+		drawcolorsample(hdc, 14 * 8, coly * vs.lineheight, r->videova.palette[i]);
+		drawcolorsample(hdc, 14 * 8 + 15 * 8, coly * vs.lineheight, r->videova.palette[i + VIDEOVA_PALETTES/2]);
+/*
 		rect.left = 14 * 8;
 		rect.right = rect.left + 15;
 		rgb = scrndrawva_drawcolor32(r->videova.palette[i]);
@@ -156,7 +192,10 @@ static void viewvideova_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 		hbr = CreateSolidBrush(RGB(rgb.p.r, rgb.p.g, rgb.p.b));
 		FillRect(hdc, &rect, hbr);
 		DeleteObject(hbr);
+*/
 	}
+	println(&vs, "  drop= %.4xh", r->videova.dropcol); 
+	drawcolorsample(hdc, 14 * 8, (vs.y - 1) * vs.lineheight, r->videova.dropcol);
 
 	DeleteObject(SelectObject(hdc, hfont));
 }
@@ -191,7 +230,7 @@ LRESULT CALLBACK viewvideova_proc(NP2VIEW_T *view,
 void viewvideova_init(NP2VIEW_T *dst, NP2VIEW_T *src) {
 
 	dst->type = VIEWMODE_VIDEOVA;
-	dst->maxline = 11 * VIDEOVA_FRAMEBUFFERS + 8 + 17;
+	dst->maxline = 11 * VIDEOVA_FRAMEBUFFERS + 14 + 18;
 	dst->mul = 1;
 	dst->pos = 0;
 }

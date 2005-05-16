@@ -1473,6 +1473,60 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 		}
 }
 
+I286 v30_test1_ea16_i4(void) {					// F0 19 11/000/reg  imm4
+												// F0 19 mod/000/mem disp imm4
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA16(4)
+					// オペランドがレジスタの場合
+					// word ptr I286_REG[eax*2]でレジスタにアクセスできる
+
+					mov		ecx, ebx
+					shr		ecx, 16
+					and		cx, 000fh	// imm4
+					mov		dx, 1
+					shl		dx, cl
+					test	word ptr I286_REG[eax*2], dx		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA16(13)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		ax, word ptr I286_MEM[ecx]
+					mov		cl, bl
+					and		cl, 000fh	// imm4
+					mov		dx, 1
+					shl		dx, cl
+					test	ax, dx		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+
+				EXTMEM_EA16
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		cl, bl
+					and		cl, 000fh	// imm4
+					mov		dx, 1
+					shl		dx, cl
+					test	ax, dx		// clビット目をテスト
+					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+
+					GET_NEXTPRE1		// imm4 の分、IPを進める
+					ret
+		}
+}
 
 
 I286 v30_clr1_ea8_i3(void) {					// 0F 1A 11/000/reg  imm3
@@ -1535,12 +1589,12 @@ I286 v30_clr1_ea16_i4(void) {					// 0F 1B 11/000/reg  imm4
 
 				PREPART_EA16(6)
 					// オペランドがレジスタの場合
-					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+					// word ptr I286_REG[eax*2]でレジスタにアクセスできる
 
 					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 000fh	// imm4
-					btr		word ptr I286_REG[eax], dx	// dxビット目をリセット
+					btr		word ptr I286_REG[eax*2], dx	// dxビット目をリセット
 
 					GET_NEXTPRE3	// 命令2～4バイト目の分 IPを進める
 					ret
@@ -1633,12 +1687,12 @@ I286 v30_set1_ea16_i4(void) {					// 0F 1D 11/000/reg  imm4
 
 				PREPART_EA16(5)
 					// オペランドがレジスタの場合
-					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+					// word ptr I286_REG[eax*2]でレジスタにアクセスできる
 
 					mov		edx, ebx
 					shr		edx, 16
 					and		dx, 000fh	// imm4
-					bts		word ptr I286_REG[eax], dx	// dxビット目をセット
+					bts		word ptr I286_REG[eax*2], dx	// dxビット目をセット
 
 					GET_NEXTPRE3	// 命令2～4バイト目の分 IPを進める
 					ret
@@ -1698,7 +1752,7 @@ static const	I286TBL	v30ope0x0f_xtable[64] = {
 			v30_reserved_0x0f,				// 16:
 			v30_reserved_0x0f,				// 17:
 			v30_test1_ea8_i3,				// 18:
-			v30_reserved_0x0f,				// 19:
+			v30_test1_ea16_i4,				// 19:
 			v30_clr1_ea8_i3,				// 1A:
 			v30_clr1_ea16_i4,				// 1B:
 			v30_set1_ea8_i3,				// 1C:

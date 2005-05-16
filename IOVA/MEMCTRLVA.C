@@ -38,6 +38,13 @@ static REG8 IOINPCALL memctrlva_i153(UINT port) {
 		   0x40;
 }
 
+static void IOOUTCALL memctrlva_o180(UINT port, REG8 dat) {
+	dma_sysm_bank = dat & 0x8f;
+}
+
+static REG8 IOINPCALL memctrlva_i180(UINT port) {
+	return dma_sysm_bank;
+}
 
 static void IOOUTCALL memctrlva_o198(UINT port, REG8 dat) {
 	backupmem_wp = 1;
@@ -69,11 +76,13 @@ void memctrlva_reset(void) {
 void memctrlva_bind(void) {
 	iocoreva_attachout(0x152, memctrlva_o152);
 	iocoreva_attachout(0x153, memctrlva_o153);
+	iocoreva_attachout(0x180, memctrlva_o180);
 	iocoreva_attachout(0x198, memctrlva_o198);
 	iocoreva_attachout(0x19a, memctrlva_o19a);
 
 	iocoreva_attachinp(0x152, memctrlva_i152);
 	iocoreva_attachinp(0x153, memctrlva_i153);
+	iocoreva_attachinp(0x180, memctrlva_i180);
 
 	iocoreva_attachinp(0x030, memctrlva_i030);
 	iocoreva_attachinp(0x031, memctrlva_i031);

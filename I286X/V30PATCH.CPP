@@ -12,6 +12,7 @@
 #include	"i286xea.mcr"
 #include	"dmap.h"
 
+#define		EXT		// Shinra
 
 typedef struct {
 	UINT	opnum;
@@ -795,6 +796,29 @@ I286 v30_xlat(void) {							// D6: XLAT
 				ret
 		}
 }
+
+#if defined(EXT)
+
+I286 v30_loop(void) {							// E2: loop
+
+		__asm {
+				dec		I286_CX
+				je		loopend
+				I286CLOCK(18)					// åvéZè„13+4ÇæÇ∆évÇ§Ç™ÅA
+												// ë™íËÇ∑ÇÈÇ∆ñÒ18
+				movsx	eax, bh
+				add		si, ax
+				add		si, 2
+				RESET_XPREFETCH
+				ret
+				align	16
+loopend:		I286CLOCK(4)
+				GET_NEXTPRE2
+				ret
+		}
+}
+
+#endif
 
 I286 v30_repne(void) {							// F2: repne
 
@@ -1849,6 +1873,9 @@ static const V30PATCH v30patch_op[] = {
 			{0xd4, v30_aam},				// D4:	AAM
 			{0xd5, v30_aad},				// D5:	AAD
 			{0xd6, v30_xlat},				// D6:	xlat (8086/V30)
+#if defined(EXT)
+			{0xe2, v30_loop},				// E2:	loop
+#endif
 			{0xf2, v30_repne},				// F2:	repne
 			{0xf3, v30_repe},				// F3:	repe
 			{0xf6, v30_ope0xf6},			// F6: 

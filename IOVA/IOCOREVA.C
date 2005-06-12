@@ -173,7 +173,7 @@ void IOOUTCALL iocoreva_out8(UINT port, REG8 dat) {
 
 	IOFUNC	iof;
 
-//	TRACEOUT(("iocoreva_out8(%.2x, %.2x)", port, dat));
+//	TRACEOUT(("iocoreva_out8(%.4x, %.2x)", port, dat));
 	CPU_REMCLOCK -= iocore.busclock;
 	iof = iocore.base[(port >> 8) & 0xff];
 	iof->ioout[port & 0xff](port, dat);
@@ -187,7 +187,7 @@ REG8 IOINPCALL iocoreva_inp8(UINT port) {
 	CPU_REMCLOCK -= iocore.busclock;
 	iof = iocore.base[(port >> 8) & 0xff];
 	ret = iof->ioinp[port & 0xff](port);
-//	TRACEOUT(("iocoreva_inp8(%.2x) -> %.2x", port, ret));
+//	TRACEOUT(("iocoreva_inp8(%.4x) -> %.2x", port, ret));
 	return(ret);
 }
 

@@ -9,6 +9,7 @@
 #include	"fdsubsys.h"
 #include	"sysportva.h"
 #include	"mouseifva.h"
+#include	"gactrlva.h"
 
 #ifdef __cplusplus
 extern "C" {

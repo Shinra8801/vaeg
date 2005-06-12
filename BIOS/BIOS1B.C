@@ -20,7 +20,9 @@ enum {
 // ---- FDD
 
 static BOOL setfdcmode(REG8 drv, REG8 type, REG8 rpm) {
-
+#if defined(SUPPORT_PC88VA)
+	int	i;
+#endif
 	if (drv >= 4) {
 		return(FAILURE);
 	}
@@ -29,12 +31,21 @@ static BOOL setfdcmode(REG8 drv, REG8 type, REG8 rpm) {
 	}
 	fdc.chgreg = type;
 	fdc.rpm[drv] = rpm;
+#if defined(SUPPORT_PC88VA)
+	if (type & 2) {
+		for (i = 0; i < 4; i++) CTRL_FDMEDIA[i] = DISKTYPE_2HD;
+	}
+	else {
+		for (i = 0; i < 4; i++)	CTRL_FDMEDIA[i] = DISKTYPE_2DD;
+	}
+#else
 	if (type & 2) {
 		CTRL_FDMEDIA = DISKTYPE_2HD;
 	}
 	else {
 		CTRL_FDMEDIA = DISKTYPE_2DD;
 	}
+#endif
 	return(SUCCESS);
 }
 

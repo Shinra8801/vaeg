@@ -236,7 +236,14 @@ void makegrphva_begin(void) {
 	work.screen[1].r320dots = videova.grres & 0x1000;
 	work.screen[0].r200lines = videova.grmode & 0x0002;
 	work.screen[1].r200lines = videova.grmode & 0x0002;
-	work.screen[0].addrmask = 0x0001ffffL;
+	if (videova.grmode & 0x0800)  {
+		// 2画面モード
+		work.screen[0].addrmask = 0x0001ffffL;
+	}
+	else {
+		// 1画面モード
+		work.screen[0].addrmask = 0x0003ffffL;
+	}
 	work.screen[0].addrofs  = 0x00000000L;
 	work.screen[1].addrmask = 0x0001ffffL;
 	work.screen[1].addrofs  = 0x00020000L;

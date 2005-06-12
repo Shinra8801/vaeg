@@ -705,7 +705,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 /*
 	int	x = 0;
 
-    if (addr == 0xac1fe && sysm_bank == 1) {
+    if (addr == 0x30000  && sysm_bank == 1) {
 		x=op+addr+data;
 	}
 */

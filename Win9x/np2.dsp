@@ -1496,6 +1496,10 @@ SOURCE=..\IOVA\FDSUBSYS.C
 # End Source File
 # Begin Source File
 
+SOURCE=..\IOVA\GACTRLVA.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\IOVA\IOCOREVA.C
 # End Source File
 # Begin Source File
@@ -1566,6 +1570,10 @@ SOURCE=..\TIMING.C
 # Begin Source File
 
 SOURCE=..\IOVA\FDSUBSYS.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\GACCESS.H
 # End Source File
 # Begin Source File
 

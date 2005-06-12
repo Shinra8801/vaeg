@@ -343,15 +343,14 @@ static void config_fdc_by_disk_mode(int drv, int track) {
 	fdc.rpm[drv] = 0;	// 1.44ではない。 (ToDo: 設定方法は正しい？)
 	switch ((mode >> 4) & 0x03) {
 	case 0:	// 1D/2D
-		// ToDo: いまはとりあえず2DD (DISKTYPE_2Dにすると、ソーサリアンが起動できない。)
-		//       (VAで起動時にディスクモード1xhは使っていない。2DDの起動はできないのか？)
-		CTRL_FDMEDIA = DISKTYPE_2DD;
+		// ToDo: 48TPI/96TPIの切り替えをどう扱うか??
+		CTRL_FDMEDIA[drv] = DISKTYPE_2DD;
 		break;
 	case 1: // 1DD/2DD
-		CTRL_FDMEDIA = DISKTYPE_2DD;
+		CTRL_FDMEDIA[drv] = DISKTYPE_2DD;
 		break;
 	case 2: // 1HD/2HD
-		CTRL_FDMEDIA = DISKTYPE_2HD;
+		CTRL_FDMEDIA[drv] = DISKTYPE_2HD;
 		break;
 	}
 

@@ -935,6 +935,17 @@ static REG8 IOINPCALL fdcva_i1b6(UINT port) {
 
 static void IOOUTCALL fdc_obe(UINT port, REG8 dat) {
 
+#if defined(SUPPORT_PC88VA)
+	int	i;
+
+	fdc.chgreg = dat;
+	if (fdc.chgreg & 2) {
+		for (i = 0; i < 4; i++) CTRL_FDMEDIA[i] = DISKTYPE_2HD;
+	}
+	else {
+		for (i = 0; i < 4; i++) CTRL_FDMEDIA[i] = DISKTYPE_2DD;
+	}
+#else
 	fdc.chgreg = dat;
 	if (fdc.chgreg & 2) {
 		CTRL_FDMEDIA = DISKTYPE_2HD;
@@ -942,6 +953,7 @@ static void IOOUTCALL fdc_obe(UINT port, REG8 dat) {
 	else {
 		CTRL_FDMEDIA = DISKTYPE_2DD;
 	}
+#endif
 	(void)port;
 }
 
@@ -958,15 +970,18 @@ static void IOOUTCALL fdcva_o1b2(UINT port, REG8 dat) {
 	ToDo:
 	ドライブのモードにあわせて CTRL_FDMEDIA を切り替える必要があるが、
 	98は2ドライブ共通なのに対し、VAは独立に指定できるため、
-	困った。
+	困った。→対応済み
 	また、2Dの扱いは・・・？
-	とりあえず、ドライブ0のみ参照
 */
-	if (dat & 1) {
-		CTRL_FDMEDIA = DISKTYPE_2HD;
-	}
-	else {
-		CTRL_FDMEDIA = DISKTYPE_2DD;
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		if (dat & (1 << i)) {
+			CTRL_FDMEDIA[i] = DISKTYPE_2HD;
+		}
+		else {
+			CTRL_FDMEDIA[i] = DISKTYPE_2DD;
+		}
 	}
 	(void)port;
 }
@@ -1010,7 +1025,11 @@ void fdc_reset(void) {
 	fdcstatusreset();
 	dmac_attach(DMADEV_2HD, FDC_DMACH2HD);
 	dmac_attach(DMADEV_2DD, FDC_DMACH2DD);
+#if defined(SUPPORT_PC88VA)
+	CTRL_FDMEDIA[0] = CTRL_FDMEDIA[1] = CTRL_FDMEDIA[2] = CTRL_FDMEDIA[3] = DISKTYPE_2HD;
+#else
 	CTRL_FDMEDIA = DISKTYPE_2HD;
+#endif
 	fdc.chgreg = 3;
 }
 

@@ -21,6 +21,7 @@ static void IOOUTCALL memctrlva_o152(UINT port, REG8 dat) {
 
 static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
 	sysm_bank = dat & 0x0f;
+	gactrlva.gmsp = dat & 0x10;
 	(void)port;
 }
 
@@ -35,6 +36,7 @@ static REG8 IOINPCALL memctrlva_i152(UINT port) {
 static REG8 IOINPCALL memctrlva_i153(UINT port) {
 	(void)port;
 	return (sysm_bank & 0x0f) |
+		   gactrlva.gmsp |
 		   0x40;
 }
 

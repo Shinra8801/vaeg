@@ -100,7 +100,11 @@ static BOOL d88trk_read(D88TRK trk, FDDFILE fdd, UINT track, UINT type) {
 			break;
 
 		case DISKTYPE_2HD:
+#if defined(SUPPORT_PC88VA)
+			if (type != DISKTYPE_2HD) {
+#else
 			if (CTRL_FDMEDIA != DISKTYPE_2HD) {
+#endif
 				goto dtrd_err1;
 			}
 			if ((fdd->inf.d88.fdtype_minor == 0) && (rpm)) {
@@ -200,11 +204,19 @@ static BOOL trkseek(FDDFILE fdd, UINT track) {
 
 	trk = &d88trk;
 	if ((trk->fdd == fdd) && (trk->track == track) &&
+#if defined(SUPPORT_PC88VA)
+		(trk->type == CTRL_FDMEDIA[fdc.us])) {
+#else
 		(trk->type == CTRL_FDMEDIA)) {
+#endif
 		r = SUCCESS;
 	}
 	else {
+#if defined(SUPPORT_PC88VA)
+		r = d88trk_read(trk, fdd, track, CTRL_FDMEDIA[fdc.us]);
+#else
 		r = d88trk_read(trk, fdd, track, CTRL_FDMEDIA);
+#endif
 	}
 	return(r);
 }
@@ -319,13 +331,21 @@ BOOL fdd_diskaccess_d88(void) {										// ver0.31
 	switch(fdd->inf.d88.fdtype_major) {
 		case DISKTYPE_2D:
 		case DISKTYPE_2DD:
+#if defined(SUPPORT_PC88VA)
+			if ((rpm) || (CTRL_FDMEDIA[fdc.us] != DISKTYPE_2DD)) {
+#else
 			if ((rpm) || (CTRL_FDMEDIA != DISKTYPE_2DD)) {
+#endif
 				return(FAILURE);
 			}
 			break;
 
 		case DISKTYPE_2HD:
+#if defined(SUPPORT_PC88VA)
+			if (CTRL_FDMEDIA[fdc.us] != DISKTYPE_2HD) {
+#else
 			if (CTRL_FDMEDIA != DISKTYPE_2HD) {
+#endif
 				return(FAILURE);
 			}
 			if ((fdd->inf.d88.fdtype_minor == 0) && (rpm)) {

@@ -66,7 +66,11 @@ enum {
 typedef struct {
 	UINT8	equip;
 	UINT8	support144;
+#if defined(SUPPORT_PC88VA)
+	UINT8	ctrlfd[4];
+#else
 	UINT8	ctrlfd;
+#endif
 	UINT8	padding;
 
 	UINT8	us, hd;

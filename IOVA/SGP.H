@@ -25,7 +25,8 @@ typedef struct {
 	UINT32	workmem;
 	UINT8	ctrl;		// bit2:割り込み許可 bit1=中断要求
 	UINT8	busy;		// bit0:ビジー
-	UINT32	clock;
+	UINT32	lastclock;
+	SINT32	remainclock;
 
 	void (*func)();
 

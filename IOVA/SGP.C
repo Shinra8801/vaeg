@@ -49,8 +49,12 @@ static REG16 MEMCALL gvramw_rd(UINT32 address) {
 
 static void MEMCALL gvramw_wt(UINT32 address, REG16 value) {
 	address -= 0x200000L;
+/*
 	_gvram_wt(address, (REG8)(value & 0xff));
 	_gvram_wt(address + 1, (REG8)(value >> 8));
+*/
+	//_gvramw_wt(address, value);
+	*(UINT16 *)(grphmem + address) = value;
 }
 
 static REG16 MEMCALL knj1w_rd(UINT32 address) {
@@ -224,10 +228,18 @@ static BYTE sgp_memoryread(UINT32 address) {
 }
 */
 
+/*
+	入力:
+		address		アドレス(偶数)
+*/
 static REG16 sgp_memoryread_w(UINT32 address) {
 	return rd16[(address >> 16) & 0x3f](address);
 }
 
+/*
+	入力:
+		address		アドレス(偶数)
+*/
 static void sgp_memorywrite_w(UINT32 address, REG16 value) {
 	wt16[(address >> 16) & 0x3f](address, value);
 }
@@ -355,6 +367,7 @@ static void cmd_set_work(void) {
 	// 作業領域(58バイト)の設定
 	sgp.workmem = sgp_memoryread_w(sgp.pc) & 0xfffe | ((UINT32)sgp_memoryread_w(sgp.pc + 2) << 16);
 	sgp.pc += 4;
+	sgp.remainclock -= 8;
 
 }
 
@@ -362,12 +375,14 @@ static void cmd_set_source(void) {
 	fetch_block(sgp.pc, &sgp.src);
 	TRACEOUT(("SGP: cmd: set source     : dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.src.dot, sgp.src.scrnmode, sgp.src.width, sgp.src.height, sgp.src.fbw, sgp.src.address));
 	sgp.pc += 12;
+	sgp.remainclock -= 6*4;
 }
 
 static void cmd_set_destination(void) {
 	fetch_block(sgp.pc, &sgp.dest);
 	TRACEOUT(("SGP: cmd: set destination: dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.dest.dot, sgp.dest.scrnmode, sgp.dest.width, sgp.dest.height, sgp.dest.fbw, sgp.dest.address));
 	sgp.pc += 12;
+	sgp.remainclock -= 6*4;
 }
 
 static void cmd_set_color(void) {
@@ -381,8 +396,11 @@ static void exec_bitblt(void) {
 	int BPP = 4;
 	UINT16 PIXMASK = ~(0xffff << BPP);
 
+	sgp.remainclock -= 24;
+
 	if (sgp.src.dotcount == 0) {
 		read_word(&sgp.src);
+		sgp.remainclock -= 4;
 	}
 	dat = sgp.src.buf >> (16 - BPP);
 
@@ -442,6 +460,7 @@ static void exec_bitblt(void) {
 		sgp.newvalmask <<= sgp.dest.dotcount * BPP;
 //		write_word(&sgp.dest);
 		write_dest();
+		sgp.remainclock -= 4;
 	}
 
 	if (sgp.dest.xcount == 0) {
@@ -457,6 +476,30 @@ static void exec_bitblt(void) {
 			else {
 				sgp.src.lineaddress += (SINT32)sgp.src.fbw;
 				sgp.dest.lineaddress += (SINT32)sgp.dest.fbw;
+
+				{	// ToDo とりあえずのつじつまあわせ(神羅万象)
+					UINT16 width_w;
+
+					// ブロックが横切るワード数
+					width_w = (sgp.src.width + sgp.src.dot + dotcountmax[sgp.src.scrnmode] - 1) / dotcountmax[sgp.src.scrnmode];
+					if (width_w * 2 > sgp.src.fbw) {
+						sgp.src.lineaddress = sgp.src.nextaddress;
+					}
+					/*
+					神羅万象では、ソースフレームバッファの幅として4バイトの倍数に合わない
+					幅(4bbpで12dot,20dotなど)を使用している。この場合、fbwに、実際の幅を超えない
+					4バイトの倍数(12dot->4, 20dot->8)を指定している。		
+
+					lineが変わるときは、
+					nextaddress += (fbw>>2 - width_w>>1) << 2 
+					とするのが正しい？
+
+					nextaddressを増やすタイミングはメモリからの読み取り直前に変更して、
+					lineが変わるときは、
+					nextaddres += fbw + 2(byte) - width 
+					とするのが正しい？
+					*/
+				}
 			}
 			sgp.src.nextaddress = sgp.src.lineaddress;
 			sgp.dest.nextaddress = sgp.dest.lineaddress;
@@ -470,6 +513,7 @@ static void cmd_bitblt(void) {
 
 	sgp.bltmode = sgp_memoryread_w(sgp.pc);
 	sgp.pc += 2;
+	sgp.remainclock -= 4;
 
 	TRACEOUT(("SGP: cmd: bitblt: %04x", sgp.bltmode));
 
@@ -536,6 +580,7 @@ static void fetch_command(void) {
 	
 	cmd = sgp_memoryread_w(sgp.pc);
 	sgp.pc += 2;
+	sgp.remainclock -= 4;
 	if (cmd >= 0x0d) {
 		TRACEOUT(("SGP: cmd: unknown %04x", cmd));
 	}
@@ -545,9 +590,21 @@ static void fetch_command(void) {
 }
 
 void sgp_step(void) {
-	if (!(sgp.busy & SGP_BUSY)) return;
+	UINT32 now;
+	UINT32 past;
 
-	sgp.func();
+	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+	past = now - sgp.lastclock;
+	sgp.remainclock += past;
+
+	while (sgp.remainclock > 0) {
+		if (!(sgp.busy & SGP_BUSY)) {
+			sgp.remainclock = 0;
+			break;
+		}
+		sgp.func();
+	}
+	sgp.lastclock = now;
 }
 
 // ---- I/O
@@ -601,6 +658,7 @@ static REG8 IOINPCALL sgp_i506(UINT port) {
 
 void sgp_reset(void) {
 	ZeroMemory(&sgp, sizeof(sgp));
+	sgp.lastclock = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
 }
 
 void sgp_bind(void) {

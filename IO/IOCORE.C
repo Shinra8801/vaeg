@@ -478,6 +478,7 @@ static const IOCBFN resetfn[] = {
 			fdsubsys_reset,
 			systemportva_reset,
 			mouseifva_reset,
+			gactrlva_reset,
 #endif
 		};
 
@@ -510,6 +511,7 @@ static const IOCBFN bindfn[] = {
 			fdsubsys_bind,
 			systemportva_bind,
 			mouseifva_bind,
+			gactrlva_bind,
 #endif
 		};
 

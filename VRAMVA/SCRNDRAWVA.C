@@ -129,6 +129,11 @@ void scrndrawva_redraw(void) {
 	scrndrawva_draw(1);
 }
 
+enum {
+	INSIDE	= 0,
+	OUTSIDE	= 1,
+};
+
 typedef struct {
 	int		type;			// VIDEOVA_xxxxSCREEN (未使用 -1)
 
@@ -136,10 +141,13 @@ typedef struct {
 	BYTE	palflip;		// パレット番号に XORするデータ
 							// パレットセット0使用時は0, 1使用時は0x10
 	DWORD	xpar;			// 透明色フラグ(bit0:パレット0～bit31:パレット31)
+
+	BOOL	mask[2];		// マスク領域の内側([0]),外側([1])をマスク
 } _COMPSCRN, *COMPSCRN;
 
 typedef struct {
 	WORD		*bp;			// vabitmap
+	int			y;
 	_COMPSCRN	scrn[VIDEOVA_PALETTE_SCREENS + VIDEOVA_RGB_SCREENS];
 } _COMPOSEWORK;
 
@@ -152,6 +160,7 @@ static	BYTE	tssprraster[SURFACE_WIDTH];
 
 void scrndrawva_compose_begin(void) {
 	work.bp = vabitmap;
+	work.y = 0;
 }
 
 
@@ -161,6 +170,8 @@ void scrndrawva_compose_raster(void) {
 	int palmode;
 	int palset1scrn;
 	int type;
+	int side;
+	int maskpos;
 	WORD *bp;
 	COMPSCRN scrn;
 	BYTE palcode;
@@ -244,7 +255,27 @@ void scrndrawva_compose_raster(void) {
 			break;
 		}
 		// ToDo: palette mode 3
+
+		// screen mask
+		maskpos = (videova.mskmode >> 4) & 3;
+		if (i == maskpos + 1) {
+			// 直後の低優先画面
+			scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
+			scrn->mask[INSIDE] = videova.mskmode & 0x01;
+		}
+		else if (i > maskpos) {
+			// 低優先画面
+			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
+			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
+		}
+		else {
+			// 高優先画面
+			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
+			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+		}
 	}
+
+
 /*
 	for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) work.scrn[i].palflip = 0;
 	switch ((videova.palmode >> 6) & 3) {
@@ -260,9 +291,20 @@ void scrndrawva_compose_raster(void) {
 */
 	bp = work.bp;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
+		if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1) {
+			side = OUTSIDE;
+		}
+		else {
+			if (x < videova.mskleft || x > videova.mskrit) {
+				side = OUTSIDE;
+			}
+			else {
+				side = INSIDE;
+			}
+		}
 		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) {
 			scrn = &work.scrn[i];
-			if (scrn->raster != NULL) {
+			if (!scrn->mask[side] && scrn->raster != NULL) {
 				palcode = scrn->raster[x] ^ scrn->palflip;
 				if ((scrn->xpar & (1 << palcode)) == 0) {
 					// 不透明色
@@ -294,6 +336,7 @@ void scrndrawva_compose_raster(void) {
 	}
 
 	work.bp = bp;
+	work.y++;
 }
 
 

@@ -115,5 +115,6 @@ typedef signed __int64		SINT64;
 #define SUPPORT_BMS
 #define SUPPORT_PC88VA
 #define SUPPORT_V30ORIGINAL
+#define SUPPORT_V30EXT
 
 #define USEIPTRACE

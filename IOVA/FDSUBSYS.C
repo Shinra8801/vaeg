@@ -56,6 +56,7 @@ enum {
 	CMD_SEND_DATA			= 0x03,
 	CMD_SEND_RESULT_STATUS	= 0x06,
 	CMD_RECEIVE_MEMORY		= 0x0c,
+	CMD_EXECUTE_COMMAND		= 0x0d,
 	CMD_SET_SURFACE_MODE	= 0x17,
 	CMD_SET_DISK_MODE		= 0x1f,
 	CMD_SEND_DISK_MODE		= 0x20,
@@ -310,6 +311,10 @@ static void subsys_cmd_received(void) {
 		recvbuf = parambuf;
 		parambuf[5] = 0;
 		break;
+	case CMD_EXECUTE_COMMAND:
+		recvdatacnt = 2;
+		recvbuf = parambuf;
+		break;
 	case CMD_SET_DISK_MODE:
 		recvdatacnt = 2;
 		recvbuf = parambuf;
@@ -509,6 +514,15 @@ static void subsys_exec_receive_memory(void) {
 }
 
 /*
+0x0d エグゼキュート・コマンド
+*/
+static void subsys_exec_execute_command(void) {
+	WORD addr = (parambuf[0] << 8) | parambuf[1];
+
+	TRACEOUT(("fdsubsys: execute command (not implemented): address=0x%02x",addr));
+}
+
+/*
 0x17 サーフェースモードの設定
 */
 static void subsys_exec_set_surface_mode(void) {
@@ -625,6 +639,9 @@ static void subsys_exec_cmd(void) {
 		break;
 	case CMD_RECEIVE_MEMORY:
 		subsys_exec_receive_memory();
+		break;
+	case CMD_EXECUTE_COMMAND:
+		subsys_exec_execute_command();
 		break;
 	case CMD_SET_SURFACE_MODE:
 		subsys_exec_set_surface_mode();

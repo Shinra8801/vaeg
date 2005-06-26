@@ -166,7 +166,12 @@ icbld_err:
 //IOCORE.CÇégóp
 //void iocore_cb(const IOCBFN *cbfn, UINT count)
 //void iocore_reset(void)
-//void iocore_bind(void)
+
+void iocoreva_bind(void) {
+	iocore.busclock = pccore.multiple;
+	//iocore_cb(bindfn, sizeof(bindfn)/sizeof(IOCBFN));
+	//Å™iocore_bindÇ…îCÇ∑
+}
 
 
 void IOOUTCALL iocoreva_out8(UINT port, REG8 dat) {

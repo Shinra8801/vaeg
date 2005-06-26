@@ -3,6 +3,7 @@
  */
 
 #include	"compiler.h"
+#include	"cpucore.h"
 #include	"pccore.h"
 #include	"iocore.h"
 #include	"iocoreva.h"
@@ -14,14 +15,19 @@
 
 #if defined(SUPPORT_PC88VA)
 
+static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
 
 static void IOOUTCALL sb2_o044(UINT port, REG8 dat) {
+
+	CPU_REMCLOCK -= wait;
 
 	opn.opnreg = dat;
 	(void)port;
 }
 
 static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
+
+	CPU_REMCLOCK -= wait;
 
 	S98_put(NORMAL2608, opn.opnreg, dat);
 	if (opn.opnreg < 0x10) {
@@ -60,11 +66,15 @@ static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
 
 static void IOOUTCALL sb2_o046(UINT port, REG8 dat) {
 
+	CPU_REMCLOCK -= wait;
+
 	opn.extreg = dat;
 	(void)port;
 }
 
 static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
+
+	CPU_REMCLOCK -= wait;
 
 	S98_put(EXTEND2608, opn.extreg, dat);
 	opn.reg[opn.extreg + 0x100] = dat;

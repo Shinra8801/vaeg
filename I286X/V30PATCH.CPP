@@ -12,7 +12,7 @@
 #include	"i286xea.mcr"
 #include	"dmap.h"
 
-#define		EXT		// Shinra
+//#define		EXT		// Shinra
 
 typedef struct {
 	UINT	opnum;

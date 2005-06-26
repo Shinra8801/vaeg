@@ -352,6 +352,7 @@ static void cmd_unknown(void) {
 static void cmd_nop(void) {
 	// Ç»Ç…Ç‡ÇµÇ»Ç¢
 	TRACEOUT(("SGP: cmd: nop"));
+	sgp.remainclock -= 5 * 2;
 }
 
 static void cmd_end(void) {
@@ -367,7 +368,7 @@ static void cmd_set_work(void) {
 	// çÏã∆óÃàÊ(58ÉoÉCÉg)ÇÃê›íË
 	sgp.workmem = sgp_memoryread_w(sgp.pc) & 0xfffe | ((UINT32)sgp_memoryread_w(sgp.pc + 2) << 16);
 	sgp.pc += 4;
-	sgp.remainclock -= 8;
+	sgp.remainclock -= 10;		// ToDo ç™ãíÇ»Çµ
 
 }
 
@@ -375,14 +376,14 @@ static void cmd_set_source(void) {
 	fetch_block(sgp.pc, &sgp.src);
 	TRACEOUT(("SGP: cmd: set source     : dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.src.dot, sgp.src.scrnmode, sgp.src.width, sgp.src.height, sgp.src.fbw, sgp.src.address));
 	sgp.pc += 12;
-	sgp.remainclock -= 6*4;
+	sgp.remainclock -= 106 * 2;
 }
 
 static void cmd_set_destination(void) {
 	fetch_block(sgp.pc, &sgp.dest);
 	TRACEOUT(("SGP: cmd: set destination: dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.dest.dot, sgp.dest.scrnmode, sgp.dest.width, sgp.dest.height, sgp.dest.fbw, sgp.dest.address));
 	sgp.pc += 12;
-	sgp.remainclock -= 6*4;
+	sgp.remainclock -= 106 * 2;
 }
 
 static void cmd_set_color(void) {
@@ -396,11 +397,8 @@ static void exec_bitblt(void) {
 	int BPP = 4;
 	UINT16 PIXMASK = ~(0xffff << BPP);
 
-	sgp.remainclock -= 24;
-
 	if (sgp.src.dotcount == 0) {
 		read_word(&sgp.src);
-		sgp.remainclock -= 4;
 	}
 	dat = sgp.src.buf >> (16 - BPP);
 
@@ -460,7 +458,12 @@ static void exec_bitblt(void) {
 		sgp.newvalmask <<= sgp.dest.dotcount * BPP;
 //		write_word(&sgp.dest);
 		write_dest();
-		sgp.remainclock -= 4;
+		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
+			sgp.remainclock -= 10 * 2;
+		}
+		else {
+			sgp.remainclock -= 8 * 2;
+		}
 	}
 
 	if (sgp.dest.xcount == 0) {
@@ -469,6 +472,8 @@ static void exec_bitblt(void) {
 			sgp.func = fetch_command;
 		}
 		else {
+			sgp.remainclock -= 14 * 2;
+
 			if (sgp.bltmode & SGP_BLTMODE_VD) {
 				sgp.src.lineaddress -= (SINT32)sgp.src.fbw;
 				sgp.dest.lineaddress -= (SINT32)sgp.dest.fbw;
@@ -513,7 +518,7 @@ static void cmd_bitblt(void) {
 
 	sgp.bltmode = sgp_memoryread_w(sgp.pc);
 	sgp.pc += 2;
-	sgp.remainclock -= 4;
+	sgp.remainclock -= 338 * 2;
 
 	TRACEOUT(("SGP: cmd: bitblt: %04x", sgp.bltmode));
 
@@ -580,7 +585,6 @@ static void fetch_command(void) {
 	
 	cmd = sgp_memoryread_w(sgp.pc);
 	sgp.pc += 2;
-	sgp.remainclock -= 4;
 	if (cmd >= 0x0d) {
 		TRACEOUT(("SGP: cmd: unknown %04x", cmd));
 	}

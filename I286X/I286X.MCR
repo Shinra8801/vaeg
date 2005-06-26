@@ -1,5 +1,19 @@
 #define	I286CLOCK(clock)												\
 				__asm {	sub		I286_REMCLOCK, clock				}
+#if defined(SUPPORT_V30EXT)
+#define	I286CLOCK_X(idx, clock286, clockv30)							\
+				__asm { test	i286core.s.cpu_type, CPUTYPE_V30	}	\
+				__asm { jnz		short v30clock_##idx				}	\
+				__asm {	sub		I286_REMCLOCK, clock286				}	\
+				__asm { jmp		short endclock_##idx				}	\
+			v30clock_##idx:												\
+				__asm { sub		I286_REMCLOCK, clockv30				}	\
+			endclock_##idx:												\
+				__asm { nop											}
+#else
+#define	I286CLOCK_X(idx, clock286, clockv30)							\
+				__asm {	sub		I286_REMCLOCK, clock286				}
+#endif
 #define	I286CLOCKDEC													\
 				__asm {	inc		I286_REMCLOCK						}
 

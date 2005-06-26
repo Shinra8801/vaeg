@@ -24,7 +24,7 @@ BOOL iocoreva_build(void);
 
 //void iocoreva_cb(const IOCBFN *cbfn, UINT count);
 //void iocoreva_reset(void);
-//void iocoreva_bind(void);
+void iocoreva_bind(void);
 
 void IOOUTCALL iocoreva_out8(UINT port, REG8 dat);
 REG8 IOINPCALL iocoreva_inp8(UINT port);

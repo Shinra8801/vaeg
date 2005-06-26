@@ -531,6 +531,13 @@ void iocore_reset(void) {
 
 void iocore_bind(void) {
 
+#if defined(SUPPORT_PC88VA)
+	if (iomode_va) {
+		iocoreva_bind();
+		//return;
+	}
+#endif
+
 	iocore.busclock = pccore.multiple;
 	iocore_cb(bindfn, sizeof(bindfn)/sizeof(IOCBFN));
 }

@@ -11,10 +11,21 @@
 #include	"cpucore.h"
 #include	"pccore.h"
 #include	"iocore.h"
+#include	"iocoreva.h"
 
 #include	"memoryva.h"
 
 #if defined(SUPPORT_PC88VA)
+
+#define SETLOWBYTE(x, y) (x) = ( (x) & 0xff00 | (y) )
+#define SETHIGHBYTE(x, y) (x) = ( (x) & 0x00ff | ((WORD)(y) << 8) )
+
+typedef	struct {
+	WORD	cgaddr;				// 14Ch ハードウェア文字コード
+	BYTE	cgrow;				// 14Fh ラスタ番号/フォント左右
+} _CGROMVA;
+
+static	_CGROMVA	cgromva;
 
 /*
 フォントを取得する
@@ -124,6 +135,48 @@ BYTE *cgromva_font(UINT16 hccode) {
 */
 int cgromva_width(UINT16 hccode) {
 	return (hccode & 0xff00) == 0 ? 1 : 2;
+}
+
+
+// ---- I/O
+
+static void IOOUTCALL cgromva_o14c(UINT port, REG8 dat) {
+	SETLOWBYTE(cgromva.cgaddr, dat & 0x7f);
+}
+
+static void IOOUTCALL cgromva_o14d(UINT port, REG8 dat) {
+	SETHIGHBYTE(cgromva.cgaddr, dat & 0x7f);
+}
+
+static REG8 IOINPCALL cgromva_i14e(UINT port) {
+	BYTE *font;
+	UINT16 hccode;
+
+	hccode = cgromva.cgaddr | ((cgromva.cgrow & 0x20) ? 0x0000 : 0x8000);
+	font = cgromva_font(hccode);
+
+	font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
+
+	return *font;
+}
+
+static void IOOUTCALL cgromva_o14f(UINT port, REG8 dat) {
+	cgromva.cgrow = dat;
+}
+
+
+// ---- I/F
+
+void cgromva_reset(void) {
+	ZeroMemory(&cgromva, sizeof(cgromva));
+}
+
+void cgromva_bind(void) {
+	iocoreva_attachout(0x14c, cgromva_o14c);
+	iocoreva_attachout(0x14d, cgromva_o14d);
+	iocoreva_attachout(0x14f, cgromva_o14f);
+
+	iocoreva_attachinp(0x14e, cgromva_i14e);
 }
 
 #endif

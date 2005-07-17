@@ -24,17 +24,29 @@ typedef struct {
 	UINT8	blinkcnt;			// ブリンク用カウンタ。画面表示1サイクルごとにデクリメント
 	UINT8	blinkcnt2;			// ブリンク用カウンタ。blinkcnt==0になるたびにインクリメント
 
-	BYTE	cmd;				// コマンド
-	BYTE	recvdatacnt;		// パラメータ残り受信バイト数
-	BYTE	senddatacnt;		// パラメータ残り送信バイト数
-	BYTE	*datap;				// 次に送信する/受信するデータ
-	BYTE	parambuf[16];		// 送受信バッファ
+	UINT8	cmd;				// コマンド
+	UINT8	status;				// ステータス(ポート142h)
+	void	(*paramfunc)(REG8 dat);
+								// 受信パラメータ処理ルーチン
 
 	UINT32	dispclock;			// 表示期間の時間(CPUクロック数)
 	UINT32	vsyncclock;			// 垂直同期信号(VSYNC)の出力時間(CPUクロック数)
 	UINT32	rasterclock;		// 1ラスタ表示の時間(CPUクロック数)
 
 	UINT8	vsync;				// bit5: 1.VSYNC期間
+
+	
+								// paramfunc_generic 用
+
+	UINT8	recvdatacnt;		// パラメータ残り受信バイト数
+	//BYTE	senddatacnt;		// パラメータ残り送信バイト数
+	BYTE	*datap;				// 次に送信する/受信するデータ
+	BYTE	parambuf[16];		// 送受信バッファ
+	void	(*endparamfunc)(void);
+								// パラメータ受信終了時ルーチン
+
+								// paramfunc_sprdef 用
+	BYTE	sprdef_offset;
 
 } _TSP, *TSP;
 

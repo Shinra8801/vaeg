@@ -10,6 +10,7 @@
 #include	"sysportva.h"
 #include	"mouseifva.h"
 #include	"gactrlva.h"
+#include	"cgromva.h"
 
 #ifdef __cplusplus
 extern "C" {

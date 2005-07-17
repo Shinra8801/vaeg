@@ -16,18 +16,17 @@
 #if defined(SUPPORT_PC88VA)
 
 static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
+//static unsigned int wait = 0;			// = 10μs  
 
 static void IOOUTCALL sb2_o044(UINT port, REG8 dat) {
 
-	CPU_REMCLOCK -= wait;
+//	CPU_REMCLOCK -= wait;
 
 	opn.opnreg = dat;
 	(void)port;
 }
 
 static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
-
-	CPU_REMCLOCK -= wait;
 
 	S98_put(NORMAL2608, opn.opnreg, dat);
 	if (opn.opnreg < 0x10) {
@@ -62,19 +61,19 @@ static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
 		opn.reg[opn.opnreg] = dat;
 	}
 	(void)port;
+
+	CPU_REMCLOCK -= wait;
 }
 
 static void IOOUTCALL sb2_o046(UINT port, REG8 dat) {
 
-	CPU_REMCLOCK -= wait;
+//	CPU_REMCLOCK -= wait;
 
 	opn.extreg = dat;
 	(void)port;
 }
 
 static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
-
-	CPU_REMCLOCK -= wait;
 
 	S98_put(EXTEND2608, opn.extreg, dat);
 	opn.reg[opn.extreg + 0x100] = dat;
@@ -85,6 +84,8 @@ static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
 		adpcm_setreg(&adpcm, opn.extreg, dat);
 	}
 	(void)port;
+
+	CPU_REMCLOCK -= wait;
 }
 
 static REG8 IOINPCALL sb2_i044(UINT port) {
@@ -96,7 +97,10 @@ static REG8 IOINPCALL sb2_i044(UINT port) {
 static REG8 IOINPCALL sb2_i045(UINT port) {
 
 	if (opn.opnreg == 0x0e) {
-		return(fmboard_getjoy(&psg1));
+		return(fmboard_getjoy(&psg1) | 0xf0);
+	}
+	else if (opn.opnreg == 0x0f) {						// 88VA固有
+		return((fmboard_getjoy(&psg1) >> 4) | 0xfc);
 	}
 	else if (opn.opnreg < 0x10) {
 		return(psggen_getreg(&psg1, opn.opnreg));
@@ -130,6 +134,7 @@ void boardsb2_bind(void) {
 
 	fmboard_fmrestore(0, 0);
 	fmboard_fmrestore(3, 1);
+	psggen_setreg(&psg1, 0x07, 0);			// 88VA固有
 	psggen_restore(&psg1);
 	fmboard_rhyrestore(&rhythm, 0);
 	sound_streamregist(&opngen, (SOUNDCB)opngen_getpcmvr);

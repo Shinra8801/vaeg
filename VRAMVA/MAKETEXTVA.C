@@ -11,11 +11,18 @@
 #include	"cgromva.h"
 #include	"memoryva.h"
 #include	"tsp.h"
+#include	"videova.h"
 #include	"maketextva.h"
+
+#if defined(SUPPORT_PC88VA)
+
+//#define	USETABLE					// 返って遅くなってしまうようだ。
+//#define	USETABLE2					// 効果がなさそうだ。
 
 enum {
 	TEXTVA_LINEHEIGHTMAX	= 20,
 	TEXTVA_CHARWIDTH		= 8,
+	TEXTVA_SURFACE_WIDTH	= 1024,		// テキストの座標系の幅(ドット)は、1024である。
 
 	TEXTVA_FRAMES			= 4,		// 分割画面の最大数
 
@@ -37,15 +44,6 @@ typedef struct {
 
 typedef void (*SYNATTRFN)(BYTE, CHARATTR);	// アトリビュート合成ルーチン
 
-/*
-typedef struct {
-	UINT16	texttable;			// テキスト画面制御テーブル(TVRAM先頭からのオフセット)
-	UINT16	attroffset;			// アトリビュート領域(TVRAM先頭からのオフセット)
-	UINT8	lineheight;
-	UINT8	hlinepos;
-} _TSP, *TSP;
-*/
-
 typedef struct {		// テキスト分割画面制御テーブル(のコピー)
 	UINT16	vw;			// フレームバッファ横幅(バイト)
 	UINT8	mode;		// 表示モード
@@ -56,7 +54,7 @@ typedef struct {		// テキスト分割画面制御テーブル(のコピー)
 	UINT16	rh;			// 分割画面の高さ(ラスタ) (16以上の偶数)
 	UINT16	rw;			// 分割画面の横幅(ドット)(32の倍数、設定値/8+2文字が表示される)
 	UINT16	rwchar;		// 分割画面の横幅(文字) = rw / 8 + 2 
-	SINT16	rxp;		// 分割画面水平開始位置(ドット)
+	UINT16	rxp;		// 分割画面水平開始位置(ドット)
 } _TEXTVAFRAME, *TEXTVAFRAME;
 
 typedef struct {
@@ -81,26 +79,58 @@ typedef struct {
 
 static	_TEXTVAWORK	work;
 
-//static	_TSP	tsp;
 
-static	BYTE linebitmap[SURFACE_WIDTH * TEXTVA_LINEHEIGHTMAX];	// テキスト1行分のbitmap
+static	BYTE linebitmap[TEXTVA_SURFACE_WIDTH * TEXTVA_LINEHEIGHTMAX];
+											// テキスト1行分のbitmap
 
 		BYTE textraster[SURFACE_WIDTH];		// 1ラスタ分のピクセルデータ
 											// 各ピクセルはパレット番号(0～15)
 
+#if defined(USETABLE)
+static	DWORD font2bitmap[16][16][16];		// [fg][bg][4bit分のビットマップ]
+#endif
 
-
-
+#if defined(USETABLE2)
+static	DWORD font2bitmap[16];
+#endif
 
 
 
 void maketextva_initialize(void) {
-/*
-	tsp.texttable = 0x7f00;
-	tsp.attroffset = 0x8000;
-	tsp.lineheight = 16;
-	tsp.hlinepos = 15;
-*/
+#if defined(USETABLE)
+	UINT8	fg;
+	UINT8	bg;
+	UINT8	dat;
+	UINT8	fontdata;
+	int		i;
+
+	for (fg = 0; fg < 16; fg++) {
+		for (bg = 0; bg < 16; bg ++) {
+			for (dat = 0; dat < 0x10; dat++) {
+				fontdata = dat;
+				for (i = 0; i < 4; i++) {
+					((BYTE *)&font2bitmap[fg][bg][dat])[i] = (fontdata & 0x08) ? fg : bg;
+					fontdata <<= 1;
+				}
+			}
+		}
+	}
+#endif
+
+#if defined(USETABLE2)
+	UINT8	dat;
+	UINT8	fontdata;
+	int		i;
+
+	for (dat = 0; dat < 0x10; dat++) {
+		fontdata = dat;
+		for (i = 0; i < 4; i++) {
+			((BYTE *)&font2bitmap[dat])[i] = (fontdata & 0x08) ? 0xff : 0;
+			fontdata <<= 1;
+		}
+	}
+
+#endif
 }
 
 
@@ -132,19 +162,28 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 	_CHARATTR	charattr;
 	UINT8	bg;
 	UINT8	fg;
+#if defined(USETABLE2)
+	DWORD	bg4;
+	DWORD	fg4;
+	DWORD	bitmap4;
+#endif
 
+/*
 	if (rwchar > SURFACE_WIDTH / TEXTVA_CHARWIDTH) {
 		rwchar = SURFACE_WIDTH / TEXTVA_CHARWIDTH;
 	}
+*/
+	if (rwchar > TEXTVA_SURFACE_WIDTH / TEXTVA_CHARWIDTH) {
+		rwchar = TEXTVA_SURFACE_WIDTH / TEXTVA_CHARWIDTH;
+	}
+
+	ZeroMemory(linebitmap, sizeof(linebitmap));
 	b = linebitmap;
 
 	for (x = 0; x < rwchar; x++) {
 		hccode = LOADINTELWORD(v);
 		attr = *(v + tsp.attroffset);
 		v+=2;
-		font = cgromva_font(hccode);
-		fontw = cgromva_width(hccode);
-		fonth = 16;
 		work.synattr(attr, &charattr);
 
 		if (charattr.attr & TEXTVA_ATR_RV) {
@@ -159,28 +198,56 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 			fg = bg;
 		}
 
-		for (r = 0; r < work.lineheight; r++) {
-			fontdata = *font;
-			font += fontw;
-			if ((charattr.attr & (TEXTVA_ATR_HL | TEXTVA_ATR_HL2)) && r == tsp.hlinepos) {
-				for (i = 0; i < 8; i++) {
-					b[i] = fg;
-				}
-			}
-			else if (r < fonth) {
-				for (i = 0; i < 8; i++) {
-					b[i] = (fontdata & 0x80) ? fg : bg;
-					fontdata <<= 1;
-				}
-			}
-			else {
-				for (i = 0; i < 8; i++) {
-					b[i] = bg;
-				}
-			}
-			b += SURFACE_WIDTH;
+#if defined(USETABLE2)
+		fg4 = fg | ((DWORD)fg << 8) | ((DWORD)fg << 16) | ((DWORD)fg << 24); 
+		bg4 = bg | ((DWORD)bg << 8) | ((DWORD)bg << 16) | ((DWORD)bg << 24); 
+#endif
+
+		if ((hccode == 0 || hccode == 0x20) && bg == 0 && 
+			((charattr.attr & (TEXTVA_ATR_HL | TEXTVA_ATR_HL2)) == 0) ) {
+			// 空白、背景色0、アンダーラインなし
+			b += TEXTVA_CHARWIDTH;
 		}
-		b -= SURFACE_WIDTH * work.lineheight - TEXTVA_CHARWIDTH;
+		else {
+			font = cgromva_font(hccode);
+			fontw = cgromva_width(hccode);
+			fonth = 16;
+
+			for (r = 0; r < work.lineheight; r++) {
+				fontdata = *font;
+				font += fontw;
+				if ((charattr.attr & (TEXTVA_ATR_HL | TEXTVA_ATR_HL2)) && r == tsp.hlinepos) {
+					for (i = 0; i < 8; i++) {
+						b[i] = fg;
+					}
+				}
+				else if (r < fonth) {
+#if defined(USETABLE)
+					((DWORD *)b)[0] = font2bitmap[fg][bg][fontdata >> 4];
+					((DWORD *)b)[1] = font2bitmap[fg][bg][fontdata & 0x0f];
+#else
+#if defined(USETABLE2)
+					bitmap4 = font2bitmap[fontdata >> 4];
+					*((DWORD *)b) = bitmap4 & fg4 | ~bitmap4 & bg4;
+					bitmap4 = font2bitmap[fontdata & 0x0f];
+					*((DWORD *)(b + 4)) = bitmap4 & fg4 | ~bitmap4 & bg4;
+#else
+					for (i = 0; i < 8; i++) {
+						b[i] = (fontdata & 0x80) ? fg : bg;
+						fontdata <<= 1;
+					}
+#endif
+#endif
+				}
+				else {
+					for (i = 0; i < 8; i++) {
+						b[i] = bg;
+					}
+				}
+				b += TEXTVA_SURFACE_WIDTH;
+			}
+			b -= TEXTVA_SURFACE_WIDTH * work.lineheight - TEXTVA_CHARWIDTH;
+		}
 	}
 
 }
@@ -301,7 +368,16 @@ void maketextva_raster(void) {
 	BYTE	*v;			// TVRAM
 	BYTE	*b;			// bitmap
 	BYTE	*lb;		// linebitmap
+	BYTE	*lbs;		// linebitmap 当該ラインの左端
 	TEXTVAFRAME	f;
+
+	if (videova.txtmode & 0x80) {
+		// テキスト表示OFF
+		for (x = 0; x < SURFACE_WIDTH; x++) {
+			textraster[x] = 0;
+		}
+		return;
+	}
 
 	if (work.y >= SURFACE_HEIGHT) return;
 
@@ -319,10 +395,33 @@ void maketextva_raster(void) {
 		work.texty++;
 		work.linebitmap_ready = TRUE;
 	}
-
+/*
 	b = textraster;
 	lb = linebitmap + SURFACE_WIDTH * work.raster;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
+		*b = *lb;
+		b++;
+		lb++;
+	}
+*/
+	b = textraster;
+	lbs = linebitmap + TEXTVA_SURFACE_WIDTH * work.raster;
+	if (f->rxp) {
+		lb = lbs + TEXTVA_SURFACE_WIDTH - f->rxp;
+	}
+	else {
+		lb = lbs;
+	}
+	x = 0;
+	if (f->rxp < SURFACE_WIDTH) {
+		for (; x < f->rxp; x++) {
+			*b = *lb;
+			b++;
+			lb++;
+		}
+		lb = lbs;
+	}
+	for (; x < SURFACE_WIDTH; x++) {
 		*b = *lb;
 		b++;
 		lb++;
@@ -337,3 +436,5 @@ void maketextva_raster(void) {
 	work.y++;
 
 }
+
+#endif

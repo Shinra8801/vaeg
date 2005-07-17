@@ -20,6 +20,11 @@ enum {
 	CMD_CURDEF	= 0x15,
 	CMD_SPRON	= 0x82,
 	CMD_SPROFF	= 0x83,
+	CMD_SPRDEF	= 0x84,
+	CMD_EXIT	= 0x88,
+
+	// ステータス
+	STATUS_BUSY	= 0x04,
 };
 
 
@@ -56,6 +61,8 @@ static void exec_dspon(void) {
 
 	tsp.texttable = tsp.parambuf[0] << 8;
 	tsp.dspon = TRUE;
+
+	tsp.status &= ~STATUS_BUSY;
 }
 
 /*
@@ -73,6 +80,8 @@ static void exec_dspdef(void) {
 	tsp.blink = tsp.parambuf[5] >> 3;		// ToDo: そのまま採用すると周期が長すぎる
 											// テクマニの誤植？
 	tsp.blinkcnt = tsp.blink;
+
+	tsp.status &= ~STATUS_BUSY;
 }
 
 /*
@@ -85,6 +94,7 @@ static void exec_curdef(void) {
 	tsp.be = tsp.parambuf[0] & 0x01;
 	sprsw(tsp.curn, tsp.parambuf[0] & 0x02);
 
+	tsp.status &= ~STATUS_BUSY;
 }
 
 /*
@@ -98,8 +108,48 @@ static void exec_spron(void) {
 	tsp.mg = tsp.parambuf[2] & 0x02;
 	tsp.gr = tsp.parambuf[2] & 0x01;
 	tsp.spron = TRUE;
+
+	tsp.status &= ~STATUS_BUSY;
 }
 
+/*
+SPRDEF (スプライト制御テーブルへの書き込み)
+*/
+// パラメータ2バイト目以降
+static void paramfunc_sprdef(REG8 dat) {
+	BYTE *mem;
+
+	mem = textmem + tsp.sprtable + tsp.sprdef_offset;
+	*mem = dat;
+	tsp.sprdef_offset++;
+}
+
+// パラメータ1バイト目
+static void paramfunc_sprdef_begin(REG8 dat) {
+	TRACEOUT(("tsp: sprdef: offset=0x%.2x", dat)); 
+
+	tsp.sprdef_offset = dat;
+	tsp.paramfunc = paramfunc_sprdef;
+}
+
+/*
+EXIT (処理中止)
+*/
+static void exec_exit(void) {
+	TRACEOUT(("tsp: exit")); 
+
+	tsp.status &= ~STATUS_BUSY;
+}
+
+/*
+未定義コマンド
+*/
+static void exec_unknown(void) {
+	TRACEOUT(("tsp: unknown cmd: 0x%.2x", tsp.cmd));
+	tsp.status &= ~STATUS_BUSY;
+}
+
+/*
 static void execcmd(void) {
 	switch(tsp.cmd) {
 	case CMD_DSPON:
@@ -118,7 +168,20 @@ static void execcmd(void) {
 		TRACEOUT(("tsp: unknown cmd: 0x%.2x", tsp.cmd));
 	}
 }
+*/
 
+static void paramfunc_nop(REG8 dat) {
+}
+
+static void paramfunc_generic(REG8 dat) {
+	if (tsp.recvdatacnt) {
+		*(tsp.datap++) = dat;
+		if (--tsp.recvdatacnt == 0) {
+			tsp.paramfunc = paramfunc_nop;
+			tsp.endparamfunc();
+		}
+	}
+}
 
 // ---- I/O
 
@@ -127,52 +190,75 @@ static void execcmd(void) {
 ステータス読み出し
 */
 static REG8 IOINPCALL tsp_i142(UINT port) {
-	(void)port;
-	return 0;
+	return tsp.status;
 }
 
 /*
 コマンド書き込み
 */
 static void IOOUTCALL tsp_o142(UINT port, REG8 dat) {
+	TRACEOUT(("tsp: command: 0x%.2x", dat));
+
 	tsp.cmd = dat;
 	tsp.datap = tsp.parambuf;
+	tsp.status |= STATUS_BUSY;
 
 	switch(dat) {
 	case CMD_DSPON:
 		tsp.recvdatacnt = 3;
+		tsp.endparamfunc = exec_dspon;
+		tsp.paramfunc = paramfunc_generic;
 		break;
 	case CMD_DSPDEF:
 		tsp.recvdatacnt = 6;
+		tsp.endparamfunc = exec_dspdef;
+		tsp.paramfunc = paramfunc_generic;
 		break;
 	case CMD_CURDEF:
 		tsp.recvdatacnt = 1;
+		tsp.endparamfunc = exec_curdef;
+		tsp.paramfunc = paramfunc_generic;
 		break;
 	case CMD_SPRON:
 		tsp.recvdatacnt = 3;
+		tsp.endparamfunc = exec_spron;
+		tsp.paramfunc = paramfunc_generic;
+		break;
+	case CMD_SPRDEF:
+		tsp.paramfunc = paramfunc_sprdef_begin;
+		break;
+	case CMD_EXIT:
+		tsp.paramfunc = paramfunc_nop;
+		exec_exit();
 		break;
 	default:
-		tsp.recvdatacnt = 0;
+		tsp.paramfunc = paramfunc_nop;
+		exec_unknown();
 		break;
 	}
 
-	if (tsp.recvdatacnt == 0) execcmd();
+	//if (tsp.recvdatacnt == 0) execcmd();
 }
 
 /*
 パラメータ書き込み
 */
 static void IOOUTCALL tsp_o146(UINT port, REG8 dat) {
+	TRACEOUT(("tsp: parameter: 0x%.2x", dat));
+/*
 	if (tsp.recvdatacnt) {
 		*(tsp.datap++) = dat;
 		if (--tsp.recvdatacnt == 0) execcmd();
 	}
+*/
+	tsp.paramfunc(dat);
 }
 
 // ---- I/F
 
 void tsp_reset(void) {
 	ZeroMemory(&tsp, sizeof(tsp));
+	tsp.paramfunc = paramfunc_nop;
 }
 
 void tsp_bind(void) {

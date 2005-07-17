@@ -258,6 +258,7 @@ void pccore_init(void) {
 //	palva_maketable();
 	maketextva_initialize();
 	makesprva_initialize();
+	makegrphva_initialize();
 #endif
 	dispsync_initialize();
 	sxsi_initialize();

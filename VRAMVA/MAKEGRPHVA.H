@@ -8,6 +8,8 @@ extern "C" {
 
 extern	BYTE	grph0p_raster[];
 extern	BYTE	grph1p_raster[];
+extern	WORD	grph0c_raster[];
+extern	WORD	grph1c_raster[];
 
 void makegrphva_initialize(void);
 

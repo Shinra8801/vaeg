@@ -40,12 +40,12 @@ static	_IOCORE		iocore;
 
 static void IOOUTCALL defout8(UINT port, REG8 dat) {
 
-	TRACEOUT(("defout8 - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
+	TRACEOUT(("defout8 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static REG8 IOINPCALL definp8(UINT port) {
 
-	TRACEOUT(("definp8 - %x %.4x %.4x", port, CPU_CS, CPU_IP));
+	TRACEOUT(("definp8 - %x %.4x:%.4x", port, CPU_CS, CPU_IP));
 	return(0xff);
 }
 

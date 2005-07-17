@@ -1182,7 +1182,8 @@ I286 cmp_ea_r8(void) {							// 38: cmp EA, REG8
 					FLAG_STORE_OF
 					GET_NEXTPRE2					// ea_regの regregだけ
 					ret
-				MEMORY_EA_REG8(6)
+				//MEMORY_EA_REG8(6)
+				MEMORY_EA_REG8_X(6, 11)
 					cmp		byte ptr I286_MEM[ecx], dl
 					FLAG_STORE_OF
 					ret
@@ -1201,7 +1202,8 @@ I286 cmp_ea_r16(void) {							// 39: cmp EA, REG16
 					FLAG_STORE_OF
 					GET_NEXTPRE2					// ea_regの regregだけ
 					ret
-				MEMORY_EA_REG16(6)
+				//MEMORY_EA_REG16(6)
+				MEMORY_EA_REG16_X(6, 11)
 					cmp		word ptr I286_MEM[ecx], dx
 					FLAG_STORE_OF
 					ret
@@ -1215,7 +1217,8 @@ I286 cmp_ea_r16(void) {							// 39: cmp EA, REG16
 I286 cmp_r8_ea(void) {							// 3A: cmp REG8, EA
 
 		__asm {
-				PREPART_REG8_EA(2, 6)
+				//PREPART_REG8_EA(2, 6)
+				PREPART_REG8_EA_X(2, 6,  2, 11)
 				cmp		I286_REG[ebp], al
 				FLAG_STORE_OF
 				ret
@@ -1225,7 +1228,8 @@ I286 cmp_r8_ea(void) {							// 3A: cmp REG8, EA
 I286 cmp_r16_ea(void) {							// 3B: cmp REG16, EA
 
 		__asm {
-				PREPART_REG16_EA(2, 6)
+				//PREPART_REG16_EA(2, 6)
+				PREPART_REG16_EA_X(2, 6,  2, 11)
 				cmp		I286_REG[ebp], ax
 				FLAG_STORE_OF
 				ret
@@ -1235,7 +1239,8 @@ I286 cmp_r16_ea(void) {							// 3B: cmp REG16, EA
 I286 cmp_al_data8(void) {						// 3C: cmp al, DATA8
 
 		__asm {
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				cmp		I286_AL, bh
 				FLAG_STORE_OF
 				GET_NEXTPRE2
@@ -1246,7 +1251,8 @@ I286 cmp_al_data8(void) {						// 3C: cmp al, DATA8
 I286 cmp_ax_data16(void) {						// 3D: cmp ax, DATA16
 
 		__asm {
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE3a
 				cmp		I286_AX, bx
 				FLAG_STORE_OF
@@ -1461,7 +1467,8 @@ I286 push_ax(void) {							// 50: push ax
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_AX)
 		}
 }
@@ -1470,7 +1477,8 @@ I286 push_cx(void) {							// 51: push cx
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_CX)
 		}
 }
@@ -1479,7 +1487,8 @@ I286 push_dx(void) {							// 52: push dx
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_DX)
 		}
 }
@@ -1488,7 +1497,8 @@ I286 push_bx(void) {							// 53: push bx
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_BX)
 		}
 }
@@ -1497,7 +1507,8 @@ I286 push_sp(void) {							// 54: push sp
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_SP)
 		}
 }
@@ -1506,7 +1517,8 @@ I286 push_bp(void) {							// 55: push bp
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_BP)
 		}
 }
@@ -1515,7 +1527,8 @@ I286 push_si(void) {							// 56: push si
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_SI)
 		}
 }
@@ -1524,7 +1537,8 @@ I286 push_di(void) {							// 57: push di
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				REGPUSH1(I286_DI)
 		}
 }
@@ -1532,7 +1546,8 @@ I286 push_di(void) {							// 57: push di
 I286 pop_ax(void) {								// 58: pop ax
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_AX)
 				GET_NEXTPRE1
 				ret
@@ -1542,7 +1557,8 @@ I286 pop_ax(void) {								// 58: pop ax
 I286 pop_cx(void) {								// 59: pop cx
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_CX)
 				GET_NEXTPRE1
 				ret
@@ -1552,7 +1568,8 @@ I286 pop_cx(void) {								// 59: pop cx
 I286 pop_dx(void) {								// 5A: pop dx
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_DX)
 				GET_NEXTPRE1
 				ret
@@ -1562,7 +1579,8 @@ I286 pop_dx(void) {								// 5A: pop dx
 I286 pop_bx(void) {								// 5B: pop bx
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_BX)
 				GET_NEXTPRE1
 				ret
@@ -1572,7 +1590,8 @@ I286 pop_bx(void) {								// 5B: pop bx
 I286 pop_sp(void) {								// 5C: pop sp
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				movzx	ecx, I286_SP
 				add		ecx, SS_BASE
 				call	i286_memoryread_w
@@ -1585,7 +1604,8 @@ I286 pop_sp(void) {								// 5C: pop sp
 I286 pop_bp(void) {								// 5D: pop bp
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_BP)
 				GET_NEXTPRE1
 				ret
@@ -1595,7 +1615,8 @@ I286 pop_bp(void) {								// 5D: pop bp
 I286 pop_si(void) {								// 5E: pop si
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_SI)
 				GET_NEXTPRE1
 				ret
@@ -1605,7 +1626,8 @@ I286 pop_si(void) {								// 5E: pop si
 I286 pop_di(void) {								// 5F: pop di
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				REGPOP(I286_DI)
 				GET_NEXTPRE1
 				ret
@@ -1620,7 +1642,8 @@ I286 _pusha(void) {								// 60: pusha
 				sub		bp, 2
 
 				GET_NEXTPRE1
-				I286CLOCK(17)
+				//I286CLOCK(17)
+				I286CLOCK_X(a, 17, 35)
 				mov		edi, SS_BASE
 
 				lea		ecx, [edi + ebp]
@@ -1669,7 +1692,8 @@ I286 _popa(void) {								// 61: popa
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(19)
+				//I286CLOCK(19)
+				I286CLOCK_X(a, 19, 43)
 				mov		edi, SS_BASE
 				movzx	ebp, I286_SP
 
@@ -1754,7 +1778,8 @@ I286 _arpl(void) {
 I286 push_data16(void) {						// 68: push DATA16
 
 		__asm {
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 7)
 				GET_NEXTPRE3a
 				REGPUSH(bx)
 				GET_NEXTPRE3b
@@ -1765,7 +1790,8 @@ I286 push_data16(void) {						// 68: push DATA16
 I286 imul_reg_ea_data16(void) {					// 69: imul REG, EA, DATA16
 
 		__asm {
-				PREPART_REG16_EA(21, 24)
+				//PREPART_REG16_EA(21, 24)
+				PREPART_REG16_EA_X(21, 24,  45, 49)
 				imul	bx
 				mov		I286_REG[ebp], ax
 
@@ -1787,7 +1813,8 @@ imulnooverflow:	GET_NEXTPRE2
 I286 push_data8(void) {							// 6A: push DATA8
 
 		__asm {
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				mov		al, bh
 				cbw
 				REGPUSH(ax)
@@ -1894,12 +1921,14 @@ I286 jo_short(void) {							// 70: jo short
 		__asm {
 				test	I286_FLAG, O_FLAG
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -1913,12 +1942,14 @@ I286 jno_short(void) {							// 71: jno short
 		__asm {
 				test	I286_FLAG, O_FLAG
 				je		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -1932,12 +1963,14 @@ I286 jc_short(void) {							// 72: jnae/jb/jc short
 		__asm {
 				test	I286_FLAG, C_FLAG
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -1951,12 +1984,14 @@ I286 jnc_short(void) {							// 73: jae/jnb/jnc short
 		__asm {
 				test	I286_FLAG, C_FLAG
 				je		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -1970,12 +2005,14 @@ I286 jz_short(void) {							// 74: je/jz short
 		__asm {
 				test	I286_FLAG, Z_FLAG
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -1990,14 +2027,16 @@ I286 jnz_short(void) {							// 75: jne/jnz short
 				test	I286_FLAG, Z_FLAG
 				jne		flagnonjump
 
-				I286CLOCK(7)					// ジャンプする事が多いと思う
+				//I286CLOCK(7)					// ジャンプする事が多いと思う
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
 				RESET_XPREFETCH
 				ret
 
-flagnonjump:	I286CLOCK(3)
+flagnonjump:	//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 		}
@@ -2008,12 +2047,14 @@ I286 jna_short(void) {							// 76: jna/jbe short
 		__asm {
 				test	I286_FLAG, (Z_FLAG or C_FLAG)
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2027,12 +2068,14 @@ I286 ja_short(void) {							// 77: ja/jnbe short
 		__asm {
 				test	I286_FLAG, (Z_FLAG or C_FLAG)
 				je		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2046,12 +2089,14 @@ I286 js_short(void) {							// 78: js short
 		__asm {
 				test	I286_FLAG, S_FLAG
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2065,12 +2110,14 @@ I286 jns_short(void) {							// 79: jns short
 		__asm {
 				test	I286_FLAG, S_FLAG
 				je		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2084,12 +2131,14 @@ I286 jp_short(void) {							// 7A: jp/jpe short
 		__asm {
 				test	I286_FLAG, P_FLAG
 				jne		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2103,12 +2152,14 @@ I286 jnp_short(void) {							// 7B: jnp/jpo short
 		__asm {
 				test	I286_FLAG, P_FLAG
 				je		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2124,12 +2175,14 @@ I286 jl_short(void) {							// 7C: jl/jnge short
 				shl		dh, 4
 				xor		dl, dh
 				js		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2145,12 +2198,14 @@ I286 jnl_short(void) {							// 7D: jnl/jge short
 				shl		dh, 4
 				xor		dl, dh
 				jns		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2168,12 +2223,14 @@ I286 jle_short(void) {							// 7E: jle/jng short
 				shl		dh, 4
 				xor		dl, dh
 				js		flagjump
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 
 				align	16
-flagjump:		I286CLOCK(7)
+flagjump:		//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2191,7 +2248,8 @@ I286 jnle_short(void) {							// 7F: jg/jnle short
 				shl		dh, 4
 				xor		dl, dh
 				js		notjump
-				I286CLOCK(7)
+				//I286CLOCK(7)
+				I286CLOCK_X(b, 7, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -2199,7 +2257,8 @@ I286 jnle_short(void) {							// 7F: jg/jnle short
 				ret
 
 				align	16
-notjump:		I286CLOCK(3)
+notjump:		//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 4)
 				GET_NEXTPRE2
 				ret
 		}
@@ -2766,7 +2825,8 @@ I286 call_far(void) {							// 9A: call far
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(13)
+				//I286CLOCK(13)
+				I286CLOCK_X(a, 13, (21+4))
 				mov		edi, SS_BASE
 				movzx	ebp, I286_SP
 				mov		dx, I286_CS
@@ -2807,7 +2867,8 @@ I286 _pushf(void) {								// 9C: pushf
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 8)
 				mov		dx, I286_FLAG
 				and		dx, 0fffh
 				sub		I286_SP, 2
@@ -2821,7 +2882,8 @@ I286 _popf(void) {								// 9D: popf
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK_X(a, 5, 8)
 				movzx	ecx, I286_SP
 				add		ecx, SS_BASE
 				call	i286_memoryread_w
@@ -2852,7 +2914,8 @@ I286 _sahf(void) {								// 9E: sahf
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(2)
+				//I286CLOCK(2)
+				I286CLOCK_X(a, 2, 3)
 				mov		al, I286_AH
 				mov		I286_FLAGL, al
 				ret
@@ -3425,7 +3488,8 @@ I286 shift_ea16_data8(void) {					// C1: shift EA16, DATA8
 I286 ret_near_data16(void) {					// C2: ret near DATA16
 
 		__asm {
-				I286CLOCK(11)
+				//I286CLOCK(11)
+				I286CLOCK_X(a, 11, (20+4))
 				shr		ebx, 8
 				add		ebx, 2
 				movzx	ecx, I286_SP
@@ -3441,7 +3505,8 @@ I286 ret_near_data16(void) {					// C2: ret near DATA16
 I286 ret_near(void) {							// C3: ret near
 
 		__asm {
-				I286CLOCK(11)
+				//I286CLOCK(11)
+				I286CLOCK_X(a, 11, (15+4))
 				REGPOP(si)
 				RESET_XPREFETCH
 				ret
@@ -3453,7 +3518,8 @@ I286 les_r16_ea(void) {							// C4: les REG16, EA
 		__asm {
 				cmp		bh, 0c0h
 				jnc		src_register
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 18)
 				movzx	eax, bh
 				push	eax
 				call	p_get_ea[eax*4]
@@ -3486,7 +3552,8 @@ I286 lds_r16_ea(void) {							// C5: lds REG16, EA
 		__asm {
 				cmp		bh, 0c0h
 				jnc		src_register
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK_X(a, 3, 18)
 				movzx	eax, bh
 				push	eax
 				call	p_get_ea[eax*4]
@@ -3587,7 +3654,7 @@ I286 _enter(void) {								// C8: enter DATA16, DATA8
 				dec		eax
 				je		enter1
 				lea		ecx, [eax*4 + 12]
-				I286CLOCK(ecx)
+				I286CLOCK(ecx)						// ToDo: V30
 				push	ebx
 				movzx	ebx, I286_BP
 				mov		I286_BP, bp
@@ -3643,7 +3710,7 @@ I286 leave(void) {								// C9: leave
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(5)
+				I286CLOCK(5)					// ToDo: V30
 				mov		ax, I286_BP
 				mov		I286_SP, ax
 				REGPOP(I286_BP)
@@ -3654,7 +3721,8 @@ I286 leave(void) {								// C9: leave
 I286 ret_far_data16(void) {						// CA: ret far DATA16
 
 		__asm {
-				I286CLOCK(15)
+				//I286CLOCK(15)
+				I286CLOCK_X(a, 15, (24+4))
 				shr		ebx, 8
 				mov		edi, SS_BASE
 				movzx	ebp, I286_SP
@@ -3683,7 +3751,8 @@ ret_far16_pe:	push	offset ret_far16_base
 I286 ret_far(void) {							// CB: ret far
 
 		__asm {
-				I286CLOCK(15)
+				//I286CLOCK(15)
+				I286CLOCK_X(a, 15, (21+4))
 				mov		edi, SS_BASE
 				movzx	ebx, I286_SP
 				lea		ecx, [edi + ebx]
@@ -3712,7 +3781,8 @@ ret_far_pe:		push	offset ret_far_base
 I286 int_03(void) {								// CC: int 3
 
 		__asm {
-				I286CLOCK(23)
+				//I286CLOCK(23)
+				I286CLOCK_X(a, 23, (38+4))
 				inc		si
 				INT_NUM(3)
 		}
@@ -3732,7 +3802,8 @@ I286 int_data8(void) {							// CD: int DATA8
 #endif
 
 		__asm {
-				I286CLOCK(23)
+				//I286CLOCK(23)
+				I286CLOCK_X(a, 23, (38+4))
 				mov		edi, SS_BASE
 				movzx	ebp, I286_SP
 				sub		bp, 2
@@ -4055,14 +4126,16 @@ I286 _loopnz(void) {							// E0: loopnz
 				je		loopend
 				test	I286_FLAG, Z_FLAG
 				jne		loopend
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK_X(a, 8, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
 				RESET_XPREFETCH
 				ret
 				align	16
-loopend:		I286CLOCK(4)
+loopend:		//I286CLOCK(4)
+				I286CLOCK_X(b, 4, 5)
 				GET_NEXTPRE2
 				ret
 		}
@@ -4075,7 +4148,8 @@ I286 _loopz(void) {								// E1: loopz
 				je		loopend
 				test	I286_FLAG, Z_FLAG
 				je		loopend
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK_X(a, 8, (14+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
@@ -4113,14 +4187,16 @@ I286 _jcxz(void) {								// E3: jcxz
 		__asm {
 				cmp		I286_CX, 0
 				jne		loopend
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK_X(a, 8, (13+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2
 				RESET_XPREFETCH
 				ret
 				align	16
-loopend:		I286CLOCK(4)
+loopend:		//I286CLOCK(4)
+				I286CLOCK_X(b, 4, 5)
 				GET_NEXTPRE2
 				ret
 		}
@@ -4189,7 +4265,8 @@ I286 out_data8_ax(void) {						// E7: out DATA8, ax
 I286 call_near(void) {							// E8: call near
 
 		__asm {
-				I286CLOCK(7)
+				//I286CLOCK(7)
+				I286CLOCK_X(a, 7, (16+4))
 				shr		ebx, 8
 				add		si, 3
 				mov		dx, si
@@ -4205,7 +4282,8 @@ I286 call_near(void) {							// E8: call near
 I286 jmp_near(void) {							// E9: jmp near
 
 		__asm {
-				I286CLOCK(7)
+				//I286CLOCK(7)
+				I286CLOCK_X(a, 7, (13+4))
 				shr		ebx, 8
 				add		si, 3
 				add		si, bx
@@ -4217,7 +4295,8 @@ I286 jmp_near(void) {							// E9: jmp near
 I286 jmp_far(void) {							// EA: jmp far
 
 		__asm {
-				I286CLOCK(11)
+				//I286CLOCK(11)
+				I286CLOCK_X(a, 11, (15+4))
 				GET_NEXTPRE1
 				mov		si, bx
 				shr		ebx, 16
@@ -4239,7 +4318,8 @@ jmp_far_pe:		mov		eax, ebx
 I286 jmp_short(void) {							// EB: jmp short
 
 		__asm {
-				I286CLOCK(7)
+				//I286CLOCK(7)
+				I286CLOCK_X(a, 7, (12+4))
 				movsx	eax, bh
 				add		si, ax
 				add		si, 2

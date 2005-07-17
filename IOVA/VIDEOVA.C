@@ -229,6 +229,12 @@ static void IOOUTCALL videova_o137(UINT port, REG8 dat) {
 	SETHIGHBYTE(videova.mskbot, dat & 0xff);
 }
 
+//   テキスト画面制御ポート
+
+static void IOOUTCALL videova_o148(UINT port, REG8 dat) {
+	videova.txtmode = dat | 1;
+	TRACEOUT(("videova_o148 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+}
 
 //   パレット
 
@@ -494,6 +500,8 @@ void videova_bind(void) {
 	iocoreva_attachout(0x135, videova_o135);
 	iocoreva_attachout(0x136, videova_o136);
 	iocoreva_attachout(0x137, videova_o137);
+
+	iocoreva_attachout(0x148, videova_o148);
 
 	for (i = 0; i < VIDEOVA_FRAMEBUFFERS; i++) {
 		int base;

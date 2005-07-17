@@ -216,11 +216,30 @@
 				__asm { adc		eax, eax					}	\
 				__asm {	and		eax, 7						}
 
+//SUPPORT_V30EXT
+#define	PREPART_EA8_X(regclk286, regclkv30)						\
+				__asm {	cmp		al, 0c0h					}	\
+				__asm {	jc		memory_eareg8				}	\
+				I286CLOCK_X(pe8, regclk286, regclkv30)			\
+				__asm {	bt		eax, 2						}	\
+				__asm { adc		eax, eax					}	\
+				__asm {	and		eax, 7						}
+
+
 									// dest: MAIN_MEM[ecx]
 #define	MEMORY_EA8(memclk)										\
 				__asm {	align	16							}	\
 			memory_eareg8:										\
 				I286CLOCK(memclk)								\
+				__asm {	call	p_ea_dst[eax*4]				}	\
+				__asm {	cmp		ecx, I286_MEMWRITEMAX		}	\
+				__asm {	jae		extmem_eareg8				}
+
+//SUPPORT_V30EXT
+#define	MEMORY_EA8_X(memclk286, memclkv30)						\
+				__asm {	align	16							}	\
+			memory_eareg8:										\
+				I286CLOCK_X(me8, memclk286, memclkv30)			\
 				__asm {	call	p_ea_dst[eax*4]				}	\
 				__asm {	cmp		ecx, I286_MEMWRITEMAX		}	\
 				__asm {	jae		extmem_eareg8				}
@@ -239,11 +258,27 @@
 				I286CLOCK(regclk)								\
 				__asm {	and		eax, 7						}
 
+//SUPPORT_V30EXT
+#define	PREPART_EA16_X(regclk286, regclkv30)					\
+				__asm {	cmp		al, 0c0h					}	\
+				__asm {	jc		memory_eareg16				}	\
+				I286CLOCK_X(pe16, regclk286, regclkv30)			\
+				__asm {	and		eax, 7						}
+
 									// dest: MAIN_MEM[ecx]
 #define	MEMORY_EA16(memclk)										\
 				__asm {	align	16							}	\
 			memory_eareg16:										\
 				I286CLOCK(memclk)								\
+				__asm {	call	p_ea_dst[eax*4]				}	\
+				__asm {	cmp		ecx, (I286_MEMWRITEMAX-1)	}	\
+				__asm {	jae		extmem_eareg16				}
+
+//SUPPORT_V30EXT
+#define	MEMORY_EA16_X(memclk286, memclkv30)						\
+				__asm {	align	16							}	\
+			memory_eareg16:										\
+				I286CLOCK_X(me16, memclk286, memclkv30)				\
 				__asm {	call	p_ea_dst[eax*4]				}	\
 				__asm {	cmp		ecx, (I286_MEMWRITEMAX-1)	}	\
 				__asm {	jae		extmem_eareg16				}

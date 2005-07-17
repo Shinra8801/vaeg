@@ -44,6 +44,7 @@ typedef struct {
 	WORD	mskrit;			// 132h
 	WORD	msktop;			// 134h
 	WORD	mskbot;			// 136h
+	BYTE	txtmode;		// 148h テキスト制御ポート
 	WORD	palette[VIDEOVA_PALETTES];
 
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];

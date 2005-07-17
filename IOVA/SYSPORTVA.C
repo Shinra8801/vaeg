@@ -4,6 +4,7 @@
 
 
 #include	"compiler.h"
+#include	"cpucore.h"
 #include	"pccore.h"
 #include	"iocore.h"
 #include	"iocoreva.h"
@@ -47,11 +48,14 @@ static void IOOUTCALL sysp_o010(UINT port, REG8 dat) {
 
 static void IOOUTCALL sysp_o032(UINT port, REG8 dat) {
 	// ToDo: サウンド割り込みマスク
+	TRACEOUT(("sysp_o032 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+	sysportva.port032 = dat & 0xbf;		// GVAMは0にする
 }
 
 static REG8 IOINPCALL sysp_i032(UINT port) {
 	// ToDo: サウンド割り込みマスク
-	return 0xff;
+	TRACEOUT(("sysp_i032 - %x %.4x:%.4x", port, CPU_CS, CPU_IP));
+	return sysportva.port032;
 }
 
 /*

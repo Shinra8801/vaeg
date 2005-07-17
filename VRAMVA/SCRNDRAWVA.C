@@ -224,19 +224,19 @@ void scrndrawva_compose_raster(void) {
 			scrn->raster = NULL;
 			continue;
 		}
-		if (i < VIDEOVA_PALETTE_SCREENS) {
+		//if (i < VIDEOVA_PALETTE_SCREENS) {
 			type &= 0x03;
-		}
-		else {
+		//}
+		//else {
 			// ToDo: 直接色指定
 			//type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
-		}
+		//}
 		scrn->type = type;
 //		scrn = &work.scrn[pri[i]];
 		scrn->palflip = defaultflip;
 		if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
 
-		switch (type) {
+		switch (scrn->type) {
 		case VIDEOVA_TEXTSCREEN:
 			scrn->raster = tstextraster;
 			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
@@ -275,6 +275,50 @@ void scrndrawva_compose_raster(void) {
 		}
 	}
 
+	scrn = &work.scrn[VIDEOVA_PALETTE_SCREENS];
+	for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
+		type = (int)(dd & 0x0f);
+		dd >>= 4;
+		if (type < 8 || type > 9) {
+			scrn->raster = NULL;
+			continue;
+		}
+		scrn->type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
+		//scrn->palflip = defaultflip;
+		//if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
+
+		switch (scrn->type) {
+		case VIDEOVA_GRAPHICSCREEN0:
+			scrn->raster = (BYTE *)grph0c_raster;
+			//scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
+			break;
+		case VIDEOVA_GRAPHICSCREEN1:
+			scrn->raster = (BYTE *)grph1c_raster;
+			//scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
+			break;
+		}
+
+		// screen mask
+		maskpos = (videova.mskmode >> 4) & 3;
+		if ((i + 4) == maskpos + 1) {
+			// 直後の低優先画面
+			scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
+			scrn->mask[INSIDE] = videova.mskmode & 0x01;
+		}
+		else /*if ((i + 4) > maskpos)*/ {
+			// 低優先画面
+			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
+			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
+		}
+		/*
+		else {
+			// 高優先画面
+			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
+			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+		}
+		*/
+	}
+
 
 /*
 	for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) work.scrn[i].palflip = 0;
@@ -302,6 +346,7 @@ void scrndrawva_compose_raster(void) {
 				side = INSIDE;
 			}
 		}
+		// パレット指定画面
 		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) {
 			scrn = &work.scrn[i];
 			if (!scrn->mask[side] && scrn->raster != NULL) {
@@ -313,7 +358,17 @@ void scrndrawva_compose_raster(void) {
 				}
 			}
 		}
-		// ToDo: 直接色指定画面
+		// 直接色指定画面
+		for (i = 0; i < VIDEOVA_RGB_SCREENS; i++) {
+			scrn = &work.scrn[i + VIDEOVA_PALETTE_SCREENS];
+			if (!scrn->mask[side] && scrn->raster != NULL) {
+				c = ((WORD *)scrn->raster)[x];
+				if (c != 0) {
+					// 不透明色
+					goto opaque;
+				}
+			}
+		}
 
 		c = videova.dropcol;
 /*

@@ -12,7 +12,6 @@
 #include	"i286xea.mcr"
 #include	"dmap.h"
 
-//#define		EXT		// Shinra
 
 typedef struct {
 	UINT	opnum;
@@ -157,7 +156,8 @@ I286 v30segprefix_ds(void) {					// 3E: ds:
 I286 v30push_sp(void) {							// 54: push sp
 
 		__asm {
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK(8)
 				GET_NEXTPRE1
 				sub		I286_SP, 2
 				movzx	ecx, I286_SP
@@ -170,7 +170,8 @@ I286 v30push_sp(void) {							// 54: push sp
 I286 v30pop_sp(void) {							// 5C: pop sp
 
 		__asm {
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(8)
 				REGPOP(I286_SP)
 				GET_NEXTPRE1
 				ret
@@ -203,7 +204,8 @@ I286 v30mov_seg_ea(void) {						// 8E: mov segrem, EA
 				jmp		segset
 				align	4
 		src_memory:
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(11)
 				call	p_ea_dst[eax*4]
 				call	i286_memoryread_w
 		segset:
@@ -236,7 +238,8 @@ I286 v30_pushf(void) {							// 9C: pushf
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(3)
+				//I286CLOCK(3)
+				I286CLOCK(8)
 				mov		dx, I286_FLAG
 				or		dx, 0f000h
 				sub		I286_SP, 2
@@ -250,7 +253,8 @@ I286 v30_popf(void) {							// 9D: popf
 
 		__asm {
 				GET_NEXTPRE1
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(8)
 				movzx	ecx, I286_SP
 				add		ecx, SS_BASE
 				call	i286_memoryread_w
@@ -435,7 +439,8 @@ I286 v30shift_ea8_data8(void) {					// C0: shift EA8, DATA8
 				and		edi, 7*4						// opcode
 				cmp		al, 0c0h
 				jc		memory_eareg8
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(7)
 				bt		ax, 2
 				rcl		eax, 1
 				and		eax, 7
@@ -450,7 +455,8 @@ I286 v30shift_ea8_data8(void) {					// C0: shift EA8, DATA8
 				jmp		sftreg8v30_table[edi]
 				align	4
 		memory_eareg8:
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK(19)
 				call	p_ea_dst[eax*4]
 				cmp		ecx, I286_MEMWRITEMAX
 				jnc		extmem_eareg8
@@ -644,7 +650,8 @@ I286 v30shift_ea16_data8(void) {				// C1: shift EA16, DATA8
 				cmp		al, 0c0h
 				jc		memory_eareg16
 				and		eax, 7
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(7)
 				lea		edx, I286_REG[eax*2]
 				mov		ecx, ebx
 				shr		ecx, 16
@@ -656,7 +663,8 @@ I286 v30shift_ea16_data8(void) {				// C1: shift EA16, DATA8
 				jmp		sftreg16v30_table[edi]
 				align	4
 		memory_eareg16:
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK(19)
 				call	p_ea_dst[eax*4]
 				cmp		ecx, (I286_MEMWRITEMAX-1)
 				jnc		extmem_eareg16
@@ -690,7 +698,8 @@ I286 v30shift_ea8_cl(void) {					// D2: shift EA8, cl
 				and		edi, 7*4						// opcode
 				cmp		al, 0c0h
 				jc		memory_eareg8
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(7)
 				bt		ax, 2
 				rcl		eax, 1
 				and		eax, 7
@@ -701,7 +710,8 @@ I286 v30shift_ea8_cl(void) {					// D2: shift EA8, cl
 				jmp		sftreg8v30_table[edi]
 				align	4
 		memory_eareg8:
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK(19)
 				call	p_ea_dst[eax*4]
 				cmp		ecx, I286_MEMWRITEMAX
 				jnc		extmem_eareg8
@@ -729,7 +739,8 @@ I286 v30shift_ea16_cl(void) {					// D3: shift EA16, cl
 				and		edi, 7*4						// opcode
 				cmp		al, 0c0h
 				jc		memory_eareg16
-				I286CLOCK(5)
+				//I286CLOCK(5)
+				I286CLOCK(7)
 				and		eax, 7
 				lea		edx, I286_REG[eax*2]
 				GET_NEXTPRE2
@@ -738,7 +749,8 @@ I286 v30shift_ea16_cl(void) {					// D3: shift EA16, cl
 				jmp		sftreg16v30_table[edi]
 				align	4
 		memory_eareg16:
-				I286CLOCK(8)
+				//I286CLOCK(8)
+				I286CLOCK(19)
 				call	p_ea_dst[eax*4]
 				cmp		ecx, (I286_MEMWRITEMAX-1)
 				jnc		extmem_eareg16
@@ -797,29 +809,6 @@ I286 v30_xlat(void) {							// D6: XLAT
 		}
 }
 
-#if defined(EXT)
-
-I286 v30_loop(void) {							// E2: loop
-
-		__asm {
-				dec		I286_CX
-				je		loopend
-				I286CLOCK(18)					// åvéZè„13+4ÇæÇ∆évÇ§Ç™ÅA
-												// ë™íËÇ∑ÇÈÇ∆ñÒ18
-				movsx	eax, bh
-				add		si, ax
-				add		si, 2
-				RESET_XPREFETCH
-				ret
-				align	16
-loopend:		I286CLOCK(4)
-				GET_NEXTPRE2
-				ret
-		}
-}
-
-#endif
-
 I286 v30_repne(void) {							// F2: repne
 
 		__asm {
@@ -837,11 +826,13 @@ I286 v30_repe(void) {							// F3: repe
 I286 v30div_ea8(void) {							// F6-6: div ea8
 
 		__asm {
-				PREPART_EA8(14)
+				//PREPART_EA8(14)
+				PREPART_EA8(19)
 					movzx	ebp, byte ptr I286_REG[eax]
 					GET_NEXTPRE2
 					jmp		divcheck
-				MEMORY_EA8(17)
+				//MEMORY_EA8(17)
+				MEMORY_EA8(25)
 					movzx	ebp, byte ptr I286_MEM[ecx]
 					jmp		divcheck
 				EXTMEM_EA8
@@ -869,11 +860,13 @@ I286 v30div_ea8(void) {							// F6-6: div ea8
 I286 v30idiv_ea8(void) {						// F6-7 idiv ea8
 
 		__asm {
-				PREPART_EA8(17)
+				//PREPART_EA8(17)
+				PREPART_EA8(31)
 					movsx	ebp, byte ptr I286_REG[eax]
 					GET_NEXTPRE2
 					jmp		idivcheck
-				MEMORY_EA8(20)
+				//MEMORY_EA8(20)
+				MEMORY_EA8(38)
 					movsx	ebp, byte ptr I286_MEM[ecx]
 					jmp		idivcheck
 				EXTMEM_EA8
@@ -913,11 +906,13 @@ I286 v30_ope0xf6(void) {						// F6:
 I286 v30div_ea16(void) {						// F7-6: div ea16
 
 		__asm {
-				PREPART_EA16(22)
+				//PREPART_EA16(22)
+				PREPART_EA16(25)
 					movzx	ebp, word ptr I286_REG[eax*2]
 					GET_NEXTPRE2
 					jmp		divcheck
-				MEMORY_EA16(25)
+				//MEMORY_EA16(25)
+				MEMORY_EA16(31)
 					movzx	ebp, word ptr I286_MEM[ecx]
 					jmp		divcheck
 				EXTMEM_EA16
@@ -946,11 +941,13 @@ I286 v30div_ea16(void) {						// F7-6: div ea16
 I286 v30idiv_ea16(void) {						// F7-7: idiv ea16
 
 		__asm {
-				PREPART_EA16(25)
+				//PREPART_EA16(25)
+				PREPART_EA16(41)
 					movsx	ebp, word ptr I286_REG[eax*2]
 					GET_NEXTPRE2
 					jmp		idivcheck
-				MEMORY_EA16(28)
+				//MEMORY_EA16(28)
+				MEMORY_EA16(47)
 					movsx	ebp, word ptr I286_MEM[ecx]
 					jmp		idivcheck
 				EXTMEM_EA16

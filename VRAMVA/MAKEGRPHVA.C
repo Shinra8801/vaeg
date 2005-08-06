@@ -17,13 +17,14 @@ typedef struct {
 	BOOL	r320dots;				// 解像度320ドットならTRUE
 	int		pixelmode;				// 0..1bit, 1..4bit, 2..8bit, 3..16bit
 									// bit3 0..パレット 1..直接色指定
-	BYTE	*rasterbuf;
+	WORD	*rasterbuf;
 	UINT32	addrmask;
 	UINT32	addrofs;
 
 	UINT32	lineaddr;				// 次回表示GVRAMアドレス
-	UINT32	wrappedaddr;			// ラップアラウンド後のGVRAMアドレス
-	UINT16	wrapcount;
+	UINT32	wrappedaddr;			// 水平ラップアラウンド後のGVRAMアドレス
+	UINT16	wrapcount;				// 水平ラップアラウンドするまでの残りバイト数
+	UINT16	vwrapcount;				// 垂直ラップアラウンドするまでの残りライン数
 	FRAMEBUFFER	framebuffer;		// 現在表示しているフレームバッファ
 	int		nextframebuffer;		// 次に使用するフレームバッファの番号。無い場合は-1
 } _SCREEN, *SCREEN;
@@ -33,20 +34,17 @@ typedef struct {
 	_SCREEN		screen[GRPHVA_SCREENS];
 } _GRPHVAWORK;
 
-static	WORD rgb8to16[256];			// VA 8bit RGB→16bit RGB
 
 static	_GRPHVAWORK	work;
-		BYTE grph0p_raster[SURFACE_WIDTH + 32];
-		BYTE grph1p_raster[SURFACE_WIDTH + 32];
+
+		WORD grph0_raster[SURFACE_WIDTH + 32];
+		WORD grph1_raster[SURFACE_WIDTH + 32];
 											// 1ラスタ分のピクセルデータ
-											// 各ピクセルはパレット番号(0～15)
+											// 各ピクセルはカラーコード(16bit) または
+											// パレット番号
 											// 画面横幅 + 
 											// 最大4バイト(ex.1bit/pixelなら32dot)分
 											// 使用する
-		WORD grph0c_raster[SURFACE_WIDTH + 32];
-		WORD grph1c_raster[SURFACE_WIDTH + 32];
-											// 1ラスタ分のピクセルデータ
-											// 各ピクセルはカラーコード(16bit)
 
 #define addr18(scrn, x) ( (x) & ((scrn)->addrmask) | ((scrn)->addrofs) )
 
@@ -62,6 +60,14 @@ static void selectframe(SCREEN screen, int no) {
 	screen->framebuffer = f;
 	screen->lineaddr = addr18(screen, f->dsa);
 	screen->wrappedaddr = addr18(screen, f->dsa - f->ofx);
+	if (f->fbl == 0xffff) {
+		// screen 1 (垂直ラップアラウンドなし)
+		screen->vwrapcount = 0;
+	}
+	else {
+		screen->vwrapcount = f->fbl + 1 - f->ofy;
+	}
+
 	if (no == 0) {
 		screen->nextframebuffer = 2;
 	}
@@ -73,12 +79,25 @@ static void selectframe(SCREEN screen, int no) {
 	}
 }
 
-// シングルプレーン4bit/pixel (パレット)
-static void drawraster_s4p(SCREEN screen) {
+static void endraster(SCREEN screen) {
+	screen->vwrapcount--;
+	if (screen->vwrapcount == 0) {
+		// 垂直ラップアラウンド
+		screen->wrappedaddr = addr18(screen, screen->framebuffer->fsa);
+		screen->lineaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->ofx);
+	}
+	else {
+		screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
+		screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
+	}
+}
+
+// シングルプレーン4bit/pixel
+static void drawraster_s4(SCREEN screen) {
 	UINT16		xp;
 	UINT16		wrapcount;
 	UINT32		addr;
-	BYTE		*b;
+	WORD		*b;
 
 	WORD		d, d2;
 
@@ -200,13 +219,12 @@ static void drawraster_s4p(SCREEN screen) {
 			*b++ = (d2 >>  8) & 0x0f;
 		}
 	}
-	screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
-	screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
+
+	endraster(screen);
 }
 
-
-// シングルプレーン8bit/pixel (直接色指定)
-static void drawraster_s8c(SCREEN screen) {
+// シングルプレーン8bit/pixel
+static void drawraster_s8(SCREEN screen) {
 	UINT16		xp;
 	UINT16		wrapcount;
 	UINT32		addr;
@@ -215,7 +233,7 @@ static void drawraster_s8c(SCREEN screen) {
 	WORD		d, d2;
 
 	addr = screen->lineaddr;
-	b = (WORD *)screen->rasterbuf;
+	b = screen->rasterbuf;
 	if (screen->framebuffer->ofx == 0xffff) {
 		// screen 1 (ラップアラウンドなし)
 		wrapcount = 0;
@@ -233,16 +251,16 @@ static void drawraster_s8c(SCREEN screen) {
 
 		switch (screen->framebuffer->dot & 0x11) {
 		case 0:
-			b[0] = b[1] = rgb8to16[(d     ) & 0xff];
+			b[0] = b[1] = (d     ) & 0xff;
 			b += 2;
 		case 1:
-			b[0] = b[1] = rgb8to16[(d >> 8) & 0xff];
+			b[0] = b[1] = (d >> 8) & 0xff;
 			b += 2;
 		case 0x10:
-			b[0] = b[1] = rgb8to16[(d2     ) & 0xff];
+			b[0] = b[1] = (d2     ) & 0xff;
 			b += 2;
 		case 0x11:
-			b[0] = b[1] = rgb8to16[(d2 >> 8) & 0xff];
+			b[0] = b[1] = (d2 >> 8) & 0xff;
 			b += 2;
 		}
 		for (xp = 0; xp < 320/4; xp++) {
@@ -254,15 +272,14 @@ static void drawraster_s8c(SCREEN screen) {
 			d = LOADINTELWORD(grphmem + addr);
 			d2 = LOADINTELWORD(grphmem + addr + 2);
 			addr = addr18(screen, addr + 4);
+			b[0] = b[1] = (d     ) & 0xff;
+			b += 2;
+			b[0] = b[1] = (d >> 8) & 0xff;
+			b += 2;
 
-			b[0] = b[1] = rgb8to16[(d     ) & 0xff];
+			b[0] = b[1] = (d2     ) & 0xff;
 			b += 2;
-			b[0] = b[1] = rgb8to16[(d >> 8) & 0xff];
-			b += 2;
-
-			b[0] = b[1] = rgb8to16[(d2     ) & 0xff];
-			b += 2;
-			b[0] = b[1] = rgb8to16[(d2 >> 8) & 0xff];
+			b[0] = b[1] = (d2 >> 8) & 0xff;
 			b += 2;
 		}
 	}
@@ -275,13 +292,13 @@ static void drawraster_s8c(SCREEN screen) {
 
 		switch (screen->framebuffer->dot & 0x11) {
 		case 0:
-			*b++ = rgb8to16[(d     ) & 0xff];
+			*b++ = (d     ) & 0xff;
 		case 1:
-			*b++ = rgb8to16[(d >> 8) & 0xff];
+			*b++ = (d >> 8) & 0xff;
 		case 0x10:
-			*b++ = rgb8to16[(d2     ) & 0xff];
+			*b++ = (d2     ) & 0xff;
 		case 0x11:
-			*b++ = rgb8to16[(d2 >> 8) & 0xff];
+			*b++ = (d2 >> 8) & 0xff;
 		}
 		for (xp = 0; xp < 640/4; xp++) {
 			wrapcount -= 4;
@@ -292,20 +309,18 @@ static void drawraster_s8c(SCREEN screen) {
 			d = LOADINTELWORD(grphmem + addr);
 			d2 = LOADINTELWORD(grphmem + addr + 2);
 			addr = addr18(screen, addr + 4);
+			*b++ = (d     ) & 0xff;
+			*b++ = (d >> 8) & 0xff;
 
-			*b++ = rgb8to16[(d     ) & 0xff];
-			*b++ = rgb8to16[(d >> 8) & 0xff];
-
-			*b++ = rgb8to16[(d2     ) & 0xff];
-			*b++ = rgb8to16[(d2 >> 8) & 0xff];
+			*b++ = (d2     ) & 0xff;
+			*b++ = (d2 >> 8) & 0xff;
 		}
 	}
-	screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
-	screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
+	endraster(screen);
 }
 
-// シングルプレーン16bit/pixel (直接色指定)
-static void drawraster_s16c(SCREEN screen) {
+// シングルプレーン16bit/pixel
+static void drawraster_s16(SCREEN screen) {
 	UINT16		xp;
 	UINT16		wrapcount;
 	UINT32		addr;
@@ -314,7 +329,7 @@ static void drawraster_s16c(SCREEN screen) {
 	WORD		d, d2;
 
 	addr = screen->lineaddr;
-	b = (WORD *)screen->rasterbuf;
+	b = screen->rasterbuf;
 	if (screen->framebuffer->ofx == 0xffff) {
 		// screen 1 (ラップアラウンドなし)
 		wrapcount = 0;
@@ -382,8 +397,7 @@ static void drawraster_s16c(SCREEN screen) {
 			*b++ = d2;
 		}
 	}
-	screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
-	screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
+	endraster(screen);
 }
 
 
@@ -409,34 +423,24 @@ static void drawraster(SCREEN screen) {
 
 		if (screen->rasterbuf) {
 			if (screen->framebuffer == NULL) {
-				UINT16		xp;
 				// 何も表示しない
-				if (screen->pixelmode & 0x04) {
-					WORD		*b;
-					b = (WORD *)screen->rasterbuf;
-					for (xp = 0; xp < 640; xp++) *b++ = 0;
-				}
-				else {
-					BYTE		*b;
-					b = screen->rasterbuf;
-					for (xp = 0; xp < 640; xp++) *b++ = 0;
-				}
+				UINT16		xp;
+				WORD		*b;
+				b = screen->rasterbuf;
+				for (xp = 0; xp < 640; xp++) *b++ = 0;
 			}
 			else {
 				switch (screen->pixelmode) {
 				case 0:
 					break;
 				case 1:
-					drawraster_s4p(screen);
+					drawraster_s4(screen);
 					break;
 				case 2:
+					drawraster_s8(screen);
 					break;
-
-				case 6:
-					drawraster_s8c(screen);
-					break;
-				case 7:
-					drawraster_s16c(screen);
+				case 3:
+					drawraster_s16(screen);
 					break;
 				}
 			}
@@ -447,59 +451,17 @@ static void drawraster(SCREEN screen) {
 }
 		
 void makegrphva_initialize(void) {
-	int i, r, g, b;
-
-	for (i = 0; i < 256; i++) {
-		b = i & 3;
-		r = (i >> 2) & 7;
-		g = (i >> 5) & 7;
-		rgb8to16[i] = (g << 13) | (g == 0 ? 0 : 0x1c00) |
-			(r << 7) | (r == 0 ? 0 : 0x0060) |
-			(b << 3) | (b == 0 ? 0 : 0x0007);
-	}
 }
 
 void makegrphva_begin(void) {
-	WORD comp;
-	int i;
 
 	work.screeny = 0;
 
-	work.screen[0].rasterbuf = NULL;
-	work.screen[1].rasterbuf = NULL;
 	work.screen[0].pixelmode = videova.grres & 0x0003;
 	work.screen[1].pixelmode = (videova.grres >> 8) & 0x0003;
+	work.screen[0].rasterbuf = grph0_raster;
+	work.screen[1].rasterbuf = grph1_raster;
 
-	comp = videova.colcomp;
-	for (i = 0; i < 4; i++) {
-		switch(comp & 0x000f) {
-		case 0x0a:
-			work.screen[0].rasterbuf = grph0p_raster;
-			break;
-		case 0x0b:
-			work.screen[1].rasterbuf = grph1p_raster;
-			break;
-		}
-		comp >>= 4;
-	}
-
-	comp = videova.rgbcomp;
-	for (i = 0; i < 4; i++) {
-		switch(comp & 0x000f) {
-		case 0x08:
-			work.screen[0].rasterbuf = (BYTE *)grph0c_raster;
-			work.screen[0].pixelmode |= 0x04;
-			break;
-		case 0x09:
-			work.screen[1].rasterbuf = (BYTE *)grph1c_raster;
-			work.screen[1].pixelmode |= 0x04;
-			break;
-		}
-		comp >>= 4;
-	}
-
-	//work.screen[0].rasterbuf = grph0p_raster;
-	//work.screen[1].rasterbuf = grph1p_raster;
 	work.screen[0].r320dots = videova.grres & 0x0010;
 	work.screen[1].r320dots = videova.grres & 0x1000;
 	work.screen[0].r200lines = videova.grmode & 0x0002;
@@ -531,17 +493,8 @@ void makegrphva_raster(void) {
 		int i;
 
 		for (i = 0; i < GRPHVA_SCREENS; i++) {
-			if (work.screen[i].rasterbuf) {
-				if (work.screen[i].pixelmode & 0x04) {
-					for (xp = 0; xp < SURFACE_WIDTH; xp++) {
-						((WORD *)work.screen[i].rasterbuf)[xp] = 0;
-					}
-				}
-				else {
-					for (xp = 0; xp < SURFACE_WIDTH; xp++) {
-						work.screen[i].rasterbuf[xp] = 0;
-					}
-				}
+			for (xp = 0; xp < SURFACE_WIDTH; xp++) {
+				work.screen[i].rasterbuf[xp] = 0;
 			}
 		}
 	}

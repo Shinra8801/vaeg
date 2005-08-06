@@ -394,7 +394,7 @@ static void cmd_set_color(void) {
 static void exec_bitblt(void) {
 	UINT16 dat;
 	UINT16 datmask;
-	int BPP = 4;
+	int BPP = bpp[sgp.dest.scrnmode];
 	UINT16 PIXMASK = ~(0xffff << BPP);
 
 	if (sgp.src.dotcount == 0) {

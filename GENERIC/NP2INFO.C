@@ -50,6 +50,21 @@ static const char str_chpan[] =
 						"Mono-R\0"					\
 						"Mono-L\0"					\
 						"Stereo";
+#if defined(SUPPORT_PC88VA)
+static const char str_fmboard[] =
+						"none\0"					\
+						"PC-9801-14\0"				\
+						"PC-9801-26\0"				\
+						"PC-9801-86\0"				\
+						"PC-9801-26 + 86\0"			\
+						"PC-9801-118\0"				\
+						"PC-9801-86 + Chibi-oto\0"	\
+						"Speak board\0"				\
+						"Spark board\0"				\
+						"AMD-98\0"					\
+						"Sound Board 1\0"			\
+						"Sound Board 2";
+#else
 static const char str_fmboard[] =
 						"none\0"					\
 						"PC-9801-14\0"				\
@@ -61,6 +76,7 @@ static const char str_fmboard[] =
 						"Speak board\0"				\
 						"Spark board\0"				\
 						"AMD-98";
+#endif
 
 static const char str_clockfmt[] = "%d.%1dMHz";
 static const char str_memfmt[] = "%3uKB";
@@ -279,6 +295,11 @@ static void info_sound(char *str, int maxlen, NP2INFOEX *ex) {
 		case 0x80:
 			type = 9;
 			break;
+#if defined(SUPPORT_PC88VA)
+		case 0x200:
+			type = 11;
+			break;
+#endif
 	}
 	milstr_ncpy(str, milstr_list(str_fmboard, type), maxlen);
 	(void)ex;

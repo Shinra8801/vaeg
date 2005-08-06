@@ -17,15 +17,18 @@ enum {
 };
 
 
-	WORD	vabitmap[SURFACE_SIZE];		// 画面合成結果(VA 16bit/pixel)
+
+		WORD	vabitmap[SURFACE_SIZE];		// 画面合成結果(VA 16bit/pixel)
 
 #if defined(SUPPORT_24BPP) || defined(SUPPORT_32BPP)
-	RGB32		drawcolor32[COLORCODES];
+		RGB32		drawcolor32[COLORCODES];
 #endif
 
 #if defined(SUPPORT_16BPP)
-	RGB16		drawcolor16[COLORCODES];
+		RGB16		drawcolor16[COLORCODES];
 #endif
+
+static	WORD rgb8to16[256];					// VA 8bit RGB→16bit RGB
 
 
 
@@ -37,6 +40,20 @@ static void scrndrawva_initialize(void) {
 
 
 	ZeroMemory(vabitmap, sizeof(vabitmap));
+
+	// VA 8bit RGB→16bit RGB 変換テーブルの作成
+	{
+		int i, r, g, b;
+
+		for (i = 0; i < 256; i++) {
+			b = i & 3;
+			r = (i >> 2) & 7;
+			g = (i >> 5) & 7;
+			rgb8to16[i] = (g << 13) | (g == 0 ? 0 : 0x1c00) |
+				(r << 7) | (r == 0 ? 0 : 0x0060) |
+				(b << 3) | (b == 0 ? 0 : 0x0007);
+		}
+	}
 }
 
 static void scrndrawva_makedrawcolor(void) {
@@ -135,14 +152,18 @@ enum {
 };
 
 typedef struct {
-	int		type;			// VIDEOVA_xxxxSCREEN (未使用 -1)
+	WORD	*raster;		// 1ライン分の色データ(パレット番号orVA8bit/16bitカラーコード)
+	BOOL	mask[2];		// マスク領域の内側([0]),外側([1])をマスク
 
-	BYTE	*raster;		// 1ライン分の色データ(パレット番号orVA16bitカラーコード)
+							// 直接色指定画面の場合のみ
+	int		pixelmode;		// ピクセルサイズ
+							// 0..1bpp, 1..4bpp, 2..8bpp, 3..16bpp
+
+							// パレット指定画面の場合のみ
 	BYTE	palflip;		// パレット番号に XORするデータ
 							// パレットセット0使用時は0, 1使用時は0x10
 	DWORD	xpar;			// 透明色フラグ(bit0:パレット0～bit31:パレット31)
 
-	BOOL	mask[2];		// マスク領域の内側([0]),外側([1])をマスク
 } _COMPSCRN, *COMPSCRN;
 
 typedef struct {
@@ -153,8 +174,8 @@ typedef struct {
 
 static	_COMPOSEWORK	work;
 
-static	BYTE	tstextraster[SURFACE_WIDTH];
-static	BYTE	tssprraster[SURFACE_WIDTH];
+static	WORD	tsptext_raster[SURFACE_WIDTH];
+static	WORD	tspspr_raster[SURFACE_WIDTH];
 												// 1ラスタ分のピクセルデータ
 												// 各ピクセルはパレット番号(0～15)
 
@@ -178,15 +199,8 @@ void scrndrawva_compose_raster(void) {
 	WORD c;
 	WORD tscr;
 	DWORD dd;
-//	BYTE *palscrn[4];
-//	BYTE pri[VIDEOVA_SCREENS];
 	BYTE defaultflip;
-/*
-	pri[VIDEOVA_TEXTSCREEN] = 1;
-	pri[VIDEOVA_SPRITESCREEN] = 0;
-	pri[VIDEOVA_GRAPHICSCREEN0] = 3;
-	pri[VIDEOVA_GRAPHICSCREEN1] = 2;
-*/
+
 	// テキストとスプライトの出力を重ね合わせ、
 	// テキスト/スプライト判別境界カラーで分離する
 	tscr = videova.pagemsk >> 12;	// テキスト/スプライト判別境界カラー
@@ -195,13 +209,13 @@ void scrndrawva_compose_raster(void) {
 		if (palcode == 0) palcode = textraster[x];
 		if (palcode > tscr) {
 			// テキスト
-			tstextraster[x] = palcode;
-			tssprraster[x] = 0;
+			tsptext_raster[x] = palcode;
+			tspspr_raster[x] = 0;
 		}
 		else {
 			// スプライト
-			tstextraster[x] = 0;
-			tssprraster[x] = palcode;
+			tsptext_raster[x] = 0;
+			tspspr_raster[x] = palcode;
 		}
 	}
 
@@ -210,47 +224,37 @@ void scrndrawva_compose_raster(void) {
 	palset1scrn = (videova.palmode >> 4) & 3;
 
 	dd = videova.colcomp | ((DWORD)videova.rgbcomp << 16);
-/*
-	for (i = 0; i < VIDEOVA_PALETTE_SCREENS + VIDEOVA_RGB_SCREENS; i++) {
-		work.scrn[i].raster = NULL;
-	}
-*/
-	//for (i = 0; i < VIDEOVA_SCREENS; i++) {
+
 	scrn = work.scrn;
 	for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
 		type = (int)(dd & 0x0f);
 		dd >>= 4;
 		if (type < 8) {
 			scrn->raster = NULL;
+			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
+			scrn->mask[OUTSIDE] = TRUE;
+			scrn->mask[INSIDE] = TRUE;
 			continue;
 		}
-		//if (i < VIDEOVA_PALETTE_SCREENS) {
-			type &= 0x03;
-		//}
-		//else {
-			// ToDo: 直接色指定
-			//type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
-		//}
-		scrn->type = type;
-//		scrn = &work.scrn[pri[i]];
+		type &= 0x03;
 		scrn->palflip = defaultflip;
 		if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
 
-		switch (scrn->type) {
+		switch (type) {
 		case VIDEOVA_TEXTSCREEN:
-			scrn->raster = tstextraster;
+			scrn->raster = tsptext_raster;
 			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
 			break;
 		case VIDEOVA_SPRITESCREEN:
-			scrn->raster = tssprraster;
+			scrn->raster = tspspr_raster;
 			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
 			break;
 		case VIDEOVA_GRAPHICSCREEN0:
-			scrn->raster = grph0p_raster;
+			scrn->raster = grph0_raster;
 			scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
 			break;
 		case VIDEOVA_GRAPHICSCREEN1:
-			scrn->raster = grph1p_raster;
+			scrn->raster = grph1_raster;
 			scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
 			break;
 		}
@@ -275,26 +279,27 @@ void scrndrawva_compose_raster(void) {
 		}
 	}
 
-	scrn = &work.scrn[VIDEOVA_PALETTE_SCREENS];
+	//scrn = &work.scrn[VIDEOVA_PALETTE_SCREENS];
 	for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
 		type = (int)(dd & 0x0f);
 		dd >>= 4;
 		if (type < 8 || type > 9) {
 			scrn->raster = NULL;
+			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
+			scrn->mask[OUTSIDE] = TRUE;
+			scrn->mask[INSIDE] = TRUE;
 			continue;
 		}
-		scrn->type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
-		//scrn->palflip = defaultflip;
-		//if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
+		type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
 
-		switch (scrn->type) {
+		switch (type) {
 		case VIDEOVA_GRAPHICSCREEN0:
-			scrn->raster = (BYTE *)grph0c_raster;
-			//scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
+			scrn->raster = grph0_raster;
+			scrn->pixelmode = videova.grres & 0x0003;
 			break;
 		case VIDEOVA_GRAPHICSCREEN1:
-			scrn->raster = (BYTE *)grph1c_raster;
-			//scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
+			scrn->raster = grph1_raster;
+			scrn->pixelmode = (videova.grres >> 8) & 0x0003;
 			break;
 		}
 
@@ -320,37 +325,20 @@ void scrndrawva_compose_raster(void) {
 	}
 
 
-/*
-	for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) work.scrn[i].palflip = 0;
-	switch ((videova.palmode >> 6) & 3) {
-	case 1:
-		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) work.scrn[i].palflip = 0x10;
-		break;
-	case 2:
-		work.scrn[pri[(videova.palmode >> 4) & 3]].palflip = 0x10;
-		break;
-	case 3:	// ToDo
-		break;
-	}
-*/
 	bp = work.bp;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
-		if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1) {
+		if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1 ||
+			x < videova.mskleft || x > videova.mskrit) {
 			side = OUTSIDE;
 		}
 		else {
-			if (x < videova.mskleft || x > videova.mskrit) {
-				side = OUTSIDE;
-			}
-			else {
-				side = INSIDE;
-			}
+			side = INSIDE;
 		}
 		// パレット指定画面
-		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++) {
-			scrn = &work.scrn[i];
-			if (!scrn->mask[side] && scrn->raster != NULL) {
-				palcode = scrn->raster[x] ^ scrn->palflip;
+		scrn = &work.scrn[0];
+		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
+			if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
+				palcode = (scrn->raster[x] & 0x0f) ^ scrn->palflip;
 				if ((scrn->xpar & (1 << palcode)) == 0) {
 					// 不透明色
 					c = videova.palette[palcode];
@@ -359,10 +347,20 @@ void scrndrawva_compose_raster(void) {
 			}
 		}
 		// 直接色指定画面
-		for (i = 0; i < VIDEOVA_RGB_SCREENS; i++) {
-			scrn = &work.scrn[i + VIDEOVA_PALETTE_SCREENS];
-			if (!scrn->mask[side] && scrn->raster != NULL) {
-				c = ((WORD *)scrn->raster)[x];
+		for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
+			if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
+				c = scrn->raster[x];
+				switch (scrn->pixelmode) {
+				case 2:
+					c = rgb8to16[c];
+					break;
+				case 3:
+					break;
+				default:
+					// 1bit/pixel, 4bit/pixelでは常に透明
+					c = 0;
+					break;
+				}
 				if (c != 0) {
 					// 不透明色
 					goto opaque;
@@ -371,20 +369,7 @@ void scrndrawva_compose_raster(void) {
 		}
 
 		c = videova.dropcol;
-/*
-		c = work.raster[1][x] ^ work.flipset[1];
-		if ((c & 0x0f) == 0) c = work.raster[0][x] ^ work.flipset[0];
-		if ((c & 0x0f) == 0) c = work.raster[3][x] ^ work.flipset[3];
-		if ((c & 0x0f) == 0) c = work.raster[2][x] ^ work.flipset[2];
-		*bp = videova.palette[c];
-*/
- /*
-		c = sprraster[x];
-		if (c == 0) c = textraster[x];
-		if (c == 0) c = grph1p_raster[x];
-		if (c == 0) c = grph0p_raster[x];
-		*bp = videova.palette[c];
-*/
+
 	opaque:
 		*bp = c;
 		bp++;

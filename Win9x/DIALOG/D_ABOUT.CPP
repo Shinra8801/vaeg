@@ -21,6 +21,23 @@ static const char str_np2title[] = "Neko Project II  ";
 static const char str_np2title[] = "Neko Project 21  ";
 #endif
 
+#if defined(SUPPORT_PC88VA)
+static const char np2infostr[] = 								\
+						"CPU: %CPU% %CLOCK%\n"					\
+						"SOUND: %EXSND%\n"						\
+						"RHYTHM: %RHYTHM%\n"					\
+						"\n"									\
+						"SCREEN: %DISP%\n"						\
+						"\n"									\
+						"[98x1]\n"								\
+						"MEM: %MEM1%\n"							\
+						"GDC: %GDC%\n"							\
+						"     %GDC2%\n"							\
+						"TEXT: %TEXT%\n"						\
+						"GRPH: %GRPH%\n"						\
+						"\n"									\
+						"BIOS: %BIOS%";
+#else
 static const char np2infostr[] = 								\
 						"CPU: %CPU% %CLOCK%\n"					\
 						"MEM: %MEM1%\n"							\
@@ -34,7 +51,7 @@ static const char np2infostr[] = 								\
 						"RHYTHM: %RHYTHM%\n"					\
 						"\n"									\
 						"SCREEN: %DISP%";
-
+#endif
 
 static void about_init(HWND hWnd) {
 
@@ -47,7 +64,7 @@ static void about_init(HWND hWnd) {
 #if defined(SUPPORT_PC88VA)
 	milstr_ncpy(work, str_vaegtitle, sizeof(work));
 	milstr_ncat(work, VAEGREL_CORE, sizeof(work));
-	milstr_ncat(work, "\n\n  Based on ", sizeof(work));
+	milstr_ncat(work, "\n\n       Based on ", sizeof(work));
 	milstr_ncat(work, str_np2title, sizeof(work));
 #else
 	milstr_ncpy(work, str_np2title, sizeof(work));
@@ -69,7 +86,11 @@ static void about_init(HWND hWnd) {
 					pt.x + ((parent.right - parent.left - aboutsize.cx) / 2),
 					pt.y + ((parent.bottom - parent.top - aboutsize.cy) / 2),
 					aboutsize.cx,
+#if defined(SUPPORT_PC88VA)
+					aboutsize.cy + 200 + 60 - (rectclient.bottom - rectclient.top));
+#else
 					aboutsize.cy + 60 - (rectclient.bottom - rectclient.top));
+#endif
 
 	SetFocus(GetDlgItem(hWnd, IDOK));
 }

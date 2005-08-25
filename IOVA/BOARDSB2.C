@@ -16,18 +16,19 @@
 #if defined(SUPPORT_PC88VA)
 
 static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
-//static unsigned int wait = 0;			// = 10μs  
+//static unsigned int wait = 0;			// 
 
 static void IOOUTCALL sb2_o044(UINT port, REG8 dat) {
 
 //	CPU_REMCLOCK -= wait;
 
 	opn.opnreg = dat;
-	(void)port;
+	//TRACEOUT(("sb2: o044 <- %02x %.4x:%.4x", dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
 
+	//TRACEOUT(("sb2: o045 (%02x) <- %02x %.4x:%.4x", opn.opnreg, dat, CPU_CS, CPU_IP));
 	S98_put(NORMAL2608, opn.opnreg, dat);
 	if (opn.opnreg < 0x10) {
 		if (opn.opnreg != 0x0e) {
@@ -75,6 +76,7 @@ static void IOOUTCALL sb2_o046(UINT port, REG8 dat) {
 
 static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
 
+	//TRACEOUT(("sb2: o047 (%02x) <- %02x %.4x:%.4x", opn.extreg, dat, CPU_CS, CPU_IP));
 	S98_put(EXTEND2608, opn.extreg, dat);
 	opn.reg[opn.extreg + 0x100] = dat;
 	if (opn.extreg >= 0x30) {
@@ -95,18 +97,22 @@ static REG8 IOINPCALL sb2_i044(UINT port) {
 }
 
 static REG8 IOINPCALL sb2_i045(UINT port) {
+	REG8 dat;
 
 	if (opn.opnreg == 0x0e) {
-		return(fmboard_getjoy(&psg1) | 0xf0);
+		dat = fmboard_getjoy(&psg1) | 0xf0;
 	}
 	else if (opn.opnreg == 0x0f) {						// 88VA固有
-		return((fmboard_getjoy(&psg1) >> 4) | 0xfc);
+		dat = (fmboard_getjoy(&psg1) >> 4) | 0xfc;
 	}
 	else if (opn.opnreg < 0x10) {
-		return(psggen_getreg(&psg1, opn.opnreg));
+		dat = psggen_getreg(&psg1, opn.opnreg);
 	}
-	(void)port;
-	return(opn.reg[opn.opnreg]);
+	else {
+		dat = opn.reg[opn.opnreg];
+	}
+	//TRACEOUT(("sb2: i045 (%02x) -> %02x %.4x:%.4x", opn.opnreg, dat, CPU_CS, CPU_IP));
+	return(dat);
 }
 
 static REG8 IOINPCALL sb2_i047(UINT port) {

@@ -696,7 +696,7 @@ enum {
 	BREAKADDR_MAX = 16,
 };
 		BOOL	stopexec = FALSE;					// 実行を停止する
-		BOOL	breakpointflag = FALSE;				// ブレークポイントを有効にする
+		BOOL	breakpointflag = TRUE;//FALSE;				// ブレークポイントを有効にする
 		BREAKADDR	breakaddrx[BREAKADDR_MAX] = {	// ブレークポイント
 			{FALSE, 0xe000, 0x9213},
 			{FALSE, 0xe000, 0xb577},
@@ -706,7 +706,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 /*
 	int	x = 0;
 
-    if (addr == 0x30000  && sysm_bank == 1) {
+    if (addr == 0x39700+0x4174 || addr == 0x39700+0x4173) {
 		x=op+addr+data;
 	}
 */
@@ -730,6 +730,7 @@ static	UINT	trpos = 0;
 static	UINT32	treip[IPTRACE];
 #if defined(SUPPORT_PC88VA)
 static	BYTE	trerom0bank[IPTRACE];
+static	WORD	tredata1[IPTRACE];
 
 		int		treafter = 0;			// Shinra
 #endif
@@ -754,12 +755,13 @@ void iptrace_out(void) {
 		BYTE	bank = trerom0bank[s & (IPTRACE - 1)];
 #endif
 		eip = treip[s & (IPTRACE - 1)];
-		s++;
 #if defined(SUPPORT_PC88VA)
-		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x)\r\n", (eip >> 16), eip & 0xffff, bank);
+//		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x)\r\n", (eip >> 16), eip & 0xffff, bank);
+		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x) dx=%.4x\r\n", (eip >> 16), eip & 0xffff, bank, tredata1[s & (IPTRACE - 1)]);
 #else
 		SPRINTF(buf, "%.4x:%.4x\r\n", (eip >> 16), eip & 0xffff);
 #endif
+		s++;
 		file_write(fh, buf, strlen(buf));
 	}
 	file_close(fh);
@@ -841,11 +843,19 @@ void pccore_exec(BOOL draw) {
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
 #if defined(SUPPORT_PC88VA)
 			trerom0bank[trpos & (IPTRACE - 1)] = rom0_bank;
+			tredata1[trpos & (IPTRACE - 1)] =CPU_DX;
 #endif
 			trpos++;
 #endif
 //@@@@@@
-			
+/*	神羅万象、効果音が変になる調査
+			if (CPU_CS==0x3970 && CPU_IP==0x5808) {
+				TRACEOUT(("aaa: process timer-B"));
+			}
+			if (CPU_CS==0x3970 && CPU_IP==0x5814) {
+				TRACEOUT(("aaa: process timer-A"));
+			}
+*/
 			if (breakpointflag) {
 				int	i;
 				BREAKADDR *ba;

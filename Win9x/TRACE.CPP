@@ -471,6 +471,33 @@ void trace_fmt(const char *fmt, ...) {
 		va_start(ap, fmt);
 		vsprintf(buf, fmt, ap);
 		va_end(ap);
+#if defined(EXT)
+		{
+#define KEYWORDS_MAX 5
+			BOOL usefilter = FALSE;
+			static const char *keywords[KEYWORDS_MAX]={
+				"sb2:",
+				"cpu:",
+/*
+				"sysp_",
+				"fm",
+				"pic: hardware-int 14",
+				//"set timera",
+				//"set timerb",
+*/
+			};
+			int i;
+
+			if (usefilter) {
+				for (i = 0; i < KEYWORDS_MAX; i++) {
+					if (keywords[i] != NULL) {
+						if (strstr(buf, keywords[i])) break;
+					}
+				}
+				if (i == KEYWORDS_MAX) return;
+			}
+		}
+#endif
 		if ((tracewin.en & 4) && (hView)) {
 			View_AddString(buf);
 		}

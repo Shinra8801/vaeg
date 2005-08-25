@@ -107,10 +107,14 @@ void pic_irq(void) {												// ver0.78
 	REG8	bit;
 	REG8	slave;
 
+#if 1	// Shinra log
 	// Š„ž‚Ý‹–‰ÂH
 	if (!CPU_isEI) {
+		//TRACEOUT(("pic: !CPU_EI"));
 		return;
 	}
+#endif
+
 	p = &pic;
 
 	sir = p->pi[1].irr & (~p->pi[1].imr);
@@ -123,6 +127,13 @@ void pic_irq(void) {												// ver0.78
 	if (mir == 0) {
 		return;
 	}
+#if 0 // Shinra log
+	// Š„ž‚Ý‹–‰ÂH
+	if (!CPU_isEI) {
+		TRACEOUT(("pic: !CPU_EI"));
+		return;
+	}
+#endif
 	if (!(p->pi[0].ocw3 & PIC_OCW3_SMM)) {
 		mir |= p->pi[0].isr;
 	}
@@ -150,7 +161,8 @@ void pic_irq(void) {												// ver0.78
 			p->pi[0].irr &= ~slave;
 			p->pi[1].isr |= bit;
 			p->pi[1].irr &= ~bit;
-//			TRACEOUT(("hardware-int %.2x", (p->pi[1].icw[1] & 0xf8) | num));
+//			TRACEOUT(("pic: hardware-int %.2x: [%.4x:%.4x]", (p->pi[1].icw[1] & 0xf8) | num, CPU_CS, CPU_IP));
+			//if (num == 4) TRACEOUT(("aaa: %ld hardware-int %.2x",CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK , (p->pi[1].icw[1] & 0xf8) | num));
 			CPU_INTERRUPT((REG8)((p->pi[1].icw[1] & 0xf8) | num), 0);
 		}
 	}

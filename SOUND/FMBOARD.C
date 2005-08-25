@@ -1,6 +1,7 @@
 #include	"compiler.h"
 #include	"joymng.h"
 #include	"soundmng.h"
+#include	"cpucore.h"
 #include	"pccore.h"
 #include	"iocore.h"
 #include	"cbuscore.h"
@@ -39,6 +40,10 @@
 	_ADPCM		adpcm;
 	_PCM86		pcm86;
 	_CS4231		cs4231;
+
+#if defined(SUPPORT_PC88VA)
+static BYTE	sintm;			// bit7  0..割り込み許可  1..割り込み禁止
+#endif
 
 
 static void	(*extfn)(REG8 enable);
@@ -146,6 +151,10 @@ void fmboard_reset(UINT32 type) {
 	adpcm_reset(&adpcm);
 	pcm86_reset();
 	cs4231_reset();
+
+#if defined(SUPPORT_PC88VA)
+	sintm = 0;
+#endif
 
 	switch(type) {
 		case 0x01:
@@ -284,3 +293,39 @@ const BYTE	*reg;
 	rhythm_setreg(rhy, 0x1d, reg[0x1d]);
 }
 
+
+
+#if defined(SUPPORT_PC88VA)
+void fmboard_setintmask(BYTE mask) {
+	mask &= 0x80;
+	if ((sintm ^ mask) & 0x80) {
+		if (mask) {
+			// マスク
+			TRACEOUT(("fmboard: SINTM set: reset irq"));
+			pic_resetirq(fmtimer.irq);
+		}
+		else {
+			// マスク解除
+			TRACEOUT(("fmboard: SINTM reset: fmtimer.status = %02x", fmtimer.status));
+			if (fmtimer.status & 0x03) {
+				// ToDo: ADPCM関連の割り込みに未対応。see FMTIMER.C fmport_a, fmport_b
+				TRACEOUT(("fmboard: set irq"));
+				pic_setirq(fmtimer.irq);
+				// CPU実行のループを抜けてpicの処理に移らせるため、CPU_REMCLOCK を 0にする
+				/*
+				if (CPU_REMCLOCK > 0) {
+					CPU_BASECLOCK -= CPU_REMCLOCK;
+					CPU_REMCLOCK = 0;
+				}
+				*/
+				nevent_forceexit();
+			}
+		}
+	}
+	sintm = mask;
+}
+
+BYTE fmboard_getintmask(void) {
+	return sintm;
+}
+#endif

@@ -117,4 +117,7 @@ typedef signed __int64		SINT64;
 #define SUPPORT_V30ORIGINAL
 #define SUPPORT_V30EXT
 
+#define VAEG_FIX			// 98x1共用処理に修正を適用する
+#define VAEG_EXT			// 98x1共用処理に拡張を適用する
+
 #define USEIPTRACE

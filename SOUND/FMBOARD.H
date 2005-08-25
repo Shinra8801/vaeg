@@ -63,7 +63,6 @@ extern	_ADPCM		adpcm;
 extern	_PCM86		pcm86;
 extern	_CS4231		cs4231;
 
-
 REG8 fmboard_getjoy(PSGGEN psg);
 
 void fmboard_extreg(void (*ext)(REG8 enable));
@@ -74,6 +73,12 @@ void fmboard_bind(void);
 
 void fmboard_fmrestore(REG8 chbase, UINT bank);
 void fmboard_rhyrestore(RHYTHM rhy, UINT bank);
+
+#if defined(SUPPORT_PC88VA)
+void fmboard_setintmask(BYTE mask);
+BYTE fmboard_getintmask(void);
+#endif
+
 
 #ifdef __cplusplus
 }

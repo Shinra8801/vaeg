@@ -104,6 +104,12 @@ void adpcm_setreg(ADPCM ad, REG8 reg, REG8 value) {
 			ad->limit = addr;
 			break;
 
+#if defined(VAEG_EXT)
+		case 0x0e:								// DAC data
+			ad->status |= 0x04;	// EOS
+			break;
+#endif
+
 		case 0x10:								// flag
 			if (value & 0x80) {
 				ad->status = 0;
@@ -120,3 +126,11 @@ REG8 adpcm_status(ADPCM ad) {
 	return(((ad->status | 8) & ad->mask) | ad->play);
 }
 
+
+#if defined(VAEG_EXT)
+/*
+	・レジスタ0Eh (DAC DATA)に出力された場合、EOSフラグを1にする。
+	  (実際の再生は行わない)
+	  (DA変換機能使用時のハングアップ回避)
+*/
+#endif

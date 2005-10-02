@@ -76,7 +76,6 @@ void fmport_b(NEVENTITEM item) {
 			if (!fmboard_getintmask()) {
 				pic_setirq(fmtimer.irq);
 				//TRACEOUT(("fmtimer: int-B"));
-				//TRACEOUT(("aaa: %ld fmtimer: int-B",CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK));
 			}
 			else {
 				//TRACEOUT(("fmtimer: int-B (masked)"));
@@ -137,7 +136,6 @@ static void set_fmtimerbevent(BOOL absolute) {
 	else {										// 5MHz
 		l = (l * 1536 / 625) * pccore.multiple;
 	}
-	//TRACEOUT(("aaa: %ld fmtimer: set timer-B: %ld",CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK, l));
 	nevent_set(NEVENT_FMTIMERB, l, fmport_b, absolute);
 	//TRACEOUT(("fmtimer: start timer-B"));
 }

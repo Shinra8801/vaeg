@@ -683,6 +683,9 @@ void screenvsyncva(NEVENTITEM item) {
 // ---------------------------------------------------------------------------
 
 //@@@@@@
+#if defined(VAEG_EXT)
+#include	"breakpoint.h"
+#endif
 
 // ブレークポイント
 typedef struct {
@@ -695,12 +698,43 @@ typedef struct {
 enum {
 	BREAKADDR_MAX = 16,
 };
+
 		BOOL	stopexec = FALSE;					// 実行を停止する
+		BOOL	singlestep = FALSE;					// シングルステップ実行
 		BOOL	breakpointflag = TRUE;//FALSE;				// ブレークポイントを有効にする
 		BREAKADDR	breakaddrx[BREAKADDR_MAX] = {	// ブレークポイント
 			{FALSE, 0xe000, 0x9213},
 			{FALSE, 0xe000, 0xb577},
 		};
+
+#if defined(VAEG_EXT)
+		DEBUGCALLBACK	debugcallback;
+
+void pccore_debugsetcallback(DEBUGCALLBACK *callback) {
+	debugcallback = *callback;
+}
+
+void pccore_debugpause(BOOL pauseflag) {
+	stopexec = pauseflag;
+}
+
+BOOL pccore_getdebugpause(void) {
+	return stopexec;
+}
+
+void pccore_debugsinglestep(BOOL singlestepflag) {
+	singlestep = singlestepflag;
+}
+
+void pccore_debugioin(BOOL word, UINT port) {
+	if (breakpoint_check_ioin(port)) {
+		stopexec = TRUE;
+	}
+	else if (word && breakpoint_check_ioin(port+1)) {
+		stopexec = TRUE;
+	}
+}
+#endif
 
 void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 /*
@@ -713,7 +747,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 }
 
 void pccore_debugint(UINT32 no) {
-	if (no != 0x82 && !(no == 0x83/* && CPU_AX==0x2e00*/) && no != 0x96) {
+	if (no != 0x82 /*&& !(no == 0x83 && CPU_AX==0x2e00)*/ && no != 0x96) {
 		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
 		no, CPU_CS, CPU_IP,  rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
 	}
@@ -848,31 +882,35 @@ void pccore_exec(BOOL draw) {
 			trpos++;
 #endif
 //@@@@@@
-/*	神羅万象、効果音が変になる調査
-			if (CPU_CS==0x3970 && CPU_IP==0x5808) {
-				TRACEOUT(("aaa: process timer-B"));
-			}
-			if (CPU_CS==0x3970 && CPU_IP==0x5814) {
-				TRACEOUT(("aaa: process timer-A"));
-			}
-*/
-			if (breakpointflag) {
-				int	i;
-				BREAKADDR *ba;
+			if (!stopexec) {
+				if (singlestep) {
+					stopexec = TRUE;
+				}
+/*
+				else if (breakpointflag) {
+					int	i;
+					BREAKADDR *ba;
 
-				ba = breakaddrx;
-				for (i = 0; i < BREAKADDR_MAX; i++, ba++) {
-					if (ba->enabled) {
-						if (ba->seg == CPU_CS && ba->off == CPU_IP) {
-							stopexec = TRUE;
+					ba = breakaddrx;
+					for (i = 0; i < BREAKADDR_MAX; i++, ba++) {
+						if (ba->enabled) {
+							if (ba->seg == CPU_CS && ba->off == CPU_IP) {
+								stopexec = TRUE;
+							}
 						}
 					}
 				}
+*/
+				else if (breakpoint_check_step()) {
+					stopexec = TRUE;
+				}
 			}
 			
-			while (stopexec) {
-				int x = 0;
-				x++;
+			if (stopexec) {
+				debugcallback.onpause();
+				while (stopexec) {
+					debugcallback.wait();
+				}
 			}
 //@@@@@@
 

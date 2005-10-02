@@ -1085,6 +1085,7 @@ BEGIN
     IDS_OPEN                "&Open..."
     IDS_EJECT               "&Eject"
     IDS_REMOVE              "&Remove"
+    IDS_DEBUGCTRL           "Debug Control"
 END
 
 #endif    // “ú–{Œê resources

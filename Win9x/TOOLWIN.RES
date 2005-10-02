@@ -16,6 +16,26 @@ static const char str_static[] = "STATIC";
 static const char str_combobox[] = "COMBOBOX";
 static const char str_button[] = "BUTTON";
 
+#if defined(SUPPORT_PC88VA)
+static const SUBITEM defsubitem[IDC_MAXITEMS] = {
+		{TCTL_STATIC,	NULL,		  8, 66,  12,   4, 0, 0},
+		{TCTL_STATIC,	NULL,		246, 10,  12,   4, 0, 0},
+		{TCTL_DDLIST,	NULL,		234, 26, 144, 160, 2, 0},
+		{TCTL_BUTTON,	str_browse,	378, 28,  16,  16, 2, 0},
+		{TCTL_BUTTON,	str_eject,	342,  6,  40,  16, 1, 0},
+		{TCTL_STATIC,	NULL,		246, 62,  12,   4, 0, 0},
+		{TCTL_DDLIST,	NULL,		234, 78, 144, 160, 2, 0},
+		{TCTL_BUTTON,	str_browse,	378, 80,  16,  16, 2, 0},
+		{TCTL_BUTTON,	str_eject,	342, 58,  40,  16, 1, 0},
+		{TCTL_BUTTON,	str_reset,   88,110,  22,   8, 1, 0},
+		{TCTL_BUTTON,	str_power,	425, 81,  28,  20, 1, 0},
+
+		{TCTL_STATIC,	NULL,		424, 13,   8,   4, 0, 0},
+		{TCTL_STATIC,	NULL,		424, 24,   8,   4, 0, 0},
+		{TCTL_STATIC,	NULL,		424, 35,   8,   4, 0, 0},
+};
+#else
+
 static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_STATIC,	NULL,		 49, 44,   8,   3, 0, 0},
 		{TCTL_STATIC,	NULL,		 93, 19,   8,   3, 0, 0},
@@ -28,12 +48,9 @@ static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_BUTTON,	str_eject,	370, 29,  34,  17, 0, 0},
 		{TCTL_BUTTON,	str_reset,    0,  0,   0,   0, 0, 0},
 		{TCTL_BUTTON,	str_power,	  0,  0,   0,   0, 0, 0},
-#if defined(SUPPORT_PC88VA)
-		{TCTL_STATIC,	NULL,		 17, 28,   8,   3, 0, 0},
-		{TCTL_STATIC,	NULL,		 49, 28,   8,   3, 0, 0},
-		{TCTL_STATIC,	NULL,		 80, 28,   8,   3, 0, 0},
-#endif
 };
+
+#endif
 
 // ----
 

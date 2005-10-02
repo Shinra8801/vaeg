@@ -301,15 +301,15 @@ void fmboard_setintmask(BYTE mask) {
 	if ((sintm ^ mask) & 0x80) {
 		if (mask) {
 			// マスク
-			TRACEOUT(("fmboard: SINTM set: reset irq"));
+//			TRACEOUT(("fmboard: SINTM set: reset irq"));
 			pic_resetirq(fmtimer.irq);
 		}
 		else {
 			// マスク解除
-			TRACEOUT(("fmboard: SINTM reset: fmtimer.status = %02x", fmtimer.status));
+//			TRACEOUT(("fmboard: SINTM reset: fmtimer.status = %02x", fmtimer.status));
 			if (fmtimer.status & 0x03) {
 				// ToDo: ADPCM関連の割り込みに未対応。see FMTIMER.C fmport_a, fmport_b
-				TRACEOUT(("fmboard: set irq"));
+//				TRACEOUT(("fmboard: set irq"));
 				pic_setirq(fmtimer.irq);
 				// CPU実行のループを抜けてpicの処理に移らせるため、CPU_REMCLOCK を 0にする
 				/*

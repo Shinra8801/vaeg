@@ -158,6 +158,14 @@ enum {
 };
 
 
+#if defined(VAEG_EXT)
+typedef struct {
+	void (*wait)(void);
+	void (*onpause)(void);
+} DEBUGCALLBACK;
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -194,6 +202,16 @@ extern	int		treafter;
 //@@@@@
 void pccore_debugint(UINT32 no);
 //@@@@@
+
+#if defined(VAEG_EXT)
+void pccore_debugsetcallback(DEBUGCALLBACK *callback);
+void pccore_debugpause(BOOL pauseflag);
+BOOL pccore_getdebugpause(void);
+void pccore_debugsinglestep(BOOL singlstepflag);
+
+void pccore_debugioin(BOOL word, UINT port);
+
+#endif
 
 #ifdef __cplusplus
 }

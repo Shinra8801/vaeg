@@ -24,6 +24,11 @@ void timing_reset(void) {
 	timing.fraction = 0;
 }
 
+/*
+表示周期を設定する
+	IN:		lines		1画面あたりのライン数(非表示区間、垂直同期区間を含む)
+			crthz		1秒当り描画ライン数
+*/
 void timing_setrate(UINT lines, UINT crthz) {
 
 	timing.msstep = (crthz << (MSSHIFT - 3)) / lines / (1000 >> 3);

@@ -267,6 +267,7 @@
 #define IDS_OPEN                        30027
 #define IDS_EJECT                       30028
 #define IDS_REMOVE                      30029
+#define IDS_DEBUGCTRL                   30030
 #define IDM_RESET                       40001
 #define IDM_CONFIG                      40002
 #define IDM_NEWDISK                     40003
@@ -397,9 +398,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         40125
-#define _APS_NEXT_CONTROL_VALUE         1208
+#define _APS_NEXT_CONTROL_VALUE         1209
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

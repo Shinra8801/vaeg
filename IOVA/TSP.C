@@ -194,6 +194,13 @@ static REG8 IOINPCALL tsp_i142(UINT port) {
 }
 
 /*
+未実装ポート
+*/
+static REG8 IOINPCALL tsp_i143(UINT port) {
+	return 0xff;
+}
+
+/*
 コマンド書き込み
 */
 static void IOOUTCALL tsp_o142(UINT port, REG8 dat) {
@@ -269,6 +276,7 @@ void tsp_bind(void) {
 	iocoreva_attachout(0x19a, memctrlva_o19a);
 	*/
 	iocoreva_attachinp(0x142, tsp_i142);
+	iocoreva_attachinp(0x143, tsp_i143);
 	iocoreva_attachout(0x142, tsp_o142);
 	iocoreva_attachout(0x146, tsp_o146);
 }

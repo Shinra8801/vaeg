@@ -107,6 +107,9 @@ static const MENUITEMS smenuitem2[] = {
 #endif
 			{IDM_MEMORYDUMP,	IDS_MEMORYDUMP},
 			{IDM_DEBUGUTY,		IDS_DEBUGUTY},
+#if defined(VAEG_EXT)
+			{IDM_DEBUGCTRL,		IDS_DEBUGCTRL},
+#endif
 			{0,					0}};
 
 

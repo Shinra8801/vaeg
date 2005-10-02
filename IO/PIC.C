@@ -162,7 +162,6 @@ void pic_irq(void) {												// ver0.78
 			p->pi[1].isr |= bit;
 			p->pi[1].irr &= ~bit;
 //			TRACEOUT(("pic: hardware-int %.2x: [%.4x:%.4x]", (p->pi[1].icw[1] & 0xf8) | num, CPU_CS, CPU_IP));
-			//if (num == 4) TRACEOUT(("aaa: %ld hardware-int %.2x",CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK , (p->pi[1].icw[1] & 0xf8) | num));
 			CPU_INTERRUPT((REG8)((p->pi[1].icw[1] & 0xf8) | num), 0);
 		}
 	}

@@ -44,6 +44,10 @@
 </TABLE></P>
 <P>リストボックスの高さ<FONT COLOR="#008000"><I>height</I></FONT>は リストの大きさです。<BR>表示サイズはフォントサイズより決定されます。</P>
 
+<P>ファイルリストには 第５パラメータがあります。<BR>
+通常は 無指定もしくは0を指定して下さい。<BR>
+ツールウィンドウがアクティブになった場合のみファイルリストを表示させたい場合には extend=2として下さい。</P>
+
 <P><B>ボタン</B></P>
 <P><TABLE CELLPADDING="2" CELLSPACING="0" BORDER="1">
 <TR><TH>キー名</TH><TH>指定値</TH></TR>
@@ -57,7 +61,9 @@
 
 <P>ボタンリソースには 第５パラメータがあります。</P>
 <P><FONT COLOR="#008000"><I>key</I></FONT>=<FONT COLOR="#008000"><I>posx</I></FONT>,<FONT COLOR="#008000"><I>posy</I></FONT>,<FONT COLOR="#008000"><I>width</I></FONT>,<FONT COLOR="#008000"><I>height</I></FONT>(,<FONT COLOR="#008000"><I>extend</I></FONT>)</P>
-<P>通常は 無指定もしくは0を指定して下さい。<BR>Windowsのボタンを表示しない場合には extend=1として下さい。</P>
+<P>通常は 無指定もしくは0を指定して下さい。<BR>
+Windowsのボタンを表示しない場合には extend=1として下さい。<BR>
+ツールウィンドウがアクティブになった場合のみボタンを表示させたい場合には extend=2として下さい。</P>
 <P>POWERBTN=193,112,14,14   (Windows ボタンを使用する)<BR>POWERBTN=193,112,14,14,1 (Windows ボタンを表示しない)</P></DD>
 </DL>
 

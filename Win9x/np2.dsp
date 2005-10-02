@@ -819,6 +819,10 @@ SOURCE=.\DIALOG\NP2CLASS.CPP
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\DEBUGUTY\DEBUGCTRL.CPP
+# End Source File
+# Begin Source File
+
 SOURCE=.\DEBUGUTY\VIEW1MB.CPP
 # End Source File
 # Begin Source File
@@ -1537,6 +1541,10 @@ SOURCE=..\CPUCVA\GVRAMVA.C
 # End Group
 # Begin Source File
 
+SOURCE=..\BREAKPOINT.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\CALENDAR.C
 # End Source File
 # Begin Source File
@@ -1567,6 +1575,10 @@ SOURCE=..\TIMING.C
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\BREAKPOINT.H
+# End Source File
 # Begin Source File
 
 SOURCE=..\IOVA\FDSUBSYS.H

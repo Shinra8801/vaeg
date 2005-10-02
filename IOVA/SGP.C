@@ -233,6 +233,12 @@ static BYTE sgp_memoryread(UINT32 address) {
 		address		アドレス(偶数)
 */
 static REG16 sgp_memoryread_w(UINT32 address) {
+	CPU_REMCLOCK -= 4;		// ToDo:本来は、CPUもメモリアクセスしようとしていた場合に
+							//      のみ待ちが生じる。この実装では常に待ちが入る。
+							//      CPUがrep movswなど長時間を消費した場合、直後の
+							//		sgp_stepでメモリ転送が大量に生じ、CPU_REMCLOCKが大きく
+							//      現象し、イベントの発生が遅れる可能性がある。
+							//      4という値には根拠なし。
 	return rd16[(address >> 16) & 0x3f](address);
 }
 
@@ -241,6 +247,7 @@ static REG16 sgp_memoryread_w(UINT32 address) {
 		address		アドレス(偶数)
 */
 static void sgp_memorywrite_w(UINT32 address, REG16 value) {
+	CPU_REMCLOCK -= 4;		// ToDo: sgp_remoryread_wを参照
 	wt16[(address >> 16) & 0x3f](address, value);
 }
 
@@ -655,6 +662,7 @@ static void IOOUTCALL sgp_o506(UINT port, REG8 dat) {
 ステータス読み出し
 */
 static REG8 IOINPCALL sgp_i506(UINT port) {
+//	TRACEOUT(("SGP: read status: %02x", sgp.busy));
 	return sgp.busy;
 }
 

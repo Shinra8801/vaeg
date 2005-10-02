@@ -476,9 +476,11 @@ void trace_fmt(const char *fmt, ...) {
 #define KEYWORDS_MAX 5
 			BOOL usefilter = FALSE;
 			static const char *keywords[KEYWORDS_MAX]={
+				"SGP:",
+				"cpu: int 0x87",
+/*
 				"sb2:",
 				"cpu:",
-/*
 				"sysp_",
 				"fm",
 				"pic: hardware-int 14",

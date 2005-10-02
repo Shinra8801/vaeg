@@ -98,12 +98,23 @@ typedef struct {
 #endif
 	HWND			sub[IDC_MAXITEMS];
 	SUBCLASSPROC	subproc[IDC_MAXITEMS];
+#if defined(VAEG_EXT)
+	int				subext[IDC_MAXITEMS];
+#endif
 } TOOLWIN;
 
 enum {
 	GTWL_FOCUS		= NP2GWL_SIZE + 0,
 	GTWL_SIZE		= NP2GWL_SIZE + 4
 };
+
+#if defined(VAEG_EXT)
+enum {	// TOOLWIN.subext
+	SUBEXT_QUIET	= 1,
+};
+#endif
+
+
 
 		NP2TOOL		np2tool;
 static	TOOLSKIN	toolskin;
@@ -437,6 +448,9 @@ const SUBITEM	*p;
 	HWND		sub;
 const char		*cls;
 	DWORD		style;
+#if defined(VAEG_EXT)
+	int			subext;
+#endif
 
 	toolwin.hfont = CreateFont(toolskin.fontsize, 0, 0, 0, 0, 0, 0, 0,
 					SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -456,6 +470,9 @@ const char		*cls;
 	for (i=0; i<IDC_MAXITEMS; i++) {
 		sub = NULL;
 		cls = NULL;
+#if defined(VAEG_EXT)
+		subext = 0;
+#endif
 		switch(p->tctl) {
 			case TCTL_STATIC:
 				cls = str_static;
@@ -471,20 +488,42 @@ const char		*cls;
 					cls = str_button;
 					style = BS_OWNERDRAW;
 				}
+#if defined(VAEG_EXT)
+				else if (p->extend == 2) {
+					cls = str_button;
+					style = BS_PUSHBUTTON;
+					subext = SUBEXT_QUIET;
+				}
+#endif
 				break;
 
 			case TCTL_DDLIST:
 				cls = str_combobox;
 				style = CBS_DROPDOWNLIST | WS_VSCROLL;
+#if defined(VAEG_EXT)
+				if (p->extend == 2) {
+					subext = SUBEXT_QUIET;
+				}
+#endif
 				break;
 		}
 		if ((cls) && (p->width > 0) && (p->height > 0)) {
+#if defined(VAEG_EXT)
+			if (!(subext & SUBEXT_QUIET)) style |= WS_VISIBLE;
+			sub = CreateWindow(cls, p->text, WS_CHILD | style,
+							p->posx, p->posy, p->width, p->height,
+							hWnd, (HMENU)(i + IDC_BASE), hInst, NULL);
+#else
 			sub = CreateWindow(cls, p->text, WS_CHILD | WS_VISIBLE | style,
 							p->posx, p->posy, p->width, p->height,
 							hWnd, (HMENU)(i + IDC_BASE), hInst, NULL);
+#endif
 		}
 		toolwin.sub[i] = sub;
 		toolwin.subproc[i] = NULL;
+#if defined(VAEG_EXT)
+		toolwin.subext[i] = subext;
+#endif
 		if (sub) {
 			toolwin.subproc[i] = (SUBCLASSPROC)GetWindowLong(sub, GWL_WNDPROC);
 			SetWindowLong(sub, GWL_WNDPROC, (LONG)twsub);
@@ -679,6 +718,35 @@ const char		*p;
 
 
 // ----
+
+#if defined(VAEG_EXT)
+
+static void prominent(void) {
+	int i;
+
+	for (i=0; i<IDC_MAXITEMS; i++) {
+		if (toolwin.subext[i] & SUBEXT_QUIET) {
+			if (toolwin.sub[i]) {
+				ShowWindow(toolwin.sub[i],SW_SHOW);
+			}
+		}
+	}
+}
+
+static void quiet(void) {
+	int i;
+
+	for (i=0; i<IDC_MAXITEMS; i++) {
+		if (toolwin.subext[i] & SUBEXT_QUIET) {
+			if (toolwin.sub[i]) {
+				ShowWindow(toolwin.sub[i],SW_HIDE);
+			}
+		}
+	}
+}
+
+#endif
+
 
 static void openpopup(HWND hWnd, LPARAM lp) {
 
@@ -913,7 +981,16 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			winlocex_destroy(wlex);
 			sysmng_update(SYS_UPDATEOSCFG);
 			break;
-
+#if defined(VAEG_EXT)
+		case WM_ACTIVATE:
+			if (LOWORD(wp) == WA_INACTIVE) {
+				quiet();
+			}
+			else {
+				prominent();
+			}
+			break;
+#endif
 		default:
 			return(DefWindowProc(hWnd, msg, wp, lp));
 	}

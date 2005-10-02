@@ -46,6 +46,10 @@
 #include	"subwind.h"
 #include	"viewer.h"
 
+#if defined(VAEG_EXT)
+#include	"debugctrl.h"
+#endif
+
 #if defined(SUPPORT_PC88VA)
 #include	"bkupmemva.h"
 #endif
@@ -169,6 +173,9 @@ static void changescreen(BYTE newmode) {
 	}
 	if (renewal) {
 		if (renewal & SCRNMODE_FULLSCREEN) {
+#if defined(VAEG_EXT)
+			debugctrl_destroy();
+#endif
 			toolwin_destroy();
 			kdispwin_destroy();
 			skbdwin_destroy();
@@ -1035,6 +1042,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 					viewer_open();
 					break;
 
+#if defined(VAEG_EXT)
+				case IDM_DEBUGCTRL:
+					debugctrl_create();
+					break;
+#endif
+
 				case IDM_SCRNMUL4:
 				case IDM_SCRNMUL6:
 				case IDM_SCRNMUL8:
@@ -1396,6 +1409,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return(0L);
 }
 
+#if defined(VAEG_EXT)
+static void debugwait(void) {
+	MSG			msg;
+
+	if (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE)) {
+		if (!GetMessage(&msg, NULL, 0, 0)) {
+			return;
+														// WM_QUITÇéÛêMÇµÇΩÇÁreturn
+		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+}
+
+static void debugonpause(void) {
+	viewer_allreload(TRUE);
+	debugctrl_update();
+}
+
+#endif
 
 static void framereset(UINT cnt) {
 
@@ -1449,6 +1482,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	kdispwin_readini();
 	skbdwin_readini();
 	mdbgwin_readini();
+#if defined(VAEG_EXT)
+	debugctrl_readini();
+#endif
 #if defined(SUPPORT_PC88VA)
 	bkupmemva_load();
 #endif
@@ -1510,6 +1546,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	skbdwin_initialize(hPreInst);
 	mdbgwin_initialize(hPreInst);
 	viewer_init(hPreInst);
+#if defined(VAEG_EXT)
+	debugctrl_initapp(hInstance);
+#endif
 
 	mousemng_initialize();
 
@@ -1606,6 +1645,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 
 	joymng_initialize();
 	pccore_init();
+#if defined(VAEG_EXT)
+	{
+		DEBUGCALLBACK callback;
+
+		callback.wait = debugwait;
+		callback.onpause = debugonpause;
+		pccore_debugsetcallback(&callback);
+	}
+#endif
 	S98_init();
 
 	sstpmsg_welcome();
@@ -1751,6 +1799,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 			DispatchMessage(&msg);
 		}
 	}
+#if defined(VAEG_EXT)
+	debugctrl_destroy();
+#endif
 	toolwin_destroy();
 	kdispwin_destroy();
 	skbdwin_destroy();
@@ -1786,6 +1837,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 		kdispwin_writeini();
 		skbdwin_writeini();
 		mdbgwin_writeini();
+#if defined(VAEG_EXT)
+		debugctrl_writeini();
+#endif
 	}
 	skbdwin_deinitialize();
 #if defined(SUPPORT_PC88VA)

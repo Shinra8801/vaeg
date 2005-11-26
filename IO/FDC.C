@@ -13,7 +13,20 @@
 
 enum {
 	FDC_DMACH2HD	= 2,
-	FDC_DMACH2DD	= 3
+	FDC_DMACH2DD	= 3,
+
+#if defined(VAEG_EXT)
+	FDD_MOTORDELAY	= 505,	// FDDのモーターをONしてからreadyになるまでの時間(msec)
+
+	FDD_MOTOR_STOPPED	= 0,
+	FDD_MOTOR_STARTING	= 1,
+	FDD_MOTOR_STABLE	= 2,
+
+	FDD_HEAD_UNLOADED	= 0,
+	FDD_HEAD_LOADING	= 1,
+	FDD_HEAD_STABLE		= 2,
+	FDD_HEAD_IDLE		= 3,
+#endif
 };
 
 static const UINT8 FDCCMD_TABLE[32] = {
@@ -24,6 +37,180 @@ static const UINT8 FDCCMD_TABLE[32] = {
 #define FDC_FORCEREADY (1)
 #define	FDC_DELAYERROR7
 
+#if defined(VAEG_EXT)
+// ----------------------------------------------------------------------
+// head status management
+
+// TODO: FDC_ReadDataなどで、エラー検出時でも、hltの時間を待って
+//       結果を返すようにする。
+
+static int msectoclock(int msec) {
+	return pccore.realclock * msec / 1000;
+}
+						
+static void update_head(void) {
+	SINT32 now;
+	SINT32 d;
+
+	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+
+	// TODO: 供給クロックが4MHzの場合と8MHzの場合とで、hlt/srt/hutの
+	//		 あらわす時間が異なるかもしれないので、それに対応。
+
+	switch (fdc.head) {
+	case FDD_HEAD_LOADING:
+		d = msectoclock(fdc.hlt * 2);
+		if (now - fdc.headlastclock > d) {
+			fdc.head = FDD_HEAD_STABLE;
+			fdc.headlastclock += d;
+			fdc.drqlastclock = fdc.headlastclock;
+		}
+		break;
+	case FDD_HEAD_IDLE:
+		d = msectoclock(fdc.hut * 16);
+		if (now - fdc.headlastclock > d) {
+			fdc.head = FDD_HEAD_UNLOADED;
+			fdc.headlastclock += d;
+		}
+		break;
+	}
+
+}
+
+static void activate_head(void) {
+	SINT32 now;
+
+	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+
+	if (fdc.headlastactive == fdc.us) {
+		switch (fdc.head) {
+		case FDD_HEAD_UNLOADED:
+			fdc.head = FDD_HEAD_LOADING;
+			fdc.headlastclock = now;
+			break;
+		case FDD_HEAD_IDLE:
+			fdc.head = FDD_HEAD_STABLE;
+			fdc.headlastclock = now;
+			break;
+		}
+	}
+	else {
+		fdc.headlastactive = fdc.us;
+		fdc.head = FDD_HEAD_LOADING;
+		fdc.headlastclock = now;
+	}
+}
+
+static void deactivate_head(void) {
+	SINT32 now;
+
+	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+
+	if (fdc.headlastactive == fdc.us) {
+		switch (fdc.head) {
+		case FDD_HEAD_STABLE:
+			fdc.head = FDD_HEAD_IDLE;
+			fdc.headlastclock = now;
+			break;
+
+		case FDD_HEAD_LOADING:
+			fdc.head = FDD_HEAD_UNLOADED;
+			fdc.headlastclock = now;
+			break;
+
+		}
+	}
+	else {
+		fdc.headlastactive = fdc.us;
+		fdc.head = FDD_HEAD_UNLOADED;
+		fdc.headlastclock = now;
+	}
+}
+
+// ----------------------------------------------------------------------
+// seek management
+
+static void fdc_stepwaitset(void) {
+	int ms;
+
+	// TODO: 供給クロックが4MHzの場合と8MHzの場合とで、hlt/srt/hutの
+	//		 あらわす時間が異なるかもしれないので、それに対応。
+	ms = 16 - fdc.srt;
+
+	nevent_setbyms(NEVENT_FDCSTEPWAIT, ms, fdc_stepwait, NEVENT_ABSOLUTE);
+}
+
+static void succeed_seek(int us) {
+	fdc.us = us;
+	fdc.ncn = fdc.headpcn[us];
+	fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
+	fdc.stat[fdc.us] |= FDCRLT_SE;
+	fdd_seek();
+	fdc_interrupt();
+}
+
+static void start_seek(int us, int ncn) {
+	if (fdc.headpcn[us] == ncn) {
+		succeed_seek(us);
+	}
+	else {
+		fdc.headncn[us] = ncn;
+		fdc_stepwaitset();
+	}
+}
+
+static UINT8 isseeking(void) {
+	int us;
+	UINT8 stat;
+
+	stat = 0;
+	for (us = 0; us < 4; us++) {
+		if (fdc.headncn[us] != fdc.headpcn[us]) {
+			stat |= (1 << us);
+		}
+	}
+	return stat;
+}
+
+static UINT8 fdbusybits(void) {
+	int us;
+	UINT8 stat;
+
+	stat = isseeking();
+	for (us = 0; us < 4; us++) {
+		if (fdc.stat[us] & FDCRLT_SE) {
+			stat |= (1 << us);
+		}
+	}
+	return stat;
+}
+
+void fdc_stepwait(NEVENTITEM item) {
+	int us;
+
+	for (us = 0; us < 4; us++) {
+		if (fdc.headncn[us] != fdc.headpcn[us]) {
+			if (fdc.headncn[us] < fdc.headpcn[us]) {
+				fdc.headpcn[us]--;
+			}
+			else if (fdc.headncn[us] > fdc.headpcn[us]) {
+				fdc.headpcn[us]++;
+			}
+			if (fdc.headncn[us] == fdc.headpcn[us]) {
+				// 目的のシリンダに到達
+				succeed_seek(us);
+			}
+		}
+	}
+
+	if (isseeking()) {
+		fdc_stepwaitset();
+	}
+}
+
+#endif
+
+// ----------------------------------------------------------------------
 
 void fdc_intwait(NEVENTITEM item) {
 
@@ -54,15 +241,55 @@ static BOOL fdc_isfdcinterrupt(void) {
 }
 
 REG8 DMACCALL fdc_dmafunc(REG8 func) {
+#if defined(VAEG_EXT)
+	SINT32 now;
+
+	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+#endif
 
 	//TRACEOUT(("fdc_dmafunc = %d", func));
+
 	switch(func) {
 		case DMAEXT_START:
+#if defined(VAEG_EXT)
+			{
+				int rpm;
+				int tracklen;
+				fdc.drqlastclock = now;
+				switch(CTRL_FDMEDIA[fdc.us]) {
+				// TODO: 2DD/2Dの場合
+				default: // 2HD
+					rpm = 360;
+					tracklen = 1024 * 8;	// DOSのフォーマットで代表させる
+					break;
+				}
+				fdc.drqinterval = pccore.realclock * 60 / (tracklen * rpm);
+			}
+#endif
 			return(1);
 
 		case DMAEXT_END:				// TC
 			fdc.tc = 1;
 			break;
+
+#if defined(VAEG_EXT)
+		case DMAEXT_DRQ: 
+			{
+				update_head();
+				if (fdc.head == FDD_HEAD_STABLE) {
+					if (now - fdc.drqlastclock < fdc.drqinterval) {
+						return 1;	// not ready
+					}
+					else {
+						fdc.drqlastclock += fdc.drqinterval;
+						return 0;
+					}
+				}
+				else {
+					return 1;	// not ready
+				}
+			}
+#endif
 	}
 	return(0);
 }
@@ -98,6 +325,9 @@ void fdcsend_error7(void) {
 	fdc_dmaready(0);
 	dmac_check();
 	fdc_interrupt();
+#if defined(VAEG_EXT)
+	deactivate_head();
+#endif
 }
 
 void fdcsend_success7(void) {
@@ -124,6 +354,10 @@ void fdcsend_success7(void) {
 
 	TRACEOUT(("fdc: send interrupt"));
 	fdc_interrupt();
+
+#if defined(VAEG_EXT)
+	deactivate_head();
+#endif
 }
 
 #if 0
@@ -189,7 +423,7 @@ static void get_eotgsldtl(void) {
 	fdc.dtl = fdc.cmds[7];
 }
 
-#if 1	// Shinra
+#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
 
 static BOOL inc_fdcR(void) {
 	BOOL	over;			// シリンダをまたがった
@@ -284,6 +518,9 @@ static void FDC_SenseDeviceStatus(void) {				// cmd: 04
 					fdc.buf[0] |= 0x10;
 				}
 				if (fddfile[fdc.us].fname[0]) {
+#if defined(VAEG_EXT)
+					if (fdc.motor[fdc.us] == FDD_MOTOR_STABLE) {
+#endif
 					fdc.buf[0] |= 0x20;
 #if defined(SUPPORT_PC88VA)
 					if (pccore.model_va != PCMODEL_NOTVA) {
@@ -291,6 +528,9 @@ static void FDC_SenseDeviceStatus(void) {				// cmd: 04
 							/*
 								VAの場合、Ready=0ならTwo Side=0のようだ。
 							*/
+					}
+#endif
+#if defined(VAEG_EXT)
 					}
 #endif
 				}
@@ -344,6 +584,9 @@ static void FDC_WriteData(void) {						// cmd: 05
 			get_eotgsldtl();
 			fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
 			if (FDC_DriveCheck(TRUE)) {
+#if defined(VAEG_EXT)
+				activate_head();
+#endif
 				fdc.event = FDCEVENT_BUFRECV;
 				fdc.bufcnt = 128 << fdc.N;
 				fdc.bufp = 0;
@@ -364,18 +607,7 @@ static void FDC_WriteData(void) {						// cmd: 05
 			if (writesector()) {
 				return;
 			}
-#if 0 // np2
-			if (fdc.tc) {
-				fdcsend_success7();
-				return;
-			}
-			if (fdc.R++ == fdc.eot) {
-				fdc.stat[fdc.us] = fdc.us | (fdc.hd << 2) |
-													FDCRLT_IC0 | FDCRLT_EN;
-				fdcsend_error7();
-				break;
-			}
-#else // Shinra
+#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
 			{
 				BOOL	over;
 				over = inc_fdcR();
@@ -389,6 +621,17 @@ static void FDC_WriteData(void) {						// cmd: 05
 					fdcsend_error7();
 					break;
 				}
+			}
+#else
+			if (fdc.tc) {
+				fdcsend_success7();
+				return;
+			}
+			if (fdc.R++ == fdc.eot) {
+				fdc.stat[fdc.us] = fdc.us | (fdc.hd << 2) |
+													FDCRLT_IC0 | FDCRLT_EN;
+				fdcsend_error7();
+				break;
 			}
 #endif
 			break;
@@ -406,6 +649,9 @@ static void readsector(void) {
 	if (!FDC_DriveCheck(FALSE)) {
 		return;
 	}
+#if defined(VAEG_EXT)
+	activate_head();
+#endif
 	if (fdd_read()) {
 		fdc.stat[fdc.us] = fdc.us | (fdc.hd << 2) | FDCRLT_IC0 | FDCRLT_ND;
 		fdcsend_error7();
@@ -463,6 +709,23 @@ static void FDC_Recalibrate(void) {						// cmd: 07
 
 	switch(fdc.event) {
 		case FDCEVENT_CMDRECV:
+#if defined(VAEG_EXT)
+			get_hdus();
+			if (!(fdc.equip & (1 << fdc.us))) {
+				fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
+				fdc.stat[fdc.us] |= FDCRLT_SE | FDCRLT_NR | FDCRLT_IC0;
+				fdc_interrupt();
+			}
+			else if (!fddfile[fdc.us].fname[0]) {
+				fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
+				fdc.stat[fdc.us] |= FDCRLT_SE | FDCRLT_NR;
+				fdc_interrupt();
+			}
+			else {
+				start_seek(fdc.us, 0);
+			}
+			break;
+#else
 			get_hdus();
 			fdc.ncn = 0;
 			fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
@@ -478,6 +741,7 @@ static void FDC_Recalibrate(void) {						// cmd: 07
 			}
 			fdc_interrupt();
 			break;
+#endif
 	}
 	fdc.event = FDCEVENT_NEUTRAL;
 	fdc.status = FDCSTAT_RQM;
@@ -533,6 +797,9 @@ static void FDC_ReadID(void) {							// cmd: 0a
 
 	switch(fdc.event) {
 		case FDCEVENT_CMDRECV:
+#if defined(VAEG_EXT)
+			activate_head();
+#endif
 			fdc.mf = fdc.cmd & 0x40;
 			get_hdus();
 			if (fdd_readid() == SUCCESS) {
@@ -559,6 +826,9 @@ static void FDC_WriteID(void) {							// cmd: 0d
 			fdc.d = fdc.cmds[4];
 			if (FDC_DriveCheck(TRUE)) {
 //				TRACE_("FDC_WriteID FDC_DriveCheck", 0);
+#if defined(VAEG_EXT)
+				activate_head();
+#endif
 				if (fdd_formatinit()) {
 //					TRACE_("FDC_WriteID fdd_formatinit", 0);
 					fdcsend_error7();
@@ -614,6 +884,20 @@ static void FDC_Seek(void) {							// cmd: 0f
 
 	switch(fdc.event) {
 		case FDCEVENT_CMDRECV:
+#if defined(VAEG_EXT)
+			get_hdus();
+			if ((!(fdc.equip & (1 << fdc.us))) ||
+				(!fddfile[fdc.us].fname[0])) {
+				fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
+				fdc.stat[fdc.us] |= FDCRLT_SE;
+				fdc.stat[fdc.us] |= FDCRLT_NR | FDCRLT_IC0;
+				fdc_interrupt();
+			}
+			else {
+				start_seek(fdc.us, fdc.cmds[1]);
+			}
+			break;
+#else
 			get_hdus();
 			fdc.ncn = fdc.cmds[1];
 			fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
@@ -627,6 +911,7 @@ static void FDC_Seek(void) {							// cmd: 0f
 			}
 			fdc_interrupt();
 			break;
+#endif
 	}
 	fdc.event = FDCEVENT_NEUTRAL;
 	fdc.status = FDCSTAT_RQM;
@@ -695,6 +980,9 @@ static void fdcstatusreset(void) {
 }
 
 void DMACCALL fdc_datawrite(REG8 data) {
+#if defined(VAEG_EXT)
+		update_head();
+#endif
 
 //	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO)) == FDCSTAT_RQM) {
 		switch(fdc.event) {
@@ -736,6 +1024,9 @@ void DMACCALL fdc_datawrite(REG8 data) {
 }
 
 REG8 DMACCALL fdc_dataread(void) {
+#if defined(VAEG_EXT)
+		update_head();
+#endif
 
 //	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO))
 //									== (FDCSTAT_RQM | FDCSTAT_DIO)) {
@@ -756,13 +1047,7 @@ REG8 DMACCALL fdc_dataread(void) {
 				if (fdc.tc) {
 					if (!fdc.bufcnt) {						// ver0.26
 						fdc.R++;
-#if 0	// np2
-						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
-							fdc.C += fdc.hd;
-							fdc.H = fdc.hd ^ 1;
-							fdc.R = 1;
-						}
-#else	// Shinra
+#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							/* ToDo:
 								fdd_seeksectorがfalseを返した場合のみ
@@ -777,6 +1062,12 @@ REG8 DMACCALL fdc_dataread(void) {
 						else {
 							fdc.R--;	// inc_fdcRの中で+1するので。
 							inc_fdcR();
+						}
+#else
+						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
+							fdc.C += fdc.hd;
+							fdc.H = fdc.hd ^ 1;
+							fdc.R = 1;
 						}
 #endif
 					}
@@ -793,6 +1084,35 @@ REG8 DMACCALL fdc_dataread(void) {
 	return(fdc.lastdata);
 }
 
+#if defined(VAEG_EXT)
+// --------------------------------------------------------------------------
+// FDC timer
+
+void fdc_timer(NEVENTITEM item) {
+	if (fdc.ctrlreg & 0x04) {
+		// XTMASK (1で割り込み許可)
+		if (fdc.chgreg & 1) {
+			pic_setirq(0x0b);
+		}
+		else {
+			pic_setirq(0x0a);
+		}
+	}
+}
+
+// --------------------------------------------------------------------------
+// FDD motor management
+
+void fdc_fddmotor(NEVENTITEM item) {
+	if (fdc.motor[0] == FDD_MOTOR_STARTING) {
+		fdc.motor[0] = 
+		fdc.motor[1] = 
+		fdc.motor[2] = 
+		fdc.motor[3] = FDD_MOTOR_STABLE;
+	}
+}
+
+#endif
 
 // ---- I/O
 
@@ -843,6 +1163,11 @@ static void IOOUTCALL fdcva_o1b6(UINT port, REG8 dat) {
 		fdc_dmaready(0);
 		dmac_check();
 	}
+	if (dat & 0x01) {
+		// TTRG
+		nevent_setbyms(NEVENT_FDCTIMER, 100, fdc_timer, NEVENT_ABSOLUTE);
+
+	}
 	fdc.ctrlreg = dat & 0xf5;		// 実際には、参照しているのはbit4(DMAE)のみのようだ
 }
 
@@ -852,7 +1177,9 @@ static void IOOUTCALL fdcva_o1b6(UINT port, REG8 dat) {
 
 
 static REG8 IOINPCALL fdc_i90(UINT port) {
-
+#if defined(VAEG_EXT)
+	fdc.status = fdc.status & 0xf0 | fdbusybits();
+#endif
 //	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
 //															CPU_CS, CPU_IP));
 
@@ -896,9 +1223,12 @@ static REG8 IOINPCALL fdc_i94(UINT port) {
 #if defined(SUPPORT_PC88VA)
 
 static REG8 IOINPCALL fdcva_i1b8(UINT port) {
+#if defined(VAEG_EXT)
+	fdc.status = fdc.status & 0xf0 | fdbusybits();
+#endif
 
-	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
-															CPU_CS, CPU_IP));
+//	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, fdc.status,
+//															CPU_CS, CPU_IP));
 
 	return(fdc.status);
 }
@@ -914,7 +1244,7 @@ static REG8 IOINPCALL fdcva_i1ba(UINT port) {
 	else {
 		ret = fdc.lastdata;
 	}
-//	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
+//	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
 	return(ret);
 }
 
@@ -925,7 +1255,7 @@ static REG8 IOINPCALL fdcva_i1b6(UINT port) {
 								// VA2のmonでi1b6 したら a6 が帰ってくる
 								// ToDo: bit4以外も意味があるのか？？
 
-//	TRACEOUT(("fdc in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
+//	TRACEOUT(("fdcva: in %.2x %.2x [%.4x:%.4x]", port, ret, CPU_CS, CPU_IP));
 	return ret;
 }
 
@@ -1003,6 +1333,24 @@ static REG8 IOINPCALL fdc_i4be(UINT port) {
 	return(fdc.rpm[(fdc.reg144 >> 5) & 3] | 0xf0);
 }
 
+#if defined(SUPPORT_PC88VA)
+
+static void IOOUTCALL fdcva_o1b4(UINT port, REG8 dat) {
+//	TRACEOUT(("fdcva: out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
+
+	// TODO: ドライブ1と2のモーターを区別せず駆動している。
+	//       正確にはわける必要がある。
+	if (dat & 0x03) {
+		if (fdc.motor[0] == FDD_MOTOR_STOPPED) {
+			fdc.motor[0] = fdc.motor[1] = FDD_MOTOR_STARTING;
+			nevent_setbyms(NEVENT_FDDMOTOR, FDD_MOTORDELAY, fdc_fddmotor, NEVENT_ABSOLUTE);
+		}
+	}
+	else {
+		fdc.motor[0] = fdc.motor[1] = FDD_MOTOR_STOPPED;
+	}
+}
+#endif
 
 // ---- I/F
 
@@ -1031,6 +1379,9 @@ void fdc_reset(void) {
 	CTRL_FDMEDIA = DISKTYPE_2HD;
 #endif
 	fdc.chgreg = 3;
+#if defined(VAEG_EXT)
+	fdc.headlastactive = -1;
+#endif
 }
 
 void fdc_bind(void) {
@@ -1050,6 +1401,7 @@ void fdc_bind(void) {
 #if defined(SUPPORT_PC88VA)
 	// 0x1b0 未作成
 	iocoreva_attachout(0x01b2, fdcva_o1b2);
+	iocoreva_attachout(0x01b4, fdcva_o1b4);
 	iocoreva_attachout(0x01b6, fdcva_o1b6);
 	iocoreva_attachinp(0x01b6, fdcva_i1b6);
 	iocoreva_attachinp(0x01b8, fdcva_i1b8);

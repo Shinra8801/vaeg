@@ -16,6 +16,8 @@ typedef struct {
 extern "C" {
 #endif
 
+extern	_SYSPORTVA	sysportva;
+
 void systemportva_reset(void);
 void systemportva_bind(void);
 

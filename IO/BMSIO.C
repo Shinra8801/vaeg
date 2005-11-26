@@ -1,35 +1,44 @@
 /*
  * BMSIO.C: I-O Bank Memory
  *
- * ToDo:
- *	バンク数のカスタマイズ
  */
 
 #include	"compiler.h"
 #include	"cpucore.h"
 #include	"pccore.h"
 #include	"iocore.h"
+#include	"iocoreva.h"
+#include	"bmsio.h"
 
-static char bmsio_initialized = 0;
+		_BMSIOCFG	bmsiocfg = {FALSE, 0x00ec, 0xffff, 0x10};
+		_BMSIO		bmsio;
+		_BMSIOWORK	bmsiowork;
+
 
 // ---- internal
 
 void bmsio_setnumbanks(UINT8 num) {
-	if (bmsio.numbanks != num) {
-		if (bmsio.bmsmem) {
-			_MFREE(bmsio.bmsmem);
-			bmsio.bmsmem = NULL;
+	UINT32 memsize;
+
+	memsize = ((UINT32)num) * 0x20000;
+	if (bmsiowork.bmsmemsize != memsize) {
+		if (bmsiowork.bmsmem) {
+			_MFREE(bmsiowork.bmsmem);
+			bmsiowork.bmsmem = NULL;
+			bmsiowork.bmsmemsize = 0;
 		}
 	}
-	if (bmsio.bmsmem == NULL) {
-		if (num > 0) {
-			bmsio.bmsmem = (BYTE *)_MALLOC(((UINT32)num) * 0x20000, "BMSMEM");
-			if (bmsio.bmsmem == NULL) {
+	if (bmsiowork.bmsmem == NULL) {
+		if (memsize > 0) {
+			bmsiowork.bmsmem = (BYTE *)_MALLOC(memsize, "BMSMEM");
+			if (bmsiowork.bmsmem == NULL) {
 				num = 0;
+				memsize = 0;
 			}
 		}
 	}
-	bmsio.numbanks = num;
+	bmsio.cfg.numbanks = num;
+	bmsiowork.bmsmemsize = memsize;
 }
 
 // ---- I/O
@@ -39,8 +48,7 @@ static void IOOUTCALL bmsio_o00ec(UINT port, REG8 dat) {
 
 	bank=dat;
 	bmsio.bank=bank;
-	if (bank<bmsio.numbanks)  {
-		bmsio.addr = bmsio.bmsmem + (((UINT32)bank) << 17);
+	if (bank<bmsio.cfg.numbanks)  {
 		bmsio.nomem=0;
 	}
 	else {
@@ -54,17 +62,32 @@ static REG8 IOINPCALL bmsio_i00ec(UINT port) {
 
 // ---- I/F
 
+/*
+ダイアログで設定した内容を動作環境に反映する
+	NP2リセット時に呼ばれる(STATSAVEのロード時は呼ばれない)
+*/
+void bmsio_set(void) {
+	bmsio.cfg = bmsiocfg;
+}
+
 void bmsio_reset(void) {
-	if (!bmsio_initialized) {
-		ZeroMemory(&bmsio, sizeof(bmsio));
-		bmsio_setnumbanks(8);
-		bmsio_initialized = 1;
+	if (bmsio.cfg.enabled) {
+		bmsio_setnumbanks(bmsio.cfg.numbanks);
+		bmsio_o00ec(0,0);
 	}
-	bmsio_o00ec(0,0);
+	else {
+		bmsio_setnumbanks(0);
+		bmsio_o00ec(0,0);
+	}
 }
 
 void bmsio_bind(void) {
-	iocore_attachout(0x00ec, bmsio_o00ec);
-	iocore_attachinp(0x00ec, bmsio_i00ec);
+	if (bmsio.cfg.enabled) {
+		iocore_attachout(bmsio.cfg.port, bmsio_o00ec);
+		iocore_attachinp(bmsio.cfg.port, bmsio_i00ec);
+
+		iocoreva_attachout(bmsio.cfg.port, bmsio_o00ec);
+		iocoreva_attachinp(bmsio.cfg.port, bmsio_i00ec);
+	}
 }
 

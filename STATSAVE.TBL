@@ -1,10 +1,23 @@
 
+#if defined(SUPPORT_PC88VA)
+
+#define		NP2STATUS_VERSION		0x051126
+
+static const NP2FHDR np2flagdef = {
+						"VA-EG",
+						"create by VAEG.EXE",
+						NP2STATUS_VERSION};
+
+#else
+
 #define		NP2STATUS_VERSION		0770
 
 static const NP2FHDR np2flagdef = {
 						"Neko Project II",
 						"create by NP2.EXE",
 						NP2STATUS_VERSION};
+
+#endif
 
 static const PROCTBL evtproc[] = {
 			{PROCID('e','s','c','0'), screendisp},
@@ -37,6 +50,15 @@ static const PROCTBL evtproc[] = {
 #if defined(SUPPORT_PC9861K)
 			{PROCID('e','p','k','1'), pc9861ch1cb},
 			{PROCID('e','p','k','2'), pc9861ch2cb},
+#endif
+#if defined(SUPPORT_PC88VA)
+			{PROCID('e','s','0','V'), screendispva},
+			{PROCID('e','s','1','V'), screenvsyncva},
+#endif
+#if defined(VAEG_EXT)
+			{PROCID('e','f','t','m'), fdc_timer},
+			{PROCID('e','f','m','o'), fdc_fddmotor},
+			{PROCID('e','f','s','w'), fdc_stepwait},
 #endif
 };
 
@@ -147,6 +169,24 @@ static const SFENTRY np2tbl[] = {
 #endif
 #if defined(SUPPORT_HOSTDRV)
 	{"HOSTDRV",		0,	STATFLAG_HDRV,	NULL,			0},
+#endif
+
+#if defined(SUPPORT_BMS)
+	{"BMSMEM",		0,	STATFLAG_BMS,	NULL,			0},
+	{"BMSIO",		0,	STATFLAG_BIN,	&bmsio,			sizeof(bmsio)},
+#endif
+#if defined(SUPPORT_PC88VA)
+	{"TVRAMVA",		0,	STATFLAG_BIN,	textmem,		sizeof(textmem)},
+	{"GVRAMVA",		0,	STATFLAG_BIN,	grphmem,		sizeof(grphmem)},
+	{"BKUPMEMVA",	0,	STATFLAG_BIN,	backupmem,		sizeof(backupmem)},
+	{"MEMORYVA",	0,	STATFLAG_BIN,	&memoryva,		sizeof(memoryva)},
+
+	{"SYSPORTVA",	0,	STATFLAG_BIN,	&sysportva,		sizeof(sysportva)},
+	{"VIDEOVA",		0,	STATFLAG_BIN,	&videova,		sizeof(videova)},
+	{"GACTRLVA",	0,	STATFLAG_BIN,	&gactrlva,		sizeof(gactrlva)},
+	{"TSP",			0,	STATFLAG_BIN,	&tsp,			sizeof(tsp)},
+	{"CGROMVA",		0,	STATFLAG_BIN,	&cgromva,		sizeof(cgromva)},
+	{"SGP",			0,	STATFLAG_BIN,	&sgp,			sizeof(sgp)},
 #endif
 	{"TERMINATE",	0,	STATFLAG_TERM,	NULL,			0}};
 

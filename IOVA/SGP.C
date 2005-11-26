@@ -14,6 +14,11 @@
 
 #define		SWAPWORD(x)	( ((x) << 8) | ((x) >> 8) )
 
+enum {
+	// func
+	FUNC_FETCH_COMMAND		= 0,
+	FUNC_EXEC_BITBLT,
+};
 
 		_SGP	sgp;
 
@@ -305,10 +310,35 @@ static void write_word(SGP_BLOCK block) {
 static void write_dest(void) {
 	UINT16 dat;
 	UINT16 mask;
+	UINT16 dest;
 
 	dat = SWAPWORD(sgp.newval);
 	mask = SWAPWORD(sgp.newvalmask);
-	dat = dat & mask | (sgp_memoryread_w(sgp.dest.nextaddress) & ~mask);
+	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+
+	switch (sgp.bltmode & SGP_BLTMODE_OP) {
+	case 0:		// 0
+		dat = 0;
+		break;
+	case 3:		// NOP
+		mask = 0;
+		break;
+	case 5:		// S
+	default:
+		break;
+	case 6:		// S XOR D
+		dat = dat ^ dest;
+		break;
+	case 0x0a:	// NOT(S)
+		dat = ~dat;
+		break;
+	case 0x0f:	// 1
+		dat = 0xffff;
+		break;
+	}
+
+	dat = dat & mask | (dest & ~mask);
+
 	sgp_memorywrite_w(sgp.dest.nextaddress, dat);
 	sgp.dest.nextaddress += 2;
 	sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode];
@@ -425,7 +455,7 @@ static void exec_bitblt(void) {
 		datmask = 0xffff;
 		break;
 	}
-
+/*
 	switch (sgp.bltmode & SGP_BLTMODE_OP) {
 	case 0:		// 0
 		dat = 0;
@@ -436,6 +466,9 @@ static void exec_bitblt(void) {
 	case 5:		// S
 	default:
 		break;
+	case 6:		// S XOR D
+
+		break;
 	case 0x0a:	// NOT(S)
 		dat = ~dat;
 		break;
@@ -443,6 +476,7 @@ static void exec_bitblt(void) {
 		dat = 0xffff;
 		break;
 	}
+*/
 /*
 	sgp.dest.buf = (sgp.dest.buf << 4) | dat;
 	sgp.dest.mask = (sgp.dest.mask << 4) | (dat ? 0x000f : 0);
@@ -476,7 +510,8 @@ static void exec_bitblt(void) {
 	if (sgp.dest.xcount == 0) {
 		sgp.dest.ycount--;
 		if (sgp.dest.ycount == 0) {
-			sgp.func = fetch_command;
+			//sgp.func = fetch_command;
+			sgp.func = FUNC_FETCH_COMMAND;
 		}
 		else {
 			sgp.remainclock -= 14 * 2;
@@ -536,7 +571,8 @@ static void cmd_bitblt(void) {
 	init_src_line(&sgp.src);
 	init_dest_line(&sgp.dest);
 
-	sgp.func = exec_bitblt;
+	//sgp.func = exec_bitblt;
+	sgp.func = FUNC_EXEC_BITBLT;
 }
 
 static void cmd_patblt(void) {
@@ -613,7 +649,16 @@ void sgp_step(void) {
 			sgp.remainclock = 0;
 			break;
 		}
-		sgp.func();
+		//sgp.func();
+		switch (sgp.func) {
+		case FUNC_EXEC_BITBLT:
+			exec_bitblt();
+			break;
+		case FUNC_FETCH_COMMAND:
+		default:
+			fetch_command();
+			break;
+		}
 	}
 	sgp.lastclock = now;
 }
@@ -652,7 +697,8 @@ static void IOOUTCALL sgp_o506(UINT port, REG8 dat) {
 	dat &= SGP_BUSY;
 	if (!(sgp.busy & SGP_BUSY) && (dat & SGP_BUSY)) {
 		// ŽÀsŠJŽn
-		sgp.func = fetch_command;
+		//sgp.func = fetch_command;
+		sgp.func = FUNC_FETCH_COMMAND;
 		sgp.pc = sgp.initialpc;
 	}
 	sgp.busy = dat;

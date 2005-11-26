@@ -13,8 +13,9 @@
 
 #define SETLOWBYTE(x, y) (x) = ( (x) & 0xff00 | (y) )
 #define SETHIGHBYTE(x, y) (x) = ( (x) & 0x00ff | ((WORD)(y) << 8) )
-#define LOWBYTE(x)  ( (x) & 0xff )
-#define HIGHBYTE(x) ( (x) >> 8 )
+#define LOWBYTE(x)  ( (BYTE)((x) & 0xff) )
+#define HIGHBYTE(x) ( (BYTE)(((x) >> 8) & 0xff) )
+#define HIGHWORD(x) ( (WORD)(((x) >> 16) & 0xffff) )
 
 enum {
 	PORT_FRAMEBUFFER = 0x200,
@@ -438,6 +439,98 @@ static void IOOUTCALL videova_o_fb_17(UINT port, REG8 dat) {
 		videova.framebuffer[n].dsp & 0x00ff | (((WORD)dat & 0x01) << 8);
 }
 
+
+static REG8 IOINPCALL videova_i_fb_00(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].fsa);
+}
+
+static REG8 IOINPCALL videova_i_fb_01(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].fsa);
+}
+
+static REG8 IOINPCALL videova_i_fb_02(UINT port) {
+	return LOWBYTE(HIGHWORD(videova.framebuffer[fbno(port)].fsa));
+}
+
+static REG8 IOINPCALL videova_i_fb_03(UINT port) {
+	return HIGHBYTE(HIGHWORD(videova.framebuffer[fbno(port)].fsa));
+}
+
+static REG8 IOINPCALL videova_i_fb_04(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].fbw);
+}
+
+static REG8 IOINPCALL videova_i_fb_05(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].fbw);
+}
+
+static REG8 IOINPCALL videova_i_fb_06(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].fbl);
+}
+
+static REG8 IOINPCALL videova_i_fb_07(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].fbl);
+}
+
+static REG8 IOINPCALL videova_i_fb_08(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].dot);
+}
+
+static REG8 IOINPCALL videova_i_fb_09(UINT port) {
+	return 0;
+}
+
+static REG8 IOINPCALL videova_i_fb_0a(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].ofx);
+}
+
+static REG8 IOINPCALL videova_i_fb_0b(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].ofx);
+}
+
+static REG8 IOINPCALL videova_i_fb_0c(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].ofy);
+}
+
+static REG8 IOINPCALL videova_i_fb_0d(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].ofy);
+}
+
+
+static REG8 IOINPCALL videova_i_fb_0e(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].dsa);
+}
+
+static REG8 IOINPCALL videova_i_fb_0f(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].dsa);
+}
+
+static REG8 IOINPCALL videova_i_fb_10(UINT port) {
+	return LOWBYTE(HIGHWORD(videova.framebuffer[fbno(port)].dsa));
+}
+
+static REG8 IOINPCALL videova_i_fb_11(UINT port) {
+	return HIGHBYTE(HIGHWORD(videova.framebuffer[fbno(port)].dsa));
+}
+
+static REG8 IOINPCALL videova_i_fb_12(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].dsh);
+}
+
+static REG8 IOINPCALL videova_i_fb_13(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].dsh);
+}
+
+static REG8 IOINPCALL videova_i_fb_16(UINT port) {
+	return LOWBYTE(videova.framebuffer[fbno(port)].dsp);
+}
+
+static REG8 IOINPCALL videova_i_fb_17(UINT port) {
+	return HIGHBYTE(videova.framebuffer[fbno(port)].dsp);
+}
+
+
+
 // ---- I/F
 
 void videova_reset(void) {
@@ -506,6 +599,7 @@ void videova_bind(void) {
 	for (i = 0; i < VIDEOVA_FRAMEBUFFERS; i++) {
 		int base;
 		base = PORT_FRAMEBUFFER + 0x20 * i;
+
 		iocoreva_attachout(base + 0x00, videova_o_fb_00);
 		iocoreva_attachout(base + 0x01, videova_o_fb_01);
 		iocoreva_attachout(base + 0x02, videova_o_fb_02);
@@ -536,6 +630,38 @@ void videova_bind(void) {
 
 		iocoreva_attachout(base + 0x16, videova_o_fb_16);
 		iocoreva_attachout(base + 0x17, videova_o_fb_17);
+
+	
+		iocoreva_attachinp(base + 0x00, videova_i_fb_00);
+		iocoreva_attachinp(base + 0x01, videova_i_fb_01);
+		iocoreva_attachinp(base + 0x02, videova_i_fb_02);
+		iocoreva_attachinp(base + 0x03, videova_i_fb_03);
+
+		iocoreva_attachinp(base + 0x04, videova_i_fb_04);
+		iocoreva_attachinp(base + 0x05, videova_i_fb_05);
+
+		iocoreva_attachinp(base + 0x06, videova_i_fb_06);
+		iocoreva_attachinp(base + 0x07, videova_i_fb_07);
+
+		iocoreva_attachinp(base + 0x08, videova_i_fb_08);
+		iocoreva_attachinp(base + 0x09, videova_i_fb_09);
+
+		iocoreva_attachinp(base + 0x0a, videova_i_fb_0a);
+		iocoreva_attachinp(base + 0x0b, videova_i_fb_0b);
+
+		iocoreva_attachinp(base + 0x0c, videova_i_fb_0c);
+		iocoreva_attachinp(base + 0x0d, videova_i_fb_0d);
+
+		iocoreva_attachinp(base + 0x0e, videova_i_fb_0e);
+		iocoreva_attachinp(base + 0x0f, videova_i_fb_0f);
+		iocoreva_attachinp(base + 0x10, videova_i_fb_10);
+		iocoreva_attachinp(base + 0x11, videova_i_fb_11);
+
+		iocoreva_attachinp(base + 0x12, videova_i_fb_12);
+		iocoreva_attachinp(base + 0x13, videova_i_fb_13);
+
+		iocoreva_attachinp(base + 0x16, videova_i_fb_16);
+		iocoreva_attachinp(base + 0x17, videova_i_fb_17);
 	}
 
 	for (i = 0; i < VIDEOVA_PALETTES * 2; i+=2) {

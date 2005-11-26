@@ -183,7 +183,10 @@ extern	BOOL	hardwarereset;
 void getbiospath(OEMCHAR *path, const OEMCHAR *fname, int maxlen);
 void screendisp(NEVENTITEM item);
 void screenvsync(NEVENTITEM item);
-
+#if defined(SUPPORT_PC88VA)
+void screendispva(NEVENTITEM item);
+void screenvsyncva(NEVENTITEM item);
+#endif
 
 void pccore_cfgupdate(void);
 

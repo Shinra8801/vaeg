@@ -14,13 +14,13 @@
 // ---- I/O
 
 static void IOOUTCALL memctrlva_o152(UINT port, REG8 dat) {
-	rom0_bank = ((dat & 0x40) >> 2) | dat & 0x0f;
-	rom1_bank = (dat & 0xb0) >> 4;
+	memoryva.rom0_bank = ((dat & 0x40) >> 2) | dat & 0x0f;
+	memoryva.rom1_bank = (dat & 0xb0) >> 4;
 	(void)port;
 }
 
 static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
-	sysm_bank = dat & 0x0f;
+	memoryva.sysm_bank = dat & 0x0f;
 	gactrlva.gmsp = dat & 0x10;
 	(void)port;
 }
@@ -28,33 +28,33 @@ static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
 
 static REG8 IOINPCALL memctrlva_i152(UINT port) {
 	(void)port;
-	return (rom0_bank & 0x0f) |
-		   ((rom0_bank & 0x10) << 2) |
-		   ((rom1_bank & 0x0b) << 4);
+	return (memoryva.rom0_bank & 0x0f) |
+		   ((memoryva.rom0_bank & 0x10) << 2) |
+		   ((memoryva.rom1_bank & 0x0b) << 4);
 }
 
 static REG8 IOINPCALL memctrlva_i153(UINT port) {
 	(void)port;
-	return (sysm_bank & 0x0f) |
+	return (memoryva.sysm_bank & 0x0f) |
 		   gactrlva.gmsp |
 		   0x40;
 }
 
 static void IOOUTCALL memctrlva_o180(UINT port, REG8 dat) {
-	dma_sysm_bank = dat & 0x8f;
+	memoryva.dma_sysm_bank = dat & 0x8f;
 }
 
 static REG8 IOINPCALL memctrlva_i180(UINT port) {
-	return dma_sysm_bank;
+	return memoryva.dma_sysm_bank;
 }
 
 static void IOOUTCALL memctrlva_o198(UINT port, REG8 dat) {
-	backupmem_wp = 1;
+	memoryva.backupmem_wp = 1;
 	(void)port;
 }
 
 static void IOOUTCALL memctrlva_o19a(UINT port, REG8 dat) {
-	backupmem_wp = 0;
+	memoryva.backupmem_wp = 0;
 	(void)port;
 }
 

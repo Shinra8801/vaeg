@@ -10,6 +10,9 @@
 #include	"winkbd.h"
 #include	"pccore.h"
 
+#if defined(SUPPORT_BMS)
+#include	"bmsio.h"
+#endif
 
 
 static BOOL inigetbmp(const BYTE *ptr, UINT pos) {
@@ -466,6 +469,11 @@ static const INITBL iniitem[] = {
 	{"FDDRIVE3", INIRO_BITMAP,		&np2cfg.fddequip,		2},
 	{"FDDRIVE4", INIRO_BITMAP,		&np2cfg.fddequip,		3},
 
+#if defined(SUPPORT_BMS)
+	{"Use_BMS_", INITYPE_BOOL,		&bmsiocfg.enabled,		0},
+	{"BMS_Port", INITYPE_HEX16,		&bmsiocfg.port,			0},
+	{"BMS_Size", INITYPE_UINT8,		&bmsiocfg.numbanks,		0},
+#endif
 
 	// OSàÀë∂ÅH
 	{"keyboard", INIRO_KB,			&np2oscfg.KEYBOARD,		0},

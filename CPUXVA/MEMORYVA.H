@@ -1,3 +1,13 @@
+
+typedef struct {		// see, memoryva.x86
+		UINT8	sysm_bank;
+		UINT8	rom0_bank;
+		UINT8	rom1_bank;
+		UINT8	dma_sysm_bank;
+		UINT8	dma_access;
+		UINT8	backupmem_wp;
+} _MEMORYVA;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,11 +19,13 @@ extern	BYTE	dicmem[0x80000];
 extern	BYTE	rom0mem[0xa0000];
 extern	BYTE	rom1mem[0x20000];
 
-extern	BYTE	backupmem_wp;
-extern	BYTE	sysm_bank;
-extern	BYTE	rom1_bank;
-extern	BYTE	rom0_bank;
-extern	BYTE	dma_sysm_bank;
+//extern	BYTE	backupmem_wp;
+//extern	BYTE	sysm_bank;
+//extern	BYTE	rom1_bank;
+//extern	BYTE	rom0_bank;
+//extern	BYTE	dma_sysm_bank;
+
+extern	_MEMORYVA	memoryva;
 
 #ifdef __cplusplus
 }

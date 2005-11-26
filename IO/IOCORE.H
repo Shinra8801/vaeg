@@ -14,7 +14,6 @@ typedef void (*IOCBFN)(void);
 #include	"lsidef.h"
 
 #include	"artic.h"
-#include	"bmsio.h"
 #include	"cgrom.h"
 #include	"cpuio.h"
 #include	"crtc.h"
@@ -46,7 +45,6 @@ extern "C" {
 #endif
 
 extern	_ARTIC		artic;
-extern	_BMSIO		bmsio;
 extern	_CGROM		cgrom;
 extern	_CGWINDOW	cgwindow;
 extern	_CRTC		crtc;

@@ -41,6 +41,11 @@ typedef struct {
 	int		ch;
 } MUSICGEN;
 
+#if defined(SUPPORT_PC88VA)
+typedef struct {
+	BYTE	sintm;			// bit7  0..äÑÇËçûÇ›ãñâ¬  1..äÑÇËçûÇ›ã÷é~
+} _FMBOARDVA;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +67,10 @@ extern	_RHYTHM		rhythm;
 extern	_ADPCM		adpcm;
 extern	_PCM86		pcm86;
 extern	_CS4231		cs4231;
+
+#if defined(SUPPORT_PC88VA)
+extern	_FMBOARDVA	fmboardva;
+#endif
 
 REG8 fmboard_getjoy(PSGGEN psg);
 

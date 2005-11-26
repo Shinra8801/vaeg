@@ -1,5 +1,6 @@
 
 SUPPORT_PC88VA	equ		1		; added by Shinra
+VAEG_EXT		equ		1		; added by Shinra
 
 				struc	dmach_t
 .adrs			resd	1		; 00
@@ -34,6 +35,10 @@ SUPPORT_PC88VA	equ		1		; added by Shinra
 DMAEXT_START		equ		0
 DMAEXT_END			equ		1
 DMAEXT_BREAK		equ		2
+%if VAEG_EXT
+DMAEXT_DRQ			equ		3
+%endif
+
 DMA_INITSIGNALONLY	equ		1
 
 
@@ -60,7 +65,22 @@ _dmap_i286:		cmp		byte [_dmac + dmac_t.working], byte 0
 				mov		eax, _dmac + dmac_t.dmach
 				mov		cl, 1
 dmap_sea:		test	[_dmac + dmac_t.working], cl
+%if VAEG_EXT
+				jz		short dmap_sea2
+				push	eax
+				push	ecx
+				push	edi
+				mov		ecx, DMAEXT_DRQ
+				call	dword [eax + dmach_t.extproc]
+				pop		edi
+				pop		ecx
+				or		al, al
+				pop		eax
+				jz		dmap_hit
+dmap_sea2:
+%else
 				jne		short dmap_hit
+%endif
 				add		cl, cl
 				add		eax, dmach_t.size
 				and		cl, 15

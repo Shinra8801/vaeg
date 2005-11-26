@@ -25,7 +25,23 @@ enum {
 
 	// ステータス
 	STATUS_BUSY	= 0x04,
+
+	// paramfunc
+	PARAMFUNC_NOP			= 0,
+	PARAMFUNC_GENERIC,
+	PARAMFUNC_SPRDEF_BEGIN,
+	PARAMFUNC_SPRDEF,
+
+	// execfunc
+	EXECFUNC_DSPON			= 0,
+	EXECFUNC_DSPDEF,
+	EXECFUNC_CURDEF,
+	EXECFUNC_SPRON,
+
+
+
 };
+
 
 
 		_TSP	tsp;
@@ -129,7 +145,8 @@ static void paramfunc_sprdef_begin(REG8 dat) {
 	TRACEOUT(("tsp: sprdef: offset=0x%.2x", dat)); 
 
 	tsp.sprdef_offset = dat;
-	tsp.paramfunc = paramfunc_sprdef;
+	//tsp.paramfunc = paramfunc_sprdef;
+	tsp.paramfunc = PARAMFUNC_SPRDEF;
 }
 
 /*
@@ -170,15 +187,33 @@ static void execcmd(void) {
 }
 */
 
+/*
 static void paramfunc_nop(REG8 dat) {
 }
+*/
 
 static void paramfunc_generic(REG8 dat) {
 	if (tsp.recvdatacnt) {
-		*(tsp.datap++) = dat;
+		//*(tsp.datap++) = dat;
+		tsp.parambuf[tsp.paramindex++] = dat;
 		if (--tsp.recvdatacnt == 0) {
-			tsp.paramfunc = paramfunc_nop;
-			tsp.endparamfunc();
+			//tsp.paramfunc = paramfunc_nop;
+			tsp.paramfunc = PARAMFUNC_NOP;
+			//tsp.endparamfunc();
+			switch (tsp.execfunc) {
+			case EXECFUNC_DSPON:
+				exec_dspon();
+				break;
+			case EXECFUNC_DSPDEF:
+				exec_dspdef();
+				break;
+			case EXECFUNC_CURDEF:
+				exec_curdef();
+				break;
+			case EXECFUNC_SPRON:
+				exec_spron();
+				break;
+			}
 		}
 	}
 }
@@ -207,39 +242,51 @@ static void IOOUTCALL tsp_o142(UINT port, REG8 dat) {
 	TRACEOUT(("tsp: command: 0x%.2x", dat));
 
 	tsp.cmd = dat;
-	tsp.datap = tsp.parambuf;
+	//tsp.datap = tsp.parambuf;
+	tsp.paramindex = 0;
 	tsp.status |= STATUS_BUSY;
 
 	switch(dat) {
 	case CMD_DSPON:
 		tsp.recvdatacnt = 3;
-		tsp.endparamfunc = exec_dspon;
-		tsp.paramfunc = paramfunc_generic;
+		//tsp.endparamfunc = exec_dspon;
+		tsp.execfunc = EXECFUNC_DSPON;
+		//tsp.paramfunc = paramfunc_generic;
+		tsp.paramfunc = PARAMFUNC_GENERIC;
 		break;
 	case CMD_DSPDEF:
 		tsp.recvdatacnt = 6;
-		tsp.endparamfunc = exec_dspdef;
-		tsp.paramfunc = paramfunc_generic;
+		//tsp.endparamfunc = exec_dspdef;
+		tsp.execfunc = EXECFUNC_DSPDEF;
+		//tsp.paramfunc = paramfunc_generic;
+		tsp.paramfunc = PARAMFUNC_GENERIC;
 		break;
 	case CMD_CURDEF:
 		tsp.recvdatacnt = 1;
-		tsp.endparamfunc = exec_curdef;
-		tsp.paramfunc = paramfunc_generic;
+		//tsp.endparamfunc = exec_curdef;
+		tsp.execfunc = EXECFUNC_CURDEF;
+		//tsp.paramfunc = paramfunc_generic;
+		tsp.paramfunc = PARAMFUNC_GENERIC;
 		break;
 	case CMD_SPRON:
 		tsp.recvdatacnt = 3;
-		tsp.endparamfunc = exec_spron;
-		tsp.paramfunc = paramfunc_generic;
+		//tsp.endparamfunc = exec_spron;
+		tsp.execfunc = EXECFUNC_SPRON;
+		//tsp.paramfunc = paramfunc_generic;
+		tsp.paramfunc = PARAMFUNC_GENERIC;
 		break;
 	case CMD_SPRDEF:
-		tsp.paramfunc = paramfunc_sprdef_begin;
+		//tsp.paramfunc = paramfunc_sprdef_begin;
+		tsp.paramfunc = PARAMFUNC_SPRDEF_BEGIN;
 		break;
 	case CMD_EXIT:
-		tsp.paramfunc = paramfunc_nop;
+		//tsp.paramfunc = paramfunc_nop;
+		tsp.paramfunc = PARAMFUNC_NOP;
 		exec_exit();
 		break;
 	default:
-		tsp.paramfunc = paramfunc_nop;
+		//tsp.paramfunc = paramfunc_nop;
+		tsp.paramfunc = PARAMFUNC_NOP;
 		exec_unknown();
 		break;
 	}
@@ -258,14 +305,29 @@ static void IOOUTCALL tsp_o146(UINT port, REG8 dat) {
 		if (--tsp.recvdatacnt == 0) execcmd();
 	}
 */
-	tsp.paramfunc(dat);
+	//tsp.paramfunc(dat);
+	switch (tsp.paramfunc) {
+	case PARAMFUNC_GENERIC:
+		paramfunc_generic(dat);
+		break;
+	case PARAMFUNC_SPRDEF_BEGIN:
+		paramfunc_sprdef_begin(dat);
+		break;
+	case PARAMFUNC_SPRDEF:
+		paramfunc_sprdef(dat);
+		break;
+	case PARAMFUNC_NOP:
+	default:
+		break;
+	}
 }
 
 // ---- I/F
 
 void tsp_reset(void) {
 	ZeroMemory(&tsp, sizeof(tsp));
-	tsp.paramfunc = paramfunc_nop;
+	//tsp.paramfunc = paramfunc_nop;
+	tsp.paramfunc = PARAMFUNC_NOP;
 }
 
 void tsp_bind(void) {

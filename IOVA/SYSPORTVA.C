@@ -186,10 +186,13 @@ void systemportva_reset(void) {
 	sysportva.port010 = 0;
 	sysportva.port040 = 0;
 	//beep_oneventset();
-	modeled_oneventset();
+	//modeled_oneventset();
 }
 
 void systemportva_bind(void) {
+	modeled_oneventset();					// STATSAVE対応。reset->ロード->bindの
+											// 順に実行されるため、このタイミングで
+											// LEDの表示を更新する。
 
 	iocoreva_attachout(0x010, sysp_o010);
 	iocoreva_attachout(0x032, sysp_o032);

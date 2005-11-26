@@ -1549,6 +1549,10 @@ SOURCE=..\CALENDAR.C
 # End Source File
 # Begin Source File
 
+SOURCE=.\DIALOG\D_BMS.CPP
+# End Source File
+# Begin Source File
+
 SOURCE=..\DEBUGSUB.C
 # End Source File
 # Begin Source File

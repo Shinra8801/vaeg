@@ -28,7 +28,8 @@ typedef struct {
 	UINT32	lastclock;
 	SINT32	remainclock;
 
-	void (*func)();
+	//void (*func)();
+	UINT16	func;
 
 	_SGP_BLOCK	src;
 	_SGP_BLOCK	dest;

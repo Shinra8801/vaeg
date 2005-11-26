@@ -202,9 +202,9 @@ void viewcmn_setbank(NP2VIEW_T *view) {
 	dmem->A20 = (BYTE)((CPU_ADRSMASK >> 20) & 1);
 #if defined(SUPPORT_PC88VA)
 	if (!dmem->lock) {
-		dmem->sysm_bank = sysm_bank;
-		dmem->rom0_bank = rom0_bank;
-		dmem->rom1_bank = rom1_bank;
+		dmem->sysm_bank = memoryva.sysm_bank;
+		dmem->rom0_bank = memoryva.rom0_bank;
+		dmem->rom1_bank = memoryva.rom1_bank;
 	}
 #endif
 }

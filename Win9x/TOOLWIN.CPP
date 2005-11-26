@@ -1,4 +1,5 @@
 #include	"compiler.h"
+#include	"commctrl.h"		// VAEG_EXT _TrackMouseEvent
 #include	"strres.h"
 #include	"resource.h"
 #include	"np2.h"
@@ -100,6 +101,8 @@ typedef struct {
 	SUBCLASSPROC	subproc[IDC_MAXITEMS];
 #if defined(VAEG_EXT)
 	int				subext[IDC_MAXITEMS];
+	BOOL			mouseover;
+	BOOL			mousetracking;
 #endif
 } TOOLWIN;
 
@@ -113,6 +116,7 @@ enum {	// TOOLWIN.subext
 	SUBEXT_QUIET	= 1,
 };
 #endif
+
 
 
 
@@ -745,6 +749,17 @@ static void quiet(void) {
 	}
 }
 
+static void trackmouseleave(void) {
+	TRACKMOUSEEVENT tme;
+
+	if (!toolwin.mousetracking) {
+		toolwin.mousetracking = TRUE;
+		tme.cbSize = sizeof(tme);
+		tme.dwFlags = TME_LEAVE;
+		tme.hwndTrack = toolwin.hwnd;
+		_TrackMouseEvent(&tme);
+	}
+}
 #endif
 
 
@@ -982,12 +997,36 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			sysmng_update(SYS_UPDATEOSCFG);
 			break;
 #if defined(VAEG_EXT)
+/*
 		case WM_ACTIVATE:
 			if (LOWORD(wp) == WA_INACTIVE) {
 				quiet();
 			}
 			else {
 				prominent();
+			}
+			break;
+*/
+		case WM_MOUSEMOVE:
+			if (!toolwin.mouseover) {
+				prominent();
+				toolwin.mouseover = TRUE;
+			}
+			trackmouseleave();
+			break;
+		case WM_MOUSELEAVE:
+			toolwin.mousetracking = FALSE;
+			if (toolwin.mouseover) {
+				RECT rect;
+				POINT pt;
+
+				GetClientRect(hWnd,&rect);
+				MapWindowPoints(hWnd,NULL,(LPPOINT)&rect,2);
+				GetCursorPos(&pt);
+				if (!PtInRect(&rect,pt)) {
+					quiet();
+					toolwin.mouseover = FALSE;
+				}
 			}
 			break;
 #endif

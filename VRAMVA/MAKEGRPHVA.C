@@ -79,6 +79,26 @@ static void selectframe(SCREEN screen, int no) {
 	}
 }
 
+/*
+次のフレームバッファを選択してscreen->framebufferに設定する。
+以下の場合はscreen->framebuffer == NULLとなる。
+  まだDSP > screen->y の場合
+  DSP < screen->y の場合 (後続フレームバッファ全てが無効となる)
+  後続のフレームバッファがない場合
+*/
+static void selectnextframe(SCREEN screen) {
+	screen->framebuffer = NULL;
+	if (screen->nextframebuffer < 0) return;
+
+	if (videova.framebuffer[screen->nextframebuffer].dsp < screen->y) {
+		// これより後のフレームバッファは表示しない
+		screen->nextframebuffer = -1;
+	}
+	else if (videova.framebuffer[screen->nextframebuffer].dsp == screen->y) {
+		selectframe(screen, screen->nextframebuffer);
+	}
+}
+
 static void endraster(SCREEN screen) {
 	screen->vwrapcount--;
 	if (screen->vwrapcount == 0) {
@@ -411,14 +431,10 @@ static void drawraster(SCREEN screen) {
 		}
 
 		// 必要なら、次のフレームバッファに切り替える
-		if (screen->framebuffer == NULL && screen->nextframebuffer >= 0) {
-			if (videova.framebuffer[screen->nextframebuffer].dsp < screen->y) {
-				// これより後のフレームバッファは表示しない
-				screen->nextframebuffer = -1;
-			}
-			else if (videova.framebuffer[screen->nextframebuffer].dsp == screen->y) {
-				selectframe(screen, screen->nextframebuffer);
-			}
+		if (screen->framebuffer == NULL) {
+			do {
+				selectnextframe(screen);
+			} while (!(screen->framebuffer == NULL || screen->framebuffer->dsh > 0 ));
 		}
 
 		if (screen->rasterbuf) {

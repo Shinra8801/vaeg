@@ -7,7 +7,7 @@
 #include	"scsiio.h"
 #include	"pc9861k.h"
 #include	"mpu98ii.h"
-
+#include	"bmsio.h"
 
 static const IOCBFN resetfn[] = {
 #if defined(SUPPORT_IDEIO)
@@ -23,6 +23,9 @@ static const IOCBFN resetfn[] = {
 			pc9861k_reset,
 #endif
 			mpu98ii_reset,
+#if defined(SUPPORT_BMS)
+			bmsio_reset,
+#endif
 	};
 
 static const IOCBFN bindfn[] = {
@@ -39,6 +42,9 @@ static const IOCBFN bindfn[] = {
 			pc9861k_bind,
 #endif
 			mpu98ii_bind,
+#if defined(SUPPORT_BMS)
+			bmsio_bind,
+#endif
 	};
 
 

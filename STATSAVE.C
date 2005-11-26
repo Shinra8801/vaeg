@@ -33,6 +33,19 @@
 #include	"calendar.h"
 #include	"keystat.h"
 
+#include	"bmsio.h"
+
+#if defined(SUPPORT_PC88VA)
+#include	"sysportva.h"
+#include	"memoryva.h"
+#include	"gvramva.h"
+#include	"videova.h"
+#include	"tsp.h"
+#include	"cgromva.h"
+#include	"gactrlva.h"
+#include	"sgp.h"
+#endif
+
 #if defined(MACOS)
 #define	CRCONST		str_cr
 #elif defined(WIN32) || defined(X11) || defined(SLZAURUS)
@@ -72,7 +85,10 @@ enum {
 #if defined(SUPPORT_HOSTDRV)
 	STATFLAG_HDRV,
 #endif
-	STATFLAG_MEM
+	STATFLAG_MEM,
+#if defined(SUPPORT_BMS)
+	STATFLAG_BMS,
+#endif
 };
 
 typedef struct {
@@ -721,7 +737,10 @@ enum {
 	FLAG_RHYTHM		= 0x0100,
 	FLAG_ADPCM		= 0x0200,
 	FLAG_PCM86		= 0x0400,
-	FLAG_CS4231		= 0x0800
+	FLAG_CS4231		= 0x0800,
+#if defined(SUPPORT_PC88VA)
+	FLAG_FMBOARDVA	= 0x8000,
+#endif
 };
 
 typedef struct {
@@ -778,6 +797,13 @@ static int flagsave_fm(STFLAGH sfh, const SFENTRY *tbl) {
 			saveflg = FLAG_PSG1 | FLAG_PSG2 | FLAG_PSG3;
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case 0x0200:
+			saveflg = FLAG_FM1A | FLAG_FM1B | FLAG_PSG1 | FLAG_RHYTHM |
+										FLAG_ADPCM | FLAG_FMBOARDVA;
+			break;
+#endif
+
 		default:
 			saveflg = 0;
 			break;
@@ -815,6 +841,11 @@ static int flagsave_fm(STFLAGH sfh, const SFENTRY *tbl) {
 	if (saveflg & FLAG_CS4231) {
 		ret |= statflag_write(sfh, &cs4231, sizeof(cs4231));
 	}
+#if defined(SUPPORT_PC88VA)
+	if (saveflg & FLAG_FMBOARDVA) {
+		ret |= statflag_write(sfh, &fmboardva, sizeof(fmboardva));
+	}
+#endif
 	(void)tbl;
 	return(ret);
 }
@@ -871,6 +902,13 @@ static int flagload_fm(STFLAGH sfh, const SFENTRY *t) {
 			saveflg = FLAG_PSG1 | FLAG_PSG2 | FLAG_PSG3;
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case 0x0200:
+			saveflg = FLAG_FM1A | FLAG_FM1B | FLAG_PSG1 | FLAG_RHYTHM |
+										FLAG_ADPCM | FLAG_FMBOARDVA;
+			break;
+#endif
+
 		default:
 			saveflg = 0;
 			break;
@@ -909,6 +947,11 @@ static int flagload_fm(STFLAGH sfh, const SFENTRY *t) {
 	if (saveflg & FLAG_CS4231) {
 		ret |= statflag_read(sfh, &cs4231, sizeof(cs4231));
 	}
+#if defined(SUPPORT_PC88VA)
+	if (saveflg & FLAG_FMBOARDVA) {
+		ret |= statflag_read(sfh, &fmboardva, sizeof(fmboardva));
+	}
+#endif
 
 	// •œŒ³B ‚±‚êˆÚ“®‚·‚é‚±‚ÆI
 	adpcm_update(&adpcm);
@@ -1151,6 +1194,35 @@ flcom_err1:
 	return(ret);
 }
 
+// ---- bms
+
+#if defined(SUPPORT_BMS)
+
+static int flagsave_bms(STFLAGH sfh, const SFENTRY *tbl) {
+
+	int		ret;
+
+	ret = STATFLAG_SUCCESS;
+	if (bmsiowork.bmsmem) {
+		ret = statflag_write(sfh, bmsiowork.bmsmem, bmsiowork.bmsmemsize);
+	}
+	(void)tbl;
+	return(ret);
+}
+
+static int flagload_bms(STFLAGH sfh, const SFENTRY *tbl) {
+
+	int		ret;
+
+	ret = STATFLAG_SUCCESS;
+	if (bmsiowork.bmsmem) {
+		ret = statflag_read(sfh, bmsiowork.bmsmem, bmsiowork.bmsmemsize);
+	}
+	(void)tbl;
+	return(ret);
+}
+
+#endif
 
 // ----
 
@@ -1249,6 +1321,12 @@ const SFENTRY	*tblterm;
 			case STATFLAG_MEM:
 				ret |= flagsave_mem(&sffh->sfh, tbl);
 				break;
+
+#if defined(SUPPORT_BMS)
+			case STATFLAG_BMS:
+				ret |= flagsave_bms(&sffh->sfh, tbl);
+				break;
+#endif
 		}
 		tbl++;
 	}
@@ -1307,6 +1385,9 @@ const SFENTRY	*tblterm;
 #endif
 #if defined(SUPPORT_HOSTDRV)
 				case STATFLAG_HDRV:
+#endif
+#if defined(SUPPORT_BMS)
+				case STATFLAG_BMS:
 #endif
 					ret |= flagcheck_veronly(&sffh->sfh, tbl);
 					break;

@@ -131,6 +131,12 @@ static REG8 IOINPCALL sb2_i047(UINT port) {
 
 void boardsb2_reset(void) {
 
+	psggen_setreg(&psg1, 0x07, 0);			
+											/* 88VA固有
+											   psggen_reset(fmboard_resetから呼ばれる)
+											   で初期値を0xbfにしている。
+											   VAの場合、0のようだ 
+											*/
 	fmtimer_reset(0xc0);
 	opn.channels = 6;
 	opngen_setcfg(6, OPN_STEREO | 0x03f);
@@ -140,7 +146,6 @@ void boardsb2_bind(void) {
 
 	fmboard_fmrestore(0, 0);
 	fmboard_fmrestore(3, 1);
-	psggen_setreg(&psg1, 0x07, 0);			// 88VA固有
 	psggen_restore(&psg1);
 	fmboard_rhyrestore(&rhythm, 0);
 	sound_streamregist(&opngen, (SOUNDCB)opngen_getpcmvr);

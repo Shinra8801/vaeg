@@ -35,9 +35,9 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	SetBkColor(hdc, 0x400000);
 	hfont = (HFONT)SelectObject(hdc, hfont);
 
-	_bankstat.rom0_bank = rom0_bank;
-	_bankstat.rom1_bank = rom1_bank;
-	_bankstat.sysm_bank = sysm_bank;
+	_bankstat.rom0_bank = memoryva.rom0_bank;
+	_bankstat.rom1_bank = memoryva.rom1_bank;
+	_bankstat.sysm_bank = memoryva.sysm_bank;
 //	_bankstat.bms_bank = bmsio.bank;
 
 	if (view->lock) {

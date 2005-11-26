@@ -20,12 +20,8 @@
 #define SETLOWBYTE(x, y) (x) = ( (x) & 0xff00 | (y) )
 #define SETHIGHBYTE(x, y) (x) = ( (x) & 0x00ff | ((WORD)(y) << 8) )
 
-typedef	struct {
-	WORD	cgaddr;				// 14Ch ハードウェア文字コード
-	BYTE	cgrow;				// 14Fh ラスタ番号/フォント左右
-} _CGROMVA;
 
-static	_CGROMVA	cgromva;
+		_CGROMVA	cgromva;
 
 /*
 フォントを取得する

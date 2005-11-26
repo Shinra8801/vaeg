@@ -41,6 +41,8 @@
 #include	"keystat.h"
 #include	"debugsub.h"
 
+#include	"bmsio.h"
+
 #if defined(SUPPORT_PC88VA)
 #include	"../vramva/maketextva.h"
 #include	"../vramva/makesprva.h"
@@ -352,6 +354,9 @@ void pccore_reset(void) {
 	}
 
 	pccore_set();
+#if defined(SUPPORT_BMS)
+	bmsio_set();
+#endif
 	nevent_allreset();
 
 	CPU_RESET();
@@ -740,7 +745,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 /*
 	int	x = 0;
 
-    if (addr == 0x39700+0x4174 || addr == 0x39700+0x4173) {
+    if (addr == 0x2d830+0xb955) {
 		x=op+addr+data;
 	}
 */
@@ -749,7 +754,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 void pccore_debugint(UINT32 no) {
 	if (no != 0x82 /*&& !(no == 0x83 && CPU_AX==0x2e00)*/ && no != 0x96) {
 		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
-		no, CPU_CS, CPU_IP,  rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
+		no, CPU_CS, CPU_IP,  memoryva.rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
 	}
 }
 
@@ -876,7 +881,7 @@ void pccore_exec(BOOL draw) {
 #if defined(TRACE) && IPTRACE
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
 #if defined(SUPPORT_PC88VA)
-			trerom0bank[trpos & (IPTRACE - 1)] = rom0_bank;
+			trerom0bank[trpos & (IPTRACE - 1)] = memoryva.rom0_bank;
 			tredata1[trpos & (IPTRACE - 1)] =CPU_DX;
 #endif
 			trpos++;

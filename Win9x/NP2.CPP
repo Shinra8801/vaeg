@@ -817,6 +817,15 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			update |= SYS_UPDATECFG;
 			break;
 
+#if defined(SUPPORT_BMS)
+		case IDM_BMS:
+			winuienter();
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_BMS),
+											hWnd, (DLGPROC)BMSDialogProc);
+			winuileave();
+			break;
+#endif
+
 		case IDM_MOUSE:
 			mousemng_toggle(MOUSEPROC_SYSTEM);
 			xmenu_setmouse(np2oscfg.MOUSE_SW ^ 1);

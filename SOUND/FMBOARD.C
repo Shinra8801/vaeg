@@ -42,7 +42,7 @@
 	_CS4231		cs4231;
 
 #if defined(SUPPORT_PC88VA)
-static BYTE	sintm;			// bit7  0..äÑÇËçûÇ›ãñâ¬  1..äÑÇËçûÇ›ã÷é~
+	_FMBOARDVA	fmboardva;
 #endif
 
 
@@ -153,7 +153,7 @@ void fmboard_reset(UINT32 type) {
 	cs4231_reset();
 
 #if defined(SUPPORT_PC88VA)
-	sintm = 0;
+	fmboardva.sintm = 0;
 #endif
 
 	switch(type) {
@@ -298,7 +298,7 @@ const BYTE	*reg;
 #if defined(SUPPORT_PC88VA)
 void fmboard_setintmask(BYTE mask) {
 	mask &= 0x80;
-	if ((sintm ^ mask) & 0x80) {
+	if ((fmboardva.sintm ^ mask) & 0x80) {
 		if (mask) {
 			// É}ÉXÉN
 //			TRACEOUT(("fmboard: SINTM set: reset irq"));
@@ -322,10 +322,10 @@ void fmboard_setintmask(BYTE mask) {
 			}
 		}
 	}
-	sintm = mask;
+	fmboardva.sintm = mask;
 }
 
 BYTE fmboard_getintmask(void) {
-	return sintm;
+	return fmboardva.sintm;
 }
 #endif

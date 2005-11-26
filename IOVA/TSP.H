@@ -26,8 +26,8 @@ typedef struct {
 
 	UINT8	cmd;				// コマンド
 	UINT8	status;				// ステータス(ポート142h)
-	void	(*paramfunc)(REG8 dat);
-								// 受信パラメータ処理ルーチン
+	//void	(*paramfunc)(REG8 dat);
+	UINT16	paramfunc;			// 受信パラメータ処理ルーチン
 
 	UINT32	dispclock;			// 表示期間の時間(CPUクロック数)
 	UINT32	vsyncclock;			// 垂直同期信号(VSYNC)の出力時間(CPUクロック数)
@@ -40,10 +40,14 @@ typedef struct {
 
 	UINT8	recvdatacnt;		// パラメータ残り受信バイト数
 	//BYTE	senddatacnt;		// パラメータ残り送信バイト数
-	BYTE	*datap;				// 次に送信する/受信するデータ
+	//BYTE	*datap;				// 次に送信する/受信するデータ
+	UINT16	paramindex;			// 次に送受信するデータの位置(parambuf内)
 	BYTE	parambuf[16];		// 送受信バッファ
-	void	(*endparamfunc)(void);
+	//void	(*endparamfunc)(void);
 								// パラメータ受信終了時ルーチン
+
+								// paramfunc_generic 用
+	UINT16	execfunc;			// コマンド実行ルーチン
 
 								// paramfunc_sprdef 用
 	BYTE	sprdef_offset;

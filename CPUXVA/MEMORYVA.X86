@@ -465,6 +465,8 @@ rom1invalidw_rd9:	pop		ebx
 
 section	.data
 
+%if 0
+
 	global	_sysm_bank
 	global	_rom0_bank
 	global	_rom1_bank
@@ -482,6 +484,37 @@ _dma_sysm_bank	db 0				;bit7   0..CPUバンクに従う
 _dma_access		db 0				;bit7   1..DMAからのメモリアクセスである
 									;bit6-0 常に0
 _backupmem_wp	db 0				;バックアップメモリ ライトプロテクト
+
+%endif
+
+			struc	memoryva_t
+
+.sysm_bank		resb 1
+.rom0_bank		resb 1				;bit5  バススロットに開放
+.rom1_bank		resb 1				;bit4  バススロットに開放
+									;bit3  常に0
+.dma_sysm_bank	resb 1				;bit7   0..CPUバンクに従う
+									;bit6-4 常に0
+									;bit3-0 バンク
+.dma_access		resb 1				;bit7   1..DMAからのメモリアクセスである
+									;bit6-0 常に0
+.backupmem_wp	resb 1				;バックアップメモリ ライトプロテクト
+
+			endstruc
+
+			global	_memoryva
+			global	_dma_access
+
+_memoryva
+	istruc	memoryva_t
+	iend
+
+_sysm_bank		equ	_memoryva + memoryva_t.sysm_bank
+_rom0_bank		equ	_memoryva + memoryva_t.rom0_bank
+_rom1_bank		equ	_memoryva + memoryva_t.rom1_bank
+_dma_sysm_bank	equ	_memoryva + memoryva_t.dma_sysm_bank
+_dma_access		equ	_memoryva + memoryva_t.dma_access
+_backupmem_wp	equ	_memoryva + memoryva_t.backupmem_wp
 
 
 section .rdata

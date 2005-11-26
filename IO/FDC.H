@@ -102,6 +102,19 @@ typedef struct {
 	int		bufp;
 	int		bufcnt;
 
+#if defined(VAEG_EXT)
+	SINT32	drqlastclock;
+	SINT32	drqinterval;
+	UINT8	motor[4];
+	SINT32	headlastclock;
+	UINT8	head;				// ヘッドの状態
+	UINT8	headlastactive;		// 最後に使用した
+								// (ヘッド状態の管理対象となった)
+								// ドライブの番号
+	UINT8	headpcn[4];			// ヘッドがどのシリンダにあるか
+	UINT8	headncn[4];			// ヘッドの移動先のシリンダ
+#endif
+
 	UINT8	cmd;
 	BYTE	cmds[15];
 	BYTE	data[16];
@@ -117,6 +130,11 @@ extern "C" {
 #define	CTRL_FDMEDIA	fdc.ctrlfd
 
 void fdc_intwait(NEVENTITEM item);
+#if defined(VAEG_EXT)
+void fdc_timer(NEVENTITEM item);
+void fdc_fddmotor(NEVENTITEM item);
+void fdc_stepwait(NEVENTITEM item);
+#endif
 
 void fdc_interrupt(void);
 

@@ -23,20 +23,23 @@ _mem	resb	0x200000
 
 %if BMS
 
-				struc	bmsio_t
+				struc	bmsiowork_t
 .bmsmem			resd	1
-.addr			resd	1
-.nomem			resb	1
-.bank			resb	1
-.numbanks		resb	1
+.bmsmemsize		resd	1
 				endstruc
 
+				struc	bmsio_t
+.nomem			resb	1
+.bank			resb	1
+				endstruc
+
+	extern	_bmsiowork
 	extern	_bmsio
 
 BMSBASE			equ		080000h
 _bmsio_nomem	equ		_bmsio + bmsio_t.nomem
-_bmsio_addr		equ		_bmsio + bmsio_t.addr
-
+_bmsio_bank		equ		_bmsio + bmsio_t.bank
+_bmsiowork_bmsmem	equ	_bmsiowork + bmsiowork_t.bmsmem
 %endif
 
 MAINMEMORY		equ		_mem
@@ -143,9 +146,14 @@ section .text
 					align	16
 @bms_wt:			test	byte [_bmsio_nomem], 0ffh
 					jnz		short bms_wt_exit
-					mov		ebx, ecx
+					movzx	ebx, byte [_bmsio_bank]
+					shl		ebx, 17
+					add		ebx, [_bmsiowork_bmsmem]
+					add		ebx, ecx
 					sub		ebx, BMSBASE
-					add		ebx, [_bmsio_addr]
+					;mov		ebx, ecx
+					;sub		ebx, BMSBASE
+					;add		ebx, [_bmsio_addr]
 					mov		[ebx], dl
 bms_wt_exit:
 					pop		ebx
@@ -363,9 +371,14 @@ grcgtdw_end:		pop		ecx
 					align	16
 @bms_rd:			test	byte [_bmsio_nomem], 0ffh
 					jnz		short bms_rd_nomem
-					mov		ebx, ecx
+					movzx	ebx, byte [_bmsio_bank]
+					shl		ebx, 17
+					add		ebx, [_bmsiowork_bmsmem]
+					add		ebx, ecx
 					sub		ebx, BMSBASE
-					add		ebx, [_bmsio_addr]
+					;mov		ebx, ecx
+					;sub		ebx, BMSBASE
+					;add		ebx, [_bmsio_addr]
 					mov		al, [ebx]
 					pop		ebx
 					ret
@@ -505,9 +518,14 @@ readmem_itf:		mov		al, [MAINMEMORY + VRAM_STEP + ecx]
 					align	16
 @bmsw_wt:			test	byte [_bmsio_nomem], 0ffh
 					jnz		short bmsw_wt_exit
-					mov		ebx, ecx
+					movzx	ebx, byte [_bmsio_bank]
+					shl		ebx, 17
+					add		ebx, [_bmsiowork_bmsmem]
+					add		ebx, ecx
 					sub		ebx, BMSBASE
-					add		ebx, [_bmsio_addr]
+					;mov		ebx, ecx
+					;sub		ebx, BMSBASE
+					;add		ebx, [_bmsio_addr]
 					mov		[ebx], dx
 bmsw_wt_exit:		pop		ebx
 					ret
@@ -746,9 +764,14 @@ grcgwtdw_end:		pop		ecx
 					align	16
 @bmsw_rd:			test	byte [_bmsio_nomem], 0ffh
 					jnz		short bmsw_rd_nomem
-					mov		ebx, ecx
+					movzx	ebx, byte [_bmsio_bank]
+					shl		ebx, 17
+					add		ebx, [_bmsiowork_bmsmem]
+					add		ebx, ecx
 					sub		ebx, BMSBASE
-					add		ebx, [_bmsio_addr]
+					;mov		ebx, ecx
+					;sub		ebx, BMSBASE
+					;add		ebx, [_bmsio_addr]
 					mov		ax, [ebx]
 					pop		ebx
 					ret

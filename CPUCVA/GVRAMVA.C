@@ -130,7 +130,7 @@ void MEMCALL gvram_wt(UINT32 address, REG8 value) {
 
 	memwait_w();
 	if (address & 1) {
-		out = writevalue(address, (REG16)(((REG16)value) << 8));
+		out = writevalue(address & 0xfffffffe, (REG16)(((REG16)value) << 8));
 		grphmem[address] = out >> 8;
 	}
 	else {

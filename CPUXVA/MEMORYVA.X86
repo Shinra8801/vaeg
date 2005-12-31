@@ -134,10 +134,16 @@ section .text
 
 ; Backup RAM
 					align	16
-@knj2_wt:			test	byte [_backupmem_wp], 0ffh
+
+@knj2_wt:			cmp		ecx, 0b1fc0h
+					jb		knj2_wt1
+					cmp		ecx, 0b2000h
+					jae		knj2_wt1
+
+					test	byte [_backupmem_wp], 0ffh
 					jnz		knj2_wt9
 
-					mov		ebx, ecx
+knj2_wt1:			mov		ebx, ecx
 					sub		ebx, CPUADDR_BACKUP
 					jc		knj2_wt9
 

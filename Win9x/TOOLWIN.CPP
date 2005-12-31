@@ -16,6 +16,11 @@
 #include	"pccore.h"
 #include	"diskdrv.h"
 
+#if defined(VAEG_EXT)
+#if _WIN32_WINNT >= 0x0500
+#define SUPPORT_XPARENT			// “§–¾FÝ’è‚ð—LŒø‚É‚·‚é
+#endif
+#endif
 
 extern WINLOCEX np2_winlocexallwin(HWND base);
 
@@ -59,6 +64,9 @@ typedef struct {
 	SINT32	fontsize;
 	UINT32	color1;
 	UINT32	color2;
+#if defined(VAEG_EXT)
+	UINT32	transparentcolor;
+#endif
 } TOOLSKIN;
 
 typedef struct {
@@ -76,6 +84,9 @@ typedef struct {
 	HWND			hwnd;
 	WINLOCEX		wlex;
 	HBITMAP			hbmp;
+#if defined(SUPPORT_PC88VA)
+	HBITMAP			hbmp2;
+#endif
 	BYTE			fddaccess[2];
 	BYTE			hddaccess;
 #if defined(SUPPORT_PC88VA)
@@ -155,6 +166,9 @@ static HBITMAP skinload(const char *path) {
 	milstr_ncpy(toolskin.font, str_deffont, sizeof(toolskin.font));
 	toolskin.color1 = 0x600000;
 	toolskin.color2 = 0xff0000;
+#if defined(VAEG_EXT)
+	toolskin.transparentcolor = 0xffffffff;
+#endif
 	if (path) {
 		ini_read(path, skintitle, skinini1, sizeof(skinini1)/sizeof(INITBL));
 	}
@@ -181,7 +195,19 @@ static HBITMAP skinload(const char *path) {
 			return(ret);
 		}
 	}
+#if defined(VAEG_EXT)
+	{
+		HBITMAP hbmp;
+
+		hbmp = LoadBitmap(hInst, "NP2TOOL");
+		if (hbmp != NULL) {
+			toolwin.hbmp2 = LoadBitmap(hInst, "NP2TOOL2");
+		}
+		return(hbmp);
+	}
+#else
 	return(LoadBitmap(hInst, "NP2TOOL"));
+#endif
 }
 
 
@@ -283,6 +309,11 @@ static void sellist(UINT drv) {
 		diskdrv_setfdd(drv, fdd->name[fdd->pos[sel]], 0);
 		fdd->insert = 1;
 		setlist(hwnd, fdd, sel);
+#if defined(VAEG_EXT)
+		if (toolwin.hwnd) {
+			InvalidateRect(toolwin.hwnd, NULL, TRUE);
+		}
+#endif
 	}
 }
 
@@ -456,6 +487,25 @@ const char		*cls;
 	int			subext;
 #endif
 
+#if defined(VAEG_EXT)
+#if defined(SUPPORT_XPARENT)
+	if (toolskin.transparentcolor <= 0xffffff) {
+		COLORREF color;
+
+		color = RGB((toolskin.transparentcolor >> 16) & 0xff,
+					(toolskin.transparentcolor >>  8) & 0xff,
+					toolskin.transparentcolor & 0xff);
+		SetWindowLong(hWnd, GWL_EXSTYLE,
+				GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+		SetLayeredWindowAttributes(hWnd, color, 255, LWA_COLORKEY);
+	}
+	else {
+		SetWindowLong(hWnd, GWL_EXSTYLE,
+				GetWindowLong(hWnd, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+	}
+#endif
+#endif
+
 	toolwin.hfont = CreateFont(toolskin.fontsize, 0, 0, 0, 0, 0, 0, 0,
 					SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 					DEFAULT_QUALITY, FIXED_PITCH, toolskin.font);
@@ -514,7 +564,7 @@ const char		*cls;
 		if ((cls) && (p->width > 0) && (p->height > 0)) {
 #if defined(VAEG_EXT)
 			if (!(subext & SUBEXT_QUIET)) style |= WS_VISIBLE;
-			sub = CreateWindow(cls, p->text, WS_CHILD | style,
+			sub = CreateWindow(cls, p->text, WS_CHILD | WS_CLIPSIBLINGS | style,
 							p->posx, p->posy, p->width, p->height,
 							hWnd, (HMENU)(i + IDC_BASE), hInst, NULL);
 #else
@@ -571,6 +621,12 @@ static void toolwindestroy(void) {
 		DeleteObject(toolwin.hdcfont);
 		DeleteObject(toolwin.hfont);
 		DeleteObject(toolwin.hbmp);
+#if defined(VAEG_EXT)
+		if (toolwin.hbmp2) {
+			DeleteObject(toolwin.hbmp2);
+			toolwin.hbmp2 = NULL;
+		}
+#endif
 		toolwin.hbmp = NULL;
 	}
 }
@@ -601,6 +657,10 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 	HDC		hdc;
 	HDC		hmdc;
 	RECT	btn;
+#if defined(VAEG_EXT)
+	int		drv;
+	HBITMAP	hbmp;
+#endif
 
 	idc -= IDC_BASE;
 	if (idc >= IDC_MAXITEMS) {
@@ -616,9 +676,31 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 	btn.right = rect.right - rect.left;
 	btn.bottom = rect.bottom - rect.top;
 	hdc = lpdis->hDC;
+#if defined(VAEG_EXT)
+	hbmp = NULL;
+	switch (idc) {
+	case IDC_TOOLFDD1EJECT:
+		drv = 0;
+		break;
+	case IDC_TOOLFDD2EJECT:
+		drv = 1;
+		break;
+	default:
+		drv = -1;
+		break;
+	}
+	if (drv >= 0) {
+		hbmp = (np2tool.fdd[drv].insert) ? toolwin.hbmp2 : toolwin.hbmp;
+	}
+	if (!hbmp) hbmp = toolwin.hbmp;
+	if (hbmp) {
+		hmdc = CreateCompatibleDC(hdc);
+		SelectObject(hmdc, hbmp);
+#else
 	if (toolwin.hbmp) {
 		hmdc = CreateCompatibleDC(hdc);
 		SelectObject(hmdc, toolwin.hbmp);
+#endif
 		BitBlt(hdc, 0, 0, btn.right, btn.bottom,
 					hmdc, rect.left - pt.x, rect.top - pt.y, SRCCOPY);
 		DeleteDC(hmdc);
@@ -1145,6 +1227,9 @@ void toolwin_setfdd(BYTE drv, const char *name) {
 			remakefddlist(sub, fdd);
 			SetForegroundWindow(hWndMain);
 		}
+#if defined(VAEG_EXT)
+		InvalidateRect(toolwin.hwnd, NULL, TRUE);
+#endif
 	}
 }
 

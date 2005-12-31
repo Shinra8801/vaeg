@@ -30,6 +30,7 @@ typedef struct {
 	union {
 		UINT8		intnum;
 		UINT16		port;			// BREAKPOINT_IOIN
+		UINT32		addr;			// BREAKPOINT_MEMWRITE
 	} p;
 } BREAKPOINT;
 
@@ -42,6 +43,7 @@ enum {
 	BREAKPOINT_STEP			= 0x0001,
 	BREAKPOINT_INTERRUPT	= 0x0002,
 	BREAKPOINT_IOIN			= 0x0004,
+	BREAKPOINT_MEMWRITE		= 0x0009,
 };
 
 enum {
@@ -91,6 +93,7 @@ void breakpoint_clear(int index);
 void breakpoint_check_setenabled(BOOL enabled);
 BOOL breakpoint_check_step(void);
 BOOL breakpoint_check_ioin(UINT port);
+BOOL breakpoint_check_memwrite(UINT32 addr);
 int breakpoint_parse(const char *str, BREAKPOINT *bp);
 
 #ifdef __cplusplus

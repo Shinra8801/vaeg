@@ -329,6 +329,9 @@ static void write_dest(void) {
 	case 6:		// S XOR D
 		dat = dat ^ dest;
 		break;
+	case 7:		// S OR D
+		dat = dat | dest;
+		break;
 	case 0x0a:	// NOT(S)
 		dat = ~dat;
 		break;
@@ -489,6 +492,7 @@ static void exec_bitblt(void) {
 	sgp.src.dotcount--;
 
 	sgp.dest.xcount--;
+	sgp.src.xcount--;
 
 	if (sgp.dest.dotcount == 0 || sgp.dest.xcount == 0) {
 /*
@@ -509,6 +513,7 @@ static void exec_bitblt(void) {
 
 	if (sgp.dest.xcount == 0) {
 		sgp.dest.ycount--;
+		sgp.src.ycount--;
 		if (sgp.dest.ycount == 0) {
 			//sgp.func = fetch_command;
 			sgp.func = FUNC_FETCH_COMMAND;
@@ -548,11 +553,22 @@ static void exec_bitblt(void) {
 					*/
 				}
 			}
+			if (sgp.src.ycount == 0) {
+				// PATBLTで、destの高さがsrcより大きかった場合で、
+				// 垂直ラップアラウンドが発生した場合
+				init_block(&sgp.src);
+			}
 			sgp.src.nextaddress = sgp.src.lineaddress;
 			sgp.dest.nextaddress = sgp.dest.lineaddress;
 			init_src_line(&sgp.src);
 			init_dest_line(&sgp.dest);
 		}
+	}
+	else if (sgp.src.xcount == 0) {
+		// PATBLTで、destの幅がsrcより大きかった場合で、
+		// 水平ラップアラウンドが発生した場合
+		sgp.src.nextaddress = sgp.src.lineaddress;
+		init_src_line(&sgp.src);
 	}
 }
 
@@ -566,6 +582,11 @@ static void cmd_bitblt(void) {
 
 	// ToDo: SF,HD,TP-MODEの実現
 
+	// BITBLTの場合、SET DESTINATIONで設定した幅、高さは無視され、
+	// SET SOURCEで指定した幅、高さだけ転送される
+	sgp.dest.width = sgp.src.width;
+	sgp.dest.height = sgp.src.height;
+
 	init_block(&sgp.src);
 	init_block(&sgp.dest);
 	init_src_line(&sgp.src);
@@ -576,26 +597,41 @@ static void cmd_bitblt(void) {
 }
 
 static void cmd_patblt(void) {
-	TRACEOUT(("SGP: cmd: patblt"));
+
+	sgp.bltmode = sgp_memoryread_w(sgp.pc);
 	sgp.pc += 2;
+	sgp.remainclock -= 338 * 2;
+
+	TRACEOUT(("SGP: cmd: patblt: %04x", sgp.bltmode));
+
+	// ToDo: SF,HD,TP-MODEの実現
+
+	init_block(&sgp.src);
+	init_block(&sgp.dest);
+	init_src_line(&sgp.src);
+	init_dest_line(&sgp.dest);
+
+	//sgp.func = exec_bitblt;
+	sgp.func = FUNC_EXEC_BITBLT;		// BITBLTと共通のルーチン
 }
 
+
 static void cmd_line(void) {
-	TRACEOUT(("SGP: cmd: line"));
+	TRACEOUT(("SGP: cmd: line (not implemented)"));
 	sgp.pc += 14;
 }
 
 static void cmd_cls(void) {
-	TRACEOUT(("SGP: cmd: cls"));
+	TRACEOUT(("SGP: cmd: cls (not implemented)"));
 	sgp.pc += 4;
 }
 
 static void cmd_scan_right(void) {
-	TRACEOUT(("SGP: cmd: scan right"));
+	TRACEOUT(("SGP: cmd: scan right (not implemented)"));
 }
 
 static void cmd_scan_left(void) {
-	TRACEOUT(("SGP: cmd: scan left"));
+	TRACEOUT(("SGP: cmd: scan left (not implemented)"));
 }
 
 // ---- 

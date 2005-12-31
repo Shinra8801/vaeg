@@ -2,6 +2,9 @@
 //#define	_WIN32_IE	0x0200
 #define _WIN32_IE	0x0300		// VAEG_EXT, for TrackMouseEvent
 
+//#define _WIN32_IE		0x0400	// VAEG_EXT, for SetLayeredWindowAttributes
+//#define _WIN32_WINNT	0x0500	// VAEG_EXT, for SetLayeredWindowAttributes
+
 #include	<windows.h>
 #include	<stdio.h>
 #include	<stddef.h>

@@ -130,17 +130,34 @@ BYTE *cgromva_font(UINT16 hccode) {
 					bit6-bit0  JIS第一バイト-0x20
 */
 int cgromva_width(UINT16 hccode) {
-	return (hccode & 0xff00) == 0 ? 1 : 2;
+	return (hccode & 0x7f00) == 0 ? 1 : 2;
 }
 
+/*
+CGROMアクセスOポートにセットされたハードウェア文字コードを、
+TVRAMに格納するためのハードウェア文字コードに変換する。
+*/
+static UINT16 curhccode(void) {
+	UINT16 hccode;
+
+	if (cgromva.cgaddr & 0x7f00) {
+		hccode = cgromva.cgaddr & 0x7fff | ((cgromva.cgrow & 0x20) ? 0x0000 : 0x8000);
+	}
+	else {
+		// ANK
+		hccode = cgromva.cgaddr;
+	}
+	return hccode;
+}
 
 // ---- I/O
 
 static void IOOUTCALL cgromva_o14c(UINT port, REG8 dat) {
-	SETLOWBYTE(cgromva.cgaddr, dat & 0x7f);
+	SETLOWBYTE(cgromva.cgaddr, dat);
 }
 
 static void IOOUTCALL cgromva_o14d(UINT port, REG8 dat) {
+	// 最上位ビットはマスクしておくことにする
 	SETHIGHBYTE(cgromva.cgaddr, dat & 0x7f);
 }
 
@@ -148,12 +165,31 @@ static REG8 IOINPCALL cgromva_i14e(UINT port) {
 	BYTE *font;
 	UINT16 hccode;
 
-	hccode = cgromva.cgaddr | ((cgromva.cgrow & 0x20) ? 0x0000 : 0x8000);
+	hccode = curhccode();
 	font = cgromva_font(hccode);
 
 	font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
 
 	return *font;
+}
+
+static void IOOUTCALL cgromva_o14e(UINT port, REG8 dat) {
+	BYTE *font;
+	UINT16 hccode;
+	UINT16 jis1;
+	UINT16 jis;
+
+	hccode = curhccode();
+	jis1 = (hccode & 0x7f) + 0x20;
+	jis = (jis << 8) | ((hccode >> 8) & 0x7f);
+	if (jis >= 0x7620 && jis < 0x7770) {
+		// ToDo: ここでは、メモリ領域と学習領域を書き換えないようにしているが、
+		// 実機ではここまでガードかけていないかもしれない。
+		
+		font = cgromva_font(hccode);
+		font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
+		*font = dat;
+	}
 }
 
 static void IOOUTCALL cgromva_o14f(UINT port, REG8 dat) {
@@ -170,6 +206,7 @@ void cgromva_reset(void) {
 void cgromva_bind(void) {
 	iocoreva_attachout(0x14c, cgromva_o14c);
 	iocoreva_attachout(0x14d, cgromva_o14d);
+	iocoreva_attachout(0x14e, cgromva_o14e);
 	iocoreva_attachout(0x14f, cgromva_o14f);
 
 	iocoreva_attachinp(0x14e, cgromva_i14e);

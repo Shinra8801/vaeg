@@ -1008,6 +1008,7 @@ END
 
 NP2BMP                  BITMAP  DISCARDABLE     "ICONS\\NEKOP2.BMP"
 NP2TOOL                 BITMAP  DISCARDABLE     "ICONS\\NP2TOOL.BMP"
+NP2TOOL2                BITMAP  DISCARDABLE     "ICONS\\NP2TOOL2.BMP"
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////

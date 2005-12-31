@@ -242,7 +242,6 @@
 #define IDC_BMSIO                       1209
 #define IDC_BMS                         1210
 #define IDC_BMSBANKS                    1211
-#define IDC_BMSKB                       1212
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003
@@ -404,7 +403,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        133
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         40126
 #define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           101

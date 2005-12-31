@@ -22,11 +22,11 @@ static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_STATIC,	NULL,		246, 10,  12,   4, 0, 0},
 		{TCTL_DDLIST,	NULL,		234, 26, 144, 160, 2, 0},
 		{TCTL_BUTTON,	str_browse,	378, 28,  16,  16, 2, 0},
-		{TCTL_BUTTON,	str_eject,	342,  6,  40,  16, 1, 0},
+		{TCTL_BUTTON,	str_eject,	341,  6,  41,  42, 1, 0},
 		{TCTL_STATIC,	NULL,		246, 62,  12,   4, 0, 0},
 		{TCTL_DDLIST,	NULL,		234, 78, 144, 160, 2, 0},
 		{TCTL_BUTTON,	str_browse,	378, 80,  16,  16, 2, 0},
-		{TCTL_BUTTON,	str_eject,	342, 58,  40,  16, 1, 0},
+		{TCTL_BUTTON,	str_eject,	341, 58,  41,  42, 1, 0},
 		{TCTL_BUTTON,	str_reset,   88,110,  22,   8, 1, 0},
 		{TCTL_BUTTON,	str_power,	425, 81,  28,  20, 1, 0},
 
@@ -61,7 +61,11 @@ static const INITBL skinini1[] = {
 	{"FONT",		INITYPE_STR,	toolskin.font,	sizeof(toolskin.font)},
 	{"FONTSIZE",	INITYPE_SINT32,	&toolskin.fontsize,					0},
 	{"COLOR1",		INITYPE_HEX32,	&toolskin.color1,					0},
-	{"COLOR2",		INITYPE_HEX32,	&toolskin.color2,					0}};
+	{"COLOR2",		INITYPE_HEX32,	&toolskin.color2,					0},
+#if defined(VAEG_EXT)
+	{"XPARENT",		INITYPE_HEX32,	&toolskin.transparentcolor,			0},
+#endif
+	};
 
 static const INITBL skinini2[] = {
 	{"HDDACC",		INITYPE_ARGS16,	&subitem[IDC_TOOLHDDACC].posx,		5},

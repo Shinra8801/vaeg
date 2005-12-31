@@ -108,6 +108,10 @@ static BOOL breakpoint_check(int type, UINT32 param1) {
 				if (bp->p.port != (UINT16)param1) break;
 				if (!breakpoint_evalcond(cond)) break;
 				return TRUE;
+			case BREAKPOINT_MEMWRITE:
+				if (bp->p.addr != param1) break;
+				if (!breakpoint_evalcond(cond)) break;
+				return TRUE;
 			case BREAKPOINT_INTERRUPT:	// int data ‚Ü‚½‚Í int3
 				if ((CPUPREFETCH(0) == 0xcd && CPUPREFETCH(1) == bp->p.intnum) ||
 					(CPUPREFETCH(0) == 0xcc && bp->p.intnum == 3)) {
@@ -133,6 +137,10 @@ BOOL breakpoint_check_ioin(UINT port) {
 	return breakpoint_check(BREAKPOINT_IOIN, (UINT32)port);
 }
 
+BOOL breakpoint_check_memwrite(UINT32 addr) {
+	return breakpoint_check(BREAKPOINT_MEMWRITE, addr);
+}
+
 
 /*
 csip=4567:89ab
@@ -148,6 +156,7 @@ action :=
     'int' hex
   | 'in' hex
   | 'out' hex
+  | 'w' segoff			// memory write
 
 condition := log_expression
 
@@ -325,19 +334,35 @@ static int parse_hexval(const char **str, BREAKVAL *val) {
 */
 }
 
+
 static int parse_segoff(const char **str, BREAKVAL *val) {
 	const char *pt;
-	UINT32 v;
 	BREAKVAL buf;
 
 	pt = *str;
-	v = 0;
 	if (parse_hexval(&pt, &buf)) {
 		if (parse_charseq(":", &pt)) {
 			if (parse_hexval(&pt, val)) {
 				*str = pt;
 				val->type = BREAKVAL_UINT32;
 				val->p.uint32 += buf.p.uint32 * 16;
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static int parse_segoffaddr(const char **str, UINT32 *val) {
+	const char *pt;
+	UINT32 seg;
+
+	pt = *str;
+	if (parse_hex(&pt, &seg)) {
+		if (parse_charseq(":", &pt)) {
+			if (parse_hex(&pt, val)) {
+				*str = pt;
+				*val += seg * 16;
 				return 1;
 			}
 		}
@@ -411,6 +436,18 @@ static int parse_action(const char **str, BREAKPOINT *bp) {
 		else {
 			// TODO
 			bp->p.port = 0;
+		}
+		return 1;
+	}
+	else if (parse_keyword("w", str)) {
+		bp->type = BREAKPOINT_MEMWRITE;
+		skipblank(str);
+		if (parse_segoffaddr(str, &v)) {
+			bp->p.addr = v;
+		}
+		else {
+			// TODO
+			bp->p.addr = 0;
 		}
 		return 1;
 	}

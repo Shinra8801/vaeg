@@ -179,11 +179,11 @@ static	WORD	tspspr_raster[SURFACE_WIDTH];
 												// 1ラスタ分のピクセルデータ
 												// 各ピクセルはパレット番号(0～15)
 
+
 void scrndrawva_compose_begin(void) {
 	work.bp = vabitmap;
 	work.y = 0;
 }
-
 
 void scrndrawva_compose_raster(void) {
 	int	x;
@@ -231,51 +231,75 @@ void scrndrawva_compose_raster(void) {
 		dd >>= 4;
 		if (type < 8) {
 			scrn->raster = NULL;
+			/*
 			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
 			scrn->mask[OUTSIDE] = TRUE;
 			scrn->mask[INSIDE] = TRUE;
 			continue;
-		}
-		type &= 0x03;
-		scrn->palflip = defaultflip;
-		if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
-
-		switch (type) {
-		case VIDEOVA_TEXTSCREEN:
-			scrn->raster = tsptext_raster;
-			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
-			break;
-		case VIDEOVA_SPRITESCREEN:
-			scrn->raster = tspspr_raster;
-			scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
-			break;
-		case VIDEOVA_GRAPHICSCREEN0:
-			scrn->raster = grph0_raster;
-			scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
-			break;
-		case VIDEOVA_GRAPHICSCREEN1:
-			scrn->raster = grph1_raster;
-			scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
-			break;
-		}
-		// ToDo: palette mode 3
-
-		// screen mask
-		maskpos = (videova.mskmode >> 4) & 3;
-		if (i == maskpos + 1) {
-			// 直後の低優先画面
-			scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
-			scrn->mask[INSIDE] = videova.mskmode & 0x01;
-		}
-		else if (i > maskpos) {
-			// 低優先画面
-			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
-			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
+			*/
 		}
 		else {
-			// 高優先画面
-			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
-			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+			type &= 0x03;
+			scrn->palflip = defaultflip;
+			if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
+
+			switch (type) {
+			case VIDEOVA_TEXTSCREEN:
+				scrn->raster = tsptext_raster;
+				scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
+				break;
+			case VIDEOVA_SPRITESCREEN:
+				scrn->raster = tspspr_raster;
+				scrn->xpar = videova.xpar_txtspr | ((DWORD)videova.xpar_txtspr << 16);
+				break;
+			case VIDEOVA_GRAPHICSCREEN0:
+				if (videova.grmode & 0x8000) {
+					// GDEN0 = 1 (グラフィック表示イネーブル)
+					scrn->raster = grph0_raster;
+					scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
+				}
+				else {
+					// GDEN0 = 0 (グラフィック表示禁止)
+					scrn->raster = NULL;
+				}
+				break;
+			case VIDEOVA_GRAPHICSCREEN1:
+				if (videova.grmode & 0x8000) {
+					// GDEN0 = 1 (グラフィック表示イネーブル)
+					scrn->raster = grph1_raster;
+					scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
+				}
+				else {
+					// GDEN0 = 0 (グラフィック表示禁止)
+					scrn->raster = NULL;
+				}
+				break;
+			}
+			// ToDo: palette mode 3
+
+			// screen mask
+			maskpos = (videova.mskmode >> 4) & 3;
+			if (i == maskpos + 1) {
+				// 直後の低優先画面
+				scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
+				scrn->mask[INSIDE] = videova.mskmode & 0x01;
+			}
+			else if (i > maskpos) {
+				// 低優先画面
+				scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
+				scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
+			}
+			else {
+				// 高優先画面
+				scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
+				scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+			}
+		}
+
+		if (scrn->raster == NULL) {
+			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
+			scrn->mask[OUTSIDE] = TRUE;
+			scrn->mask[INSIDE] = TRUE;
 		}
 	}
 
@@ -285,92 +309,118 @@ void scrndrawva_compose_raster(void) {
 		dd >>= 4;
 		if (type < 8 || type > 9) {
 			scrn->raster = NULL;
+			/*
 			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
 			scrn->mask[OUTSIDE] = TRUE;
 			scrn->mask[INSIDE] = TRUE;
 			continue;
+			*/
 		}
-		type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
-
-		switch (type) {
-		case VIDEOVA_GRAPHICSCREEN0:
-			scrn->raster = grph0_raster;
-			scrn->pixelmode = videova.grres & 0x0003;
-			break;
-		case VIDEOVA_GRAPHICSCREEN1:
-			scrn->raster = grph1_raster;
-			scrn->pixelmode = (videova.grres >> 8) & 0x0003;
-			break;
-		}
-
-		// screen mask
-		maskpos = (videova.mskmode >> 4) & 3;
-		if ((i + 4) == maskpos + 1) {
-			// 直後の低優先画面
-			scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
-			scrn->mask[INSIDE] = videova.mskmode & 0x01;
-		}
-		else /*if ((i + 4) > maskpos)*/ {
-			// 低優先画面
-			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
-			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
-		}
-		/*
 		else {
-			// 高優先画面
-			scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
-			scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+			type = (type & 0x01) + VIDEOVA_GRAPHICSCREEN0;
+
+			if (videova.grmode & 0x8000) {
+				// GDEN0 = 1 (グラフィック表示イネーブル)
+				switch (type) {
+				case VIDEOVA_GRAPHICSCREEN0:
+					scrn->raster = grph0_raster;
+					scrn->pixelmode = videova.grres & 0x0003;
+					break;
+				case VIDEOVA_GRAPHICSCREEN1:
+					scrn->raster = grph1_raster;
+					scrn->pixelmode = (videova.grres >> 8) & 0x0003;
+					break;
+				}
+			}
+			else {
+				// GDEN0 = 0 (グラフィック表示禁止)
+				scrn->raster = NULL;
+			}
+
+			// screen mask
+			maskpos = (videova.mskmode >> 4) & 3;
+			if ((i + 4) == maskpos + 1) {
+				// 直後の低優先画面
+				scrn->mask[OUTSIDE] = videova.mskmode & 0x04;
+				scrn->mask[INSIDE] = videova.mskmode & 0x01;
+			}
+			else /*if ((i + 4) > maskpos)*/ {
+				// 低優先画面
+				scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x0c;
+				scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x03;
+			}
+			/*
+			else {
+				// 高優先画面
+				scrn->mask[OUTSIDE] = (videova.mskmode & 0x0c) == 0x08;
+				scrn->mask[INSIDE] = (videova.mskmode & 0x03) == 0x02;
+			}
+			*/
 		}
-		*/
+
+		if (scrn->raster == NULL) {
+			// raster == NULLのときは、mask==TRUEにして、描画されないようにする
+			scrn->mask[OUTSIDE] = TRUE;
+			scrn->mask[INSIDE] = TRUE;
+		}
 	}
 
 
 	bp = work.bp;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
-		if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1 ||
-			x < videova.mskleft || x > videova.mskrit) {
-			side = OUTSIDE;
+		if (videova.grmode & 0x2000) {
+			// XVSP = 1 (ビデオ信号出力モード)
+
+			if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1 ||
+				x < videova.mskleft || x > videova.mskrit) {
+				side = OUTSIDE;
+			}
+			else {
+				side = INSIDE;
+			}
+			// パレット指定画面
+			scrn = &work.scrn[0];
+			for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
+				if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
+					palcode = (scrn->raster[x] & 0x0f) ^ scrn->palflip;
+					if ((scrn->xpar & (1 << palcode)) == 0) {
+						// 不透明色
+						c = videova.palette[palcode];
+						goto opaque;
+					}
+				}
+			}
+			// 直接色指定画面
+			for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
+				if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
+					c = scrn->raster[x];
+					switch (scrn->pixelmode) {
+					case 2:
+						c = rgb8to16[c];
+						break;
+					case 3:
+						break;
+					default:
+						// 1bit/pixel, 4bit/pixelでは常に透明
+						c = 0;
+						break;
+					}
+					if (c != 0) {
+						// 不透明色
+						goto opaque;
+					}
+				}
+			}
+
+			c = videova.dropcol;
+		opaque:
+			;
 		}
 		else {
-			side = INSIDE;
+			// XVSP = 0 (ビデオ信号禁止モード)
+			// バックドロップカラーも含めて出力禁止
+			c = 0;
 		}
-		// パレット指定画面
-		scrn = &work.scrn[0];
-		for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
-			if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
-				palcode = (scrn->raster[x] & 0x0f) ^ scrn->palflip;
-				if ((scrn->xpar & (1 << palcode)) == 0) {
-					// 不透明色
-					c = videova.palette[palcode];
-					goto opaque;
-				}
-			}
-		}
-		// 直接色指定画面
-		for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
-			if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
-				c = scrn->raster[x];
-				switch (scrn->pixelmode) {
-				case 2:
-					c = rgb8to16[c];
-					break;
-				case 3:
-					break;
-				default:
-					// 1bit/pixel, 4bit/pixelでは常に透明
-					c = 0;
-					break;
-				}
-				if (c != 0) {
-					// 不透明色
-					goto opaque;
-				}
-			}
-		}
-
-		c = videova.dropcol;
-
-	opaque:
 		*bp = c;
 		bp++;
 	}

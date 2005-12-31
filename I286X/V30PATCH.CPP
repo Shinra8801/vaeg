@@ -1020,7 +1020,7 @@ I286 v30_add4s(void) {							// 0F 20
 
 				xor		esi, esi
 				mov		si, I286_SI
-				add		esi, DS_BASE
+				add		esi, DS_FIX
 				xor		edi, edi
 				mov		di, I286_DI
 				add		edi, ES_BASE
@@ -1151,7 +1151,7 @@ I286 v30_sub4s(void) {							// 0F 22
 
 				xor		esi, esi
 				mov		si, I286_SI
-				add		esi, DS_BASE
+				add		esi, DS_FIX
 				xor		edi, edi
 				mov		di, I286_DI
 				add		edi, ES_BASE

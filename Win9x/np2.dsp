@@ -1647,6 +1647,10 @@ SOURCE=.\ICONS\NP2DEBUG.ICO
 
 SOURCE=.\ICONS\NP2TOOL.BMP
 # End Source File
+# Begin Source File
+
+SOURCE=.\ICONS\NP2TOOL2.BMP
+# End Source File
 # End Group
 # Begin Source File
 

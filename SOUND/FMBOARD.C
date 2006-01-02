@@ -59,12 +59,7 @@ REG8 fmboard_getjoy(PSGGEN psg) {
 
 	rapids ^= 0xf0;											// ver0.28
 	ret = 0xff;
-#if defined(SUPPORT_PC88VA)
-	if (pccore.model_va != PCMODEL_NOTVA || !(psg->reg.io2 & 0x40)) {
-		// VAの場合、JOYPAD1のみ使用する(2は使用できない)
-#else
 	if (!(psg->reg.io2 & 0x40)) {
-#endif
 		ret &= (joymng_getstat() | (rapids & 0x30));
 		if (np2cfg.KEY_MODE == 1) {
 			ret &= keystat_getjoy();

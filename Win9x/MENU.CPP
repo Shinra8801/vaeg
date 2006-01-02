@@ -6,6 +6,9 @@
 #include	"np2class.h"
 #include	"pccore.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"mouseifva.h"
+#endif
 
 
 #define	MFCHECK(a) ((a)?MF_CHECKED:MF_UNCHECKED)
@@ -546,3 +549,13 @@ void xmenu_setsstp(BYTE value) {
 	CheckMenuItem(np2class_gethmenu(hWndMain), IDM_SSTP, MFCHECK(value));
 }
 
+#if defined(SUPPORT_PC88VA)
+void xmenu_setmousedevice(UINT8 value) {
+	HMENU	hmenu;
+
+	mouseifvacfg.device = value;
+	hmenu = np2class_gethmenu(hWndMain);
+	CheckMenuItem(hmenu, IDM_PORTJOY, MFCHECK(value == 0x00));
+	CheckMenuItem(hmenu, IDM_PORTMOUSE, MFCHECK(value == 0x01));
+}
+#endif

@@ -52,6 +52,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"bkupmemva.h"
+#include	"mouseifva.h"
 #endif
 
 #ifdef BETA_RELEASE
@@ -832,6 +833,18 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			update |= SYS_UPDATECFG;
 			break;
 
+#if defined(SUPPORT_PC88VA)
+		case IDM_PORTJOY:
+			xmenu_setmousedevice(MOUSEIFVA_JOYPAD);
+			update |= SYS_UPDATECFG;
+			break;
+
+		case IDM_PORTMOUSE:
+			xmenu_setmousedevice(MOUSEIFVA_MOUSE);
+			update |= SYS_UPDATECFG;
+			break;
+#endif
+
 		case IDM_SERIAL1:
 			winuienter();
 			dialog_serial(hWnd);
@@ -1593,6 +1606,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	xmenu_setbtnrapid(np2cfg.BTN_RAPID);
 	xmenu_setmsrapid(np2cfg.MOUSERAPID);
 	xmenu_setsstp(np2oscfg.sstp);
+
+#if defined(SUPPORT_PC88VA)
+	xmenu_setmousedevice(mouseifvacfg.device);
+#endif
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);

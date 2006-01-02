@@ -914,6 +914,11 @@ BEGIN
         END
         MENUITEM "IO &Bank Memory",             IDM_BMS
         MENUITEM "&Mouse",                      IDM_MOUSE
+        POPUP "Mouse Por&t (VA)"
+        BEGIN
+            MENUITEM "&Joy Stick",                  IDM_PORTJOY
+            MENUITEM "&Mouse",                      IDM_PORTMOUSE
+        END
         MENUITEM SEPARATOR
         MENUITEM "Se&rial option...",           IDM_SERIAL1
         MENUITEM SEPARATOR

@@ -187,6 +187,7 @@ static const SFENTRY np2tbl[] = {
 	{"TSP",			0,	STATFLAG_BIN,	&tsp,			sizeof(tsp)},
 	{"CGROMVA",		0,	STATFLAG_BIN,	&cgromva,		sizeof(cgromva)},
 	{"SGP",			0,	STATFLAG_BIN,	&sgp,			sizeof(sgp)},
+	{"MOUSEVA",		0,	STATFLAG_BIN,	&mouseifva,		sizeof(mouseifva)},
 #endif
 	{"TERMINATE",	0,	STATFLAG_TERM,	NULL,			0}};
 

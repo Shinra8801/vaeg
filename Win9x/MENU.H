@@ -38,3 +38,6 @@ void xmenu_setbtnrapid(BYTE value);
 void xmenu_setmsrapid(BYTE value);
 void xmenu_setsstp(BYTE value);
 
+#if defined(SUPPORT_PC88VA)
+void xmenu_setmousedevice(UINT8 value);
+#endif

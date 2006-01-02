@@ -10,9 +10,8 @@
 #include	"winkbd.h"
 #include	"pccore.h"
 
-#if defined(SUPPORT_BMS)
 #include	"bmsio.h"
-#endif
+#include	"mouseifva.h"
 
 
 static BOOL inigetbmp(const BYTE *ptr, UINT pos) {
@@ -473,6 +472,9 @@ static const INITBL iniitem[] = {
 	{"Use_BMS_", INITYPE_BOOL,		&bmsiocfg.enabled,		0},
 	{"BMS_Port", INITYPE_HEX16,		&bmsiocfg.port,			0},
 	{"BMS_Size", INITYPE_UINT8,		&bmsiocfg.numbanks,		0},
+#endif
+#if defined(SUPPORT_PC88VA)
+	{"Mouse_VA", INITYPE_UINT8,		&mouseifvacfg.device,	0},
 #endif
 
 	// OSàÀë∂ÅH

@@ -44,6 +44,7 @@
 #include	"cgromva.h"
 #include	"gactrlva.h"
 #include	"sgp.h"
+#include	"mouseifva.h"
 #endif
 
 #if defined(MACOS)

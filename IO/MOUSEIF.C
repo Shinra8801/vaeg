@@ -10,6 +10,25 @@
 // 一部のゲームでマウスデータを切り捨てるので正常な動かなくなる事がある
 // それを救う為に 均等に移動データが伝わるようにしなければならない
 
+/*
+メモ (Shinra)
+	垂直表示1周期につき1回	mouseif_sync を呼び出し、実マウスの移動量を取得
+		mouseif.sx, sy = 移動量
+	I/Oからの読み取るマウスの移動量は、
+		前回I/O読み取りからの経過時間/垂直表示1周期の時間
+
+	すなわち、垂直表示1周期の間に、マウスがmouseif.sx,syだけ等速度でまっすぐ
+	移動したかのように振舞う。
+
+	垂直表示1周期の時間 = 1/56400秒
+	mouseif.moveclock = 垂直表示1周期の時間(CPUクロック数1000を単位とする)
+
+	mouseif.x, y = マウスカウンタ
+
+	マウスカウンタは calc_mousexy で更新。
+		マウスカウンタに足しこんだ分は、mouseif.rx, ryから減算。
+		rx, ryが0になったら実マウスの移動量をすべてマウスカウンタに反映完了。
+*/
 
 void mouseif_sync(void) {
 
@@ -25,20 +44,40 @@ void mouseif_sync(void) {
 	mouseif.rx = mouseif.sx;
 	mouseif.ry = mouseif.sy;
 
+#if defined(VAEG_FIX)
+	mouseif.lastc = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+#else
 	mouseif.lastc = CPU_CLOCK + CPU_BASECLOCK + CPU_REMCLOCK;
+#endif
 }
 
+#if defined(SUPPORT_PC88VA)
+void calc_mousexy(void) {
+#else
 static void calc_mousexy(void) {
+#endif
+
+#if defined(VAEG_EXT)
+	static UINT32	rapidlastc;
+#endif
 
 	UINT32	clock;
 	SINT32	diff;
 
+
+#if defined(VAEG_FIX)
+	clock = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+#else
 	clock = CPU_CLOCK + CPU_BASECLOCK + CPU_REMCLOCK;
+#endif
+
 	diff = clock - mouseif.lastc;
 	if (diff >= 2000) {
 		SINT32 dx;
 		SINT32 dy;
+#if !defined(VAEG_EXT)
 		mouseif.rapid ^= 0xa0;
+#endif
 		diff /= 1000;
 		dx = mouseif.sx;
 		if (dx > 0) {
@@ -77,6 +116,17 @@ static void calc_mousexy(void) {
 		mouseif.ry -= dy;
 		mouseif.lastc += diff * 1000;
 	}
+
+#if defined(VAEG_EXT)
+	diff = clock - rapidlastc;
+	if (diff > 200000 || diff < 0) {
+		// 8MHzで20打/秒 くらい
+		// rapidlastcが凄く昔の場合にdiff < 0となることがある
+		mouseif.rapid ^= 0xa0;
+		rapidlastc = clock;
+	}
+#endif
+
 }
 
 void mouseint(NEVENTITEM item) {

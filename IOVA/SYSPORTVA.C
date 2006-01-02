@@ -71,7 +71,8 @@ static REG8 IOINPCALL sysp_i032(UINT port) {
 static void IOOUTCALL sysp_o040(UINT port, REG8 dat) {
 	sysportva.port040 = dat;
 	calendar_ondataset();
-	// ToDo: カレンダ以外
+	mouseifva_outstrobe((UINT8)((dat & 0x40) >> 6));
+	// ToDo: カレンダ、マウス以外
 }
 
 /*

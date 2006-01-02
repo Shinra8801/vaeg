@@ -2,6 +2,7 @@
  *	BOARDSB2.H: PC-88VA Sound board 2
  */
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif

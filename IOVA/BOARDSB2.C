@@ -18,6 +18,9 @@
 static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
 //static unsigned int wait = 0;			// 
 
+
+// ---- I/O
+
 static void IOOUTCALL sb2_o044(UINT port, REG8 dat) {
 
 //	CPU_REMCLOCK -= wait;
@@ -98,12 +101,16 @@ static REG8 IOINPCALL sb2_i044(UINT port) {
 
 static REG8 IOINPCALL sb2_i045(UINT port) {
 	REG8 dat;
+	UINT8 data4;
+	UINT8 data2;
 
 	if (opn.opnreg == 0x0e) {
-		dat = fmboard_getjoy(&psg1) | 0xf0;
+		mouseifva_indata(&data4, &data2);
+		dat = data4 | 0xf0;
 	}
 	else if (opn.opnreg == 0x0f) {						// 88VA固有
-		dat = (fmboard_getjoy(&psg1) >> 4) | 0xfc;
+		mouseifva_indata(&data4, &data2);
+		dat = data2 | 0xfc;
 	}
 	else if (opn.opnreg < 0x10) {
 		dat = psggen_getreg(&psg1, opn.opnreg);

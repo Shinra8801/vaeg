@@ -27,6 +27,10 @@ void mouseif_bind(void);
 void mouseif_sync(void);
 void mouseint(NEVENTITEM item);
 
+#if defined(SUPPORT_PC88VA)
+void calc_mousexy(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

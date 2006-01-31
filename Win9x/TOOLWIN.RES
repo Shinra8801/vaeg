@@ -33,6 +33,10 @@ static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_STATIC,	NULL,		424, 13,   8,   4, 0, 0},
 		{TCTL_STATIC,	NULL,		424, 24,   8,   4, 0, 0},
 		{TCTL_STATIC,	NULL,		424, 35,   8,   4, 0, 0},
+#if defined(VAEG_EXT)
+		{TCTL_STATIC,	NULL,		234,  4, 160,  44, 0, 0},
+		{TCTL_STATIC,	NULL,		234, 56, 160,  44, 0, 0},
+#endif
 };
 #else
 
@@ -48,6 +52,10 @@ static const SUBITEM defsubitem[IDC_MAXITEMS] = {
 		{TCTL_BUTTON,	str_eject,	370, 29,  34,  17, 0, 0},
 		{TCTL_BUTTON,	str_reset,    0,  0,   0,   0, 0, 0},
 		{TCTL_BUTTON,	str_power,	  0,  0,   0,   0, 0, 0},
+#if defined(VAEG_EXT)
+		{TCTL_STATIC,	NULL,	      0,  0,   0,   0, 0, 0},
+		{TCTL_STATIC,	NULL,	      0,  0,   0,   0, 0, 0},
+#endif
 };
 
 #endif

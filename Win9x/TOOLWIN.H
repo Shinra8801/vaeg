@@ -34,7 +34,12 @@ void toolwin_setfdd(BYTE drv, const char *name);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(VAEG_EXT)
+void toolwin_fddaccess(BYTE drv, int mediatype);
+#else
 void toolwin_fddaccess(BYTE drv);
+#endif
 void toolwin_hddaccess(BYTE drv);
 
 #if defined(SUPPORT_PC88VA)

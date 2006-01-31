@@ -42,8 +42,13 @@ void sysmng_hddaccess(BYTE drv);
 			sys_updates &= (SYS_UPDATECFG | SYS_UPDATEOSCFG);			\
 			sysmng_workclockreset()
 
+#if defined(VAEG_EXT)
+#define	sysmng_fddaccess(a,b)											\
+			toolwin_fddaccess((a),(b))
+#else
 #define	sysmng_fddaccess(a)												\
 			toolwin_fddaccess((a))
+#endif
 
 #define	sysmng_hddaccess(a)												\
 			toolwin_hddaccess((a));
@@ -62,7 +67,11 @@ void sysmng_workclockreset(void);
 BOOL sysmng_workclockrenewal(void);
 void sysmng_updatecaption(BYTE flag);
 
+#if defined(VAEG_EXT)
+void toolwin_fddaccess(BYTE drv, int color);
+#else
 void toolwin_fddaccess(BYTE drv);
+#endif
 void toolwin_hddaccess(BYTE drv);
 
 #if defined(SUPPORT_PC88VA)

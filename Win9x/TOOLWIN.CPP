@@ -42,6 +42,10 @@ enum {
 	IDC_TOOLV2MODE,
 	IDC_TOOLV3MODE,
 #endif
+#if defined(VAEG_EXT)
+	IDC_TOOLFDD1DOOR,
+	IDC_TOOLFDD2DOOR,
+#endif
 	IDC_MAXITEMS,
 
 	IDC_BASE				= 3000,
@@ -89,6 +93,10 @@ typedef struct {
 #endif
 	BYTE			fddaccess[2];
 	BYTE			hddaccess;
+#if defined(VAEG_EXT)
+	BYTE			fddaccesscolor[2];
+	BYTE			hddaccesscolor;
+#endif
 #if defined(SUPPORT_PC88VA)
 	BYTE			modeled[3];
 #endif
@@ -103,8 +111,8 @@ typedef struct {
 	int				parenty;
 	HFONT			hfont;
 	HDC				hdcfont;
-#if defined(SUPPORT_PC88VA)
-	HBRUSH			access[3];
+#if defined(SUPPORT_PC88VA) || defined(VAEG_EXT)
+	HBRUSH			access[4];	//0..消灯(赤) 1..赤  3..消灯(緑) 4..緑
 #else
 	HBRUSH			access[2];
 #endif
@@ -114,6 +122,8 @@ typedef struct {
 	int				subext[IDC_MAXITEMS];
 	BOOL			mouseover;
 	BOOL			mousetracking;
+	BOOL			useroperating;
+	int				quietdelaycount;
 #endif
 } TOOLWIN;
 
@@ -142,16 +152,25 @@ static	TOOLWIN		toolwin;
 typedef struct {
 	WORD	idc;
 	BYTE	*counter;
+#if defined(VAEG_EXT)
+	BYTE	*color;		// 0..赤 2..緑
+#endif
 } DISKACC;
 
 static const BYTE fddlist[FDDLIST_DRV] = {
 					IDC_TOOLFDD1LIST, IDC_TOOLFDD2LIST};
 
+#if defined(VAEG_EXT)
+static const DISKACC diskacc[3] = {
+			{IDC_TOOLFDD1ACC,	&toolwin.fddaccess[0], &toolwin.fddaccesscolor[0]},
+			{IDC_TOOLFDD2ACC,	&toolwin.fddaccess[1], &toolwin.fddaccesscolor[1]},
+			{IDC_TOOLHDDACC,	&toolwin.hddaccess,	   &toolwin.hddaccesscolor}};
+#else
 static const DISKACC diskacc[3] = {
 					{IDC_TOOLFDD1ACC,	&toolwin.fddaccess[0]},
 					{IDC_TOOLFDD2ACC,	&toolwin.fddaccess[1]},
 					{IDC_TOOLHDDACC,	&toolwin.hddaccess}};
-
+#endif
 
 // ----
 
@@ -358,8 +377,11 @@ static void remakefddlist(HWND hwnd, TOOLFDD *fdd) {
 	setlist(hwnd, fdd, sel);
 }
 
+#if defined(VAEG_EXT)
+static void accdraw(HWND hWnd, BYTE count, int color) {
+#else
 static void accdraw(HWND hWnd, BYTE count) {
-
+#endif
 	HDC			hdc;
 	PAINTSTRUCT	ps;
 	RECT		rc;
@@ -367,7 +389,11 @@ static void accdraw(HWND hWnd, BYTE count) {
 
 	hdc = BeginPaint(hWnd, &ps);
 	GetClientRect(hWnd, &rc);
+#if defined(VAEG_EXT)
+	hbrush = (HBRUSH)SelectObject(hdc, toolwin.access[(count)? color + 1: color]);
+#else
 	hbrush = (HBRUSH)SelectObject(hdc, toolwin.access[(count)?1:0]);
+#endif
 	PatBlt(hdc, rc.left, rc.top, rc.right, rc.bottom, PATCOPY);
 	SelectObject(hdc, hbrush);
 	EndPaint(hWnd, &ps);
@@ -383,12 +409,69 @@ static void modedraw(HWND hWnd, BYTE sw) {
 
 	hdc = BeginPaint(hWnd, &ps);
 	GetClientRect(hWnd, &rc);
-	hbrush = (HBRUSH)SelectObject(hdc, toolwin.access[(sw)?2:0]);
+	hbrush = (HBRUSH)SelectObject(hdc, toolwin.access[(sw)?3:2]);
 	PatBlt(hdc, rc.left, rc.top, rc.right, rc.bottom, PATCOPY);
 	SelectObject(hdc, hbrush);
 	EndPaint(hWnd, &ps);
 }
 #endif
+
+#if defined(VAEG_EXT)
+#if 1
+static void toolwinpaint2(HWND hWnd, HDC hdc);
+
+static void doordraw(HWND hWnd, int doorstat) {
+	HDC			hdc;
+	PAINTSTRUCT	ps;
+
+	hdc = BeginPaint(hWnd, &ps);
+	toolwinpaint2(hWnd, hdc);
+	EndPaint(hWnd, &ps);
+}
+#else
+///@@@@@@@
+static void doordraw(HWND hWnd, int doorstat) {
+	
+
+
+	HDC			hdc;
+	HDC			hmdc;
+	PAINTSTRUCT	ps;
+	RECT		rc;
+	RECT		toolwinRc;
+
+	hdc = BeginPaint(hWnd, &ps);
+	hmdc = CreateCompatibleDC(hdc);
+
+	// 描画するbitmap
+	if (doorstat && toolwin.hbmp2) {
+		// door closed
+		SelectObject(hmdc, toolwin.hbmp2);
+	}
+	else {
+		// door opened
+		SelectObject(hmdc, toolwin.hbmp);
+	}
+
+	// 描画位置
+	GetClientRect(hWnd, &rc);		// static に対する描画範囲
+									// 左上は常に0,0
+	toolwinRc = rc;
+	MapWindowPoints(hWnd, toolwin.hwnd, (POINT *)&toolwinRc, 2); 
+									// toolwinRc にtoolWindowsに対する描画範囲を
+									// 求める
+
+	// 描画
+	BitBlt(hdc, 0, 0, rc.right, rc.bottom,
+					hmdc, toolwinRc.left, toolwinRc.top, SRCCOPY);
+
+	DeleteDC(hmdc);
+	EndPaint(hWnd, &ps);
+
+}
+#endif
+#endif
+
 
 static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
@@ -443,15 +526,27 @@ static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 	}
 	else if (msg == WM_PAINT) {
 		if (idc == IDC_TOOLHDDACC) {
+#if defined(VAEG_EXT)
+			accdraw(hWnd, toolwin.hddaccess, 0);
+#else
 			accdraw(hWnd, toolwin.hddaccess);
+#endif
 			return(FALSE);
 		}
 		else if (idc == IDC_TOOLFDD1ACC) {
+#if defined(VAEG_EXT)
+			accdraw(hWnd, toolwin.fddaccess[0], toolwin.fddaccesscolor[0]);
+#else
 			accdraw(hWnd, toolwin.fddaccess[0]);
+#endif
 			return(FALSE);
 		}
 		else if (idc == IDC_TOOLFDD2ACC) {
+#if defined(VAEG_EXT)
+			accdraw(hWnd, toolwin.fddaccess[1], toolwin.fddaccesscolor[1]);
+#else
 			accdraw(hWnd, toolwin.fddaccess[1]);
+#endif
 			return(FALSE);
 		}
 #if defined(SUPPORT_PC88VA)
@@ -468,10 +563,44 @@ static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			return(FALSE);
 		}
 #endif
+#if defined(VAEG_EXT)
+		else if (idc == IDC_TOOLFDD1DOOR) {
+			doordraw(hWnd, np2tool.fdd[0].insert);
+			return(FALSE);
+		}
+		else if (idc == IDC_TOOLFDD2DOOR) {
+			doordraw(hWnd, np2tool.fdd[1].insert);
+			return(FALSE);
+		}
+#endif
 	}
 	else if (msg == WM_SETFOCUS) {
 		SetWindowLong(GetParent(hWnd), GTWL_FOCUS, idc);
 	}
+#if defined(VAEG_EXT)
+/*
+	else if (msg == WM_MOUSEMOVE) {
+		TRACKMOUSEEVENT tme;
+
+		tme.cbSize = sizeof(tme);
+		tme.dwFlags = TME_LEAVE;
+		tme.hwndTrack = hWnd;
+		_TrackMouseEvent(&tme);
+	}
+	else if (msg == WM_MOUSELEAVE) {
+		RECT rect;
+		POINT pt;
+
+		GetClientRect(toolwin.hwnd,&rect);
+		MapWindowPoints(toolwin.hwnd,NULL,(LPPOINT)&rect,2);
+		GetCursorPos(&pt);
+		if (!PtInRect(&rect,pt)) {
+			//quiet();
+			toolwin.mouseover = FALSE;
+		}
+	}
+*/
+#endif
 	return(CallWindowProc(toolwin.subproc[idc], hWnd, msg, wp, lp));
 }
 
@@ -516,8 +645,9 @@ const char		*cls;
 
 	toolwin.access[0] = CreateSolidBrush(0x000060);
 	toolwin.access[1] = CreateSolidBrush(0x0000ff);
-#if defined(SUPPORT_PC88VA)
-	toolwin.access[2] = CreateSolidBrush(0x00ff00);
+#if defined(SUPPORT_PC88VA) || defined(VAEG_EXT)
+	toolwin.access[2] = CreateSolidBrush(0x006000);
+	toolwin.access[3] = CreateSolidBrush(0x00ff00);
 #endif
 
 	p = subitem;
@@ -615,8 +745,9 @@ static void toolwindestroy(void) {
 		}
 		DeleteObject(toolwin.access[0]);
 		DeleteObject(toolwin.access[1]);
-#if defined(SUPPORT_PC88VA)
+#if defined(SUPPORT_PC88VA) || defined(VAEG_EXT)
 		DeleteObject(toolwin.access[2]);
+		DeleteObject(toolwin.access[3]);
 #endif
 		DeleteObject(toolwin.hdcfont);
 		DeleteObject(toolwin.hfont);
@@ -630,6 +761,113 @@ static void toolwindestroy(void) {
 		toolwin.hbmp = NULL;
 	}
 }
+
+
+#if defined(VAEG_EXT)
+
+/*
+hbmpのrectの部分をhWndに描画する。
+hbmpはtool windowの左上隅に位置するとする。
+*/
+#if 1
+static void paintskin(HWND hWnd, HDC hdc, HBITMAP *hbmp, RECT *rect)
+{
+	RECT dstrect;
+	HDC hmdc;
+	POINT oldorg;
+
+	hmdc = CreateCompatibleDC(hdc);
+
+	GetClientRect(hWnd, &dstrect);	// dstrectはhWndの座標系
+
+	MapWindowPoints(hWnd, toolwin.hwnd, (POINT *)&dstrect ,2);
+
+	// tool windowの座標系にする
+	SetViewportOrgEx(hdc, -dstrect.left, -dstrect.top, &oldorg);
+	SelectObject(hmdc, *hbmp);
+	// ただ単純に、hbmp, rectで指定された画像、部分を描画
+	BitBlt(hdc, rect->left, rect->top, rect->right, rect->bottom,
+			   hmdc, rect->left, rect->top, SRCCOPY);
+	//元の座標系にもどす
+	SetViewportOrgEx(hdc, oldorg.x, oldorg.y, NULL);
+	DeleteDC(hmdc);
+}
+#else
+///@@@@@@@@
+static void paintskin(HWND hWnd, HDC hdc, HBITMAP *hbmp, RECT *rect)
+{
+	RECT srcrect;
+	RECT dstrect;
+	RECT andrect;
+	RECT andrectToolwin;
+	HDC hmdc;
+
+	hmdc = CreateCompatibleDC(hdc);
+
+	GetClientRect(hWnd, &dstrect);	// dstrectはhWndの座標系
+	srcrect = *rect;
+	MapWindowPoints(toolwin.hwnd, hWnd, (POINT *)&srcrect ,2);
+					// tool window 座標→hWnd座標
+	if (IntersectRect(&andrect, &dstrect, &srcrect)) {
+		// andrect: 実際に描画する範囲
+		andrectToolwin = andrect;
+		MapWindowPoints(hWnd, toolwin.hwnd, (POINT*)&andrectToolwin, 2);
+					// andrect の tool window 座標
+		SelectObject(hmdc, *hbmp);
+		BitBlt(hdc, andrect.left, andrect.top, andrect.right, andrect.bottom,
+			   hmdc, andrectToolwin.left, andrectToolwin.top, SRCCOPY);
+	}
+
+	DeleteDC(hmdc);
+}
+#endif
+
+
+// ドライブドアの状況を含めて描画
+static void toolwinpaint2(HWND hWnd, HDC hdc) {
+	RECT		rc;
+	RECT		doorRc;
+	HWND		doorhWnd;
+	BITMAP		bmp;
+	int			i;
+
+	if (toolwin.hbmp) {
+		// スキン(通常状態)
+		GetObject(toolwin.hbmp, sizeof(BITMAP), &bmp);
+		rc.top = 0;
+		rc.left = 0;
+		rc.right = bmp.bmWidth;
+		rc.bottom = bmp.bmHeight;
+		paintskin(hWnd, hdc, &toolwin.hbmp, &rc); 
+
+		// スキン(ドアクローズ状態)
+		if (toolwin.hbmp2) {
+			for (i = 0; i <FDDLIST_DRV; i++) {
+				if (np2tool.fdd[i].insert) {
+					doorhWnd = toolwin.sub[IDC_TOOLFDD1DOOR + i];
+					if (doorhWnd) {
+						GetClientRect(doorhWnd, &doorRc);
+						MapWindowPoints(doorhWnd, toolwin.hwnd, (POINT *)&doorRc, 2); 
+						paintskin(hWnd, hdc, &toolwin.hbmp2, &doorRc);
+					}
+				}
+			}
+		}
+
+	}
+
+}
+
+static void toolwinpaint(HWND hWnd) {
+	HDC hdc;
+	PAINTSTRUCT	ps;
+
+	hdc = BeginPaint(hWnd, &ps);
+	toolwinpaint2(hWnd, hdc);
+	EndPaint(hWnd, &ps);
+}
+
+#else
 
 static void toolwinpaint(HWND hWnd) {
 
@@ -648,6 +886,30 @@ static void toolwinpaint(HWND hWnd) {
 	}
 	EndPaint(hWnd, &ps);
 }
+#endif
+
+#if defined(VAEG_EXT)
+static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
+
+	HWND	sub;
+	HDC		hdc;
+	RECT	btn;
+
+	idc -= IDC_BASE;
+	if (idc >= IDC_MAXITEMS) {
+		return;
+	}
+	hdc = lpdis->hDC;
+	sub = toolwin.sub[idc];
+	toolwinpaint2(sub, hdc);
+
+	// フォーカスを持っている場合に表示する枠
+	if (lpdis->itemState & ODS_FOCUS) {
+		GetClientRect(sub, &btn);
+		DrawFocusRect(hdc, &btn);
+	}
+}
+#else
 
 static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 
@@ -657,10 +919,6 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 	HDC		hdc;
 	HDC		hmdc;
 	RECT	btn;
-#if defined(VAEG_EXT)
-	int		drv;
-	HBITMAP	hbmp;
-#endif
 
 	idc -= IDC_BASE;
 	if (idc >= IDC_MAXITEMS) {
@@ -676,31 +934,9 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 	btn.right = rect.right - rect.left;
 	btn.bottom = rect.bottom - rect.top;
 	hdc = lpdis->hDC;
-#if defined(VAEG_EXT)
-	hbmp = NULL;
-	switch (idc) {
-	case IDC_TOOLFDD1EJECT:
-		drv = 0;
-		break;
-	case IDC_TOOLFDD2EJECT:
-		drv = 1;
-		break;
-	default:
-		drv = -1;
-		break;
-	}
-	if (drv >= 0) {
-		hbmp = (np2tool.fdd[drv].insert) ? toolwin.hbmp2 : toolwin.hbmp;
-	}
-	if (!hbmp) hbmp = toolwin.hbmp;
-	if (hbmp) {
-		hmdc = CreateCompatibleDC(hdc);
-		SelectObject(hmdc, hbmp);
-#else
 	if (toolwin.hbmp) {
 		hmdc = CreateCompatibleDC(hdc);
 		SelectObject(hmdc, toolwin.hbmp);
-#endif
 		BitBlt(hdc, 0, 0, btn.right, btn.bottom,
 					hmdc, rect.left - pt.x, rect.top - pt.y, SRCCOPY);
 		DeleteDC(hmdc);
@@ -709,7 +945,7 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 		DrawFocusRect(hdc, &btn);
 	}
 }
-
+#endif
 
 // ----
 
@@ -803,10 +1039,23 @@ const char		*p;
 }
 
 
-// ----
+// ---- マウスカーソルがツールウィンドウ上にあるときだけコントロールを表示する
 
 #if defined(VAEG_EXT)
 
+/*
+タイマーを始動
+*/
+static void startmousetracking(void) {
+	if (!toolwin.mousetracking) {
+		SetTimer(toolwin.hwnd, 1, 500, NULL);
+		toolwin.mousetracking = TRUE;
+	}
+}
+
+/*
+コントロールを表示
+*/
 static void prominent(void) {
 	int i;
 
@@ -817,8 +1066,12 @@ static void prominent(void) {
 			}
 		}
 	}
+	toolwin.quietdelaycount = 0;
 }
 
+/*
+コントロールを非表示
+*/
 static void quiet(void) {
 	int i;
 
@@ -829,8 +1082,66 @@ static void quiet(void) {
 			}
 		}
 	}
+	toolwin.quietdelaycount = 0;
 }
 
+/*
+少したったらコントロールを非表示
+*/
+static void quietsoon(void) {
+	toolwin.quietdelaycount = 6;
+	startmousetracking();
+}
+
+/*
+少したったかどうか確認
+*/
+static void checkquietdelaycount(void) {
+	if (toolwin.quietdelaycount) {
+		toolwin.quietdelaycount--;
+		if (toolwin.quietdelaycount == 0) {
+			quiet();
+		}
+	}
+}
+
+/*
+マウスカーソルがツールウィンドウ内に入ったかどうかを確認
+*/
+static void checkmouseenter(void) {
+	if (!toolwin.mouseover) {
+		RECT rect;
+		POINT pt;
+
+		GetClientRect(toolwin.hwnd,&rect);
+		MapWindowPoints(toolwin.hwnd,NULL,(LPPOINT)&rect,2);
+		GetCursorPos(&pt);
+		if (PtInRect(&rect,pt)) {
+			prominent();
+			toolwin.mouseover = TRUE;
+		}
+	}
+}
+
+/*
+マウスカーソルがツールウィンドウ外に出たかどうかを確認
+*/
+static void checkmouseleave(void) {
+	if (toolwin.mouseover && !toolwin.useroperating) {
+		RECT rect;
+		POINT pt;
+
+		GetClientRect(toolwin.hwnd,&rect);
+		MapWindowPoints(toolwin.hwnd,NULL,(LPPOINT)&rect,2);
+		GetCursorPos(&pt);
+		if (!PtInRect(&rect,pt)) {
+			quietsoon();
+			toolwin.mouseover = FALSE;
+		}
+	}
+}
+
+/*
 static void trackmouseleave(void) {
 	TRACKMOUSEEVENT tme;
 
@@ -842,6 +1153,7 @@ static void trackmouseleave(void) {
 		_TrackMouseEvent(&tme);
 	}
 }
+*/
 #endif
 
 
@@ -908,6 +1220,15 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 					if (HIWORD(wp) == CBN_SELCHANGE) {
 						sellist(0);
 					}
+#if defined(VAEG_EXT)
+					else if (HIWORD(wp) == CBN_DROPDOWN) {
+						toolwin.useroperating = TRUE;
+					}
+					else if (HIWORD(wp) == CBN_CLOSEUP) {
+						toolwin.useroperating = FALSE;
+						//checkmouseleave();
+					}
+#endif
 					break;
 
 				case IDC_BASE + IDC_TOOLFDD1BROWSE:
@@ -925,6 +1246,15 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 					if (HIWORD(wp) == CBN_SELCHANGE) {
 						sellist(1);
 					}
+#if defined(VAEG_EXT)
+					else if (HIWORD(wp) == CBN_DROPDOWN) {
+						toolwin.useroperating = TRUE;
+					}
+					else if (HIWORD(wp) == CBN_CLOSEUP) {
+						toolwin.useroperating = FALSE;
+						//checkmouseleave();
+					}
+#endif
 					break;
 
 				case IDC_BASE + IDC_TOOLFDD2BROWSE:
@@ -1090,12 +1420,17 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			break;
 */
 		case WM_MOUSEMOVE:
+			/*
 			if (!toolwin.mouseover) {
 				prominent();
 				toolwin.mouseover = TRUE;
 			}
 			trackmouseleave();
+			*/
+			checkmouseenter();
+			startmousetracking();
 			break;
+			/*
 		case WM_MOUSELEAVE:
 			toolwin.mousetracking = FALSE;
 			if (toolwin.mouseover) {
@@ -1110,6 +1445,11 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 					toolwin.mouseover = FALSE;
 				}
 			}
+			break;
+			*/
+		case WM_TIMER:
+			checkmouseleave();
+			checkquietdelaycount();
 			break;
 #endif
 		default:
@@ -1140,7 +1480,9 @@ void toolwin_create(void) {
 	HBITMAP	hbmp;
 	BITMAP	bmp;
 	HWND	hWnd;
-
+#if defined(VAEG_EXT)
+	int		i;
+#endif
 	if (toolwin.hwnd) {
 		return;
 	}
@@ -1164,6 +1506,15 @@ void toolwin_create(void) {
 	UpdateWindow(hWnd);
 	ShowWindow(hWnd, SW_SHOWNOACTIVATE);
 	SetForegroundWindow(hWndMain);
+
+#if defined(VAEG_EXT)
+	// コマンドラインに指定したディスクイメージがtool windowに
+	// 反映されるようにする。
+	for (i = 0; i < FDDLIST_DRV; i++) {
+		toolwin_setfdd(i, diskdrv_fname[i]); 
+	}
+#endif
+	
 	return;
 
 twope_err2:
@@ -1229,11 +1580,18 @@ void toolwin_setfdd(BYTE drv, const char *name) {
 		}
 #if defined(VAEG_EXT)
 		InvalidateRect(toolwin.hwnd, NULL, TRUE);
+
+		prominent();
+		if (!toolwin.mouseover) quietsoon();
 #endif
 	}
 }
 
+#if defined(VAEG_EXT)
+static void setdiskacc(UINT num, BYTE count, BYTE color) {
+#else
 static void setdiskacc(UINT num, BYTE count) {
+#endif
 
 const DISKACC	*acc;
 	HWND		sub;
@@ -1251,19 +1609,40 @@ const DISKACC	*acc;
 		if (sub) {
 			InvalidateRect(sub, NULL, TRUE);
 		}
+#if defined(VAEG_EXT)
+		*(acc->color) = color;
+#endif
 	}
 }
 
+#if defined(VAEG_EXT)
+/*
+FDDアクセスランプのON
+	IN:
+		drv = ドライ番号
+		mediatype = 2HD なら1。それ以外は0
+*/
+void toolwin_fddaccess(BYTE drv, int mediatype) {
+
+	if (drv < 2) {
+		setdiskacc(drv, 20, (mediatype) ? 2 : 0);
+	}
+}
+#else
 void toolwin_fddaccess(BYTE drv) {
 
 	if (drv < 2) {
-		setdiskacc(drv, 20);
+		setdiskacc(drv, 20);	
 	}
 }
+#endif
 
 void toolwin_hddaccess(BYTE drv) {
-
+#if defined(VAEG_EXT)
+	setdiskacc(2, 10, 0);
+#else
 	setdiskacc(2, 10);
+#endif
 }
 
 #if defined(SUPPORT_PC88VA)

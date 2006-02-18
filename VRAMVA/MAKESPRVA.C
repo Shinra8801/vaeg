@@ -203,15 +203,21 @@ void makesprva_begin(void) {
 
 		sprinfo += 8;
 	}
+}
 
+void makesprva_blankraster(void) {
+	ZeroMemory(sprraster, sizeof(sprraster));
 }
 
 void makesprva_raster(void) {
 	int i;
 	BYTE *sprinfo;
 	SPRVA s;
+	BOOL mg;
 
-	if (!tsp.mg || (work.screeny & 1) == 0) { 
+	mg = tsp.mg && !((tsp.syncparam[0] & 0xc0) == 0x40);
+
+	if (!mg || (work.screeny & 1) == 0) { 
 
 		ZeroMemory(sprraster, sizeof(sprraster));
 		sprinfo = textmem + tsp.sprtable + SPRVA_SPRS * 8;

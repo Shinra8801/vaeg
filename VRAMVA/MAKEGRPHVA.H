@@ -11,9 +11,9 @@ extern	WORD	grph1_raster[];
 
 void makegrphva_initialize(void);
 
-void makegrphva_begin(void);
+void makegrphva_begin(BOOL *scrn200);
 void makegrphva_raster(void);
-
+void makegrphva_blankraster(void);
 
 #ifdef __cplusplus
 }

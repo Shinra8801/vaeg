@@ -650,9 +650,13 @@ void scrnmng_setextend(int extend) {
 }
 
 void scrnmng_setheight(int posy, int height) {
-
 	scrnstat.height = height;
 	renewalclientsize(TRUE);
+#if defined(VAEG_FIX)
+	// 表示領域が小さくなったときに、領域外に以前書かれた画像が残ってしまうので
+	// 領域外をクリアする。
+	clearoutscreen();
+#endif
 }
 
 const SCRNSURF *scrnmng_surflock(void) {

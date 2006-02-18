@@ -92,6 +92,7 @@ static REG8 IOINPCALL sysp_i040(UINT port) {
 		0xc0 |							// 常に1
 		(tsp.vsync & 0x20) |			// VSYNC
 		((uPD4990.cdat & 0x01) << 4) |	// CDI(カレンダ時計)
+										// bit1(CRTモード)は0(24KHz)
 		0x01;							// PBSY
 
 	return ret;
@@ -159,18 +160,21 @@ static REG8 IOINPCALL sysp_i1c9(UINT port) {
 	return sysportva.a;
 }
 
-/*
+
 static REG8 IOINPCALL sysp_i1cb(UINT port) {
 
 	REG8	ret;
 
+	ret = 0x08;			// bit3 ( ~CRTモード) は 1 (24KHz)
+/*
 	ret = ((~np2cfg.dipsw[0]) & 1) << 3;
 	ret |= rs232c_stat();
 	ret |= uPD4990.cdat;
 	(void)port;
+*/
 	return(ret);
 }
-*/
+
 
 static REG8 IOINPCALL sysp_i1cd(UINT port) {
 
@@ -209,7 +213,7 @@ void systemportva_bind(void) {
 	iocoreva_attachout(0x1cd, sysp_o1cd);
 	iocoreva_attachout(0x1cf, sysp_o1cf);
 	iocoreva_attachinp(0x1c9, sysp_i1c9);
-//	iocoreva_attachinp(0x1cb, sysp_i1cb);
+	iocoreva_attachinp(0x1cb, sysp_i1cb);
 	iocoreva_attachinp(0x1cd, sysp_i1cd);
 }
 

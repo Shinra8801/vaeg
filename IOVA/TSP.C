@@ -14,6 +14,7 @@
 
 enum {
 	// TSPƒRƒ}ƒ“ƒh
+	CMD_SYNC	= 0x10,
 	CMD_DSPON	= 0x12,
 	CMD_DSPOFF	= 0x13,
 	CMD_DSPDEF	= 0x14,
@@ -33,7 +34,8 @@ enum {
 	PARAMFUNC_SPRDEF,
 
 	// execfunc
-	EXECFUNC_DSPON			= 0,
+	EXECFUNC_SYNC			= 0,
+	EXECFUNC_DSPON,
 	EXECFUNC_DSPDEF,
 	EXECFUNC_CURDEF,
 	EXECFUNC_SPRON,
@@ -66,6 +68,32 @@ static void sprsw(int no, BOOL sw) {
 		d &= ~0x0200;
 	}
 	STOREINTELWORD(sprinfo + 0, d);
+}
+
+/*
+SYNC
+*/
+static void exec_sync(void) {
+	int i;
+	UINT16 newlines;
+	BOOL newhsync15khz;
+
+	for (i = 0; i < 14; i++) tsp.syncparam[i] = tsp.parambuf[i];
+	tsp.textmg = (tsp.syncparam[0] & 0xc0) == 0x80;
+	newlines = tsp.syncparam[0x0a] | ((tsp.syncparam[0x0b] & 0xc0) << 2);
+	newhsync15khz = tsp.syncparam[0x02] == 0x1c;
+	if (newlines != tsp.screenlines || newhsync15khz != tsp.hsync15khz) {
+		tsp.screenlines = newlines;
+		tsp.hsync15khz = newhsync15khz;
+		tsp.flag |= TSP_F_LINESCHANGED;
+	}
+	
+	TRACEOUT(("tsp: sync: textmg=0x%.2x, screenlines=%d, hsync=%s"
+		, tsp.textmg
+		, tsp.screenlines
+		, (tsp.hsync15khz) ? "15KHz" : "24KHz"));
+
+	tsp.status &= ~STATUS_BUSY;
 }
 
 /*
@@ -201,6 +229,9 @@ static void paramfunc_generic(REG8 dat) {
 			tsp.paramfunc = PARAMFUNC_NOP;
 			//tsp.endparamfunc();
 			switch (tsp.execfunc) {
+			case EXECFUNC_SYNC:
+				exec_sync();
+				break;
 			case EXECFUNC_DSPON:
 				exec_dspon();
 				break;
@@ -247,6 +278,11 @@ static void IOOUTCALL tsp_o142(UINT port, REG8 dat) {
 	tsp.status |= STATUS_BUSY;
 
 	switch(dat) {
+	case CMD_SYNC:
+		tsp.recvdatacnt = 14;
+		tsp.execfunc = EXECFUNC_SYNC;
+		tsp.paramfunc = PARAMFUNC_GENERIC;
+		break;
 	case CMD_DSPON:
 		tsp.recvdatacnt = 3;
 		//tsp.endparamfunc = exec_dspon;

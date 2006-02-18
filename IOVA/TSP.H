@@ -3,6 +3,10 @@
  *
  */
 
+enum {
+	TSP_F_LINESCHANGED	=	1,
+};
+
 typedef struct {
 	BOOL	dspon;				// TSPの表示ON
 	BOOL	spron;				// スプライトの表示ON
@@ -20,6 +24,13 @@ typedef struct {
 	BOOL	mg;					// 縦2倍拡大
 	UINT8	hspn;				// 1ラスタ中に同時に表示できるスプライトの最大数
 	BOOL	gr;					// グルーピングモード
+
+	UINT8	syncparam[14];		// SYNCコマンドパラメータ
+	UINT16	screenlines;		// 画面ライン数(SYNCコマンドで指定されたもの)
+	BOOL	textmg;				// テキスト縦2倍拡大
+	BOOL	hsync15khz;			// true.15KHz, false.24KHz(SYNCコマンドで指定されたもの)
+
+	UINT16	flag;				// TSP_F_***
 
 	UINT8	blinkcnt;			// ブリンク用カウンタ。画面表示1サイクルごとにデクリメント
 	UINT8	blinkcnt2;			// ブリンク用カウンタ。blinkcnt==0になるたびにインクリメント

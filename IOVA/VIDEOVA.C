@@ -43,6 +43,11 @@ static void adjustpal(int palno) {
 
 // ---- I/O
 
+//    テキスト制御ポート0
+static void IOOUTCALL videova_o030(UINT port, REG8 dat) {
+	videova.txtmode8 = dat;
+}
+
 //    表示画面制御レジスタ
 
 static REG8 IOINPCALL videova_i100(UINT port) {
@@ -548,6 +553,8 @@ void videova_reset(void) {
 
 void videova_bind(void) {
 	int i;
+
+	iocoreva_attachout(0x030, videova_o030);
 
 	iocoreva_attachinp(0x100, videova_i100);
 	iocoreva_attachinp(0x101, videova_i101);

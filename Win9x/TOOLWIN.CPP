@@ -417,7 +417,6 @@ static void modedraw(HWND hWnd, BYTE sw) {
 #endif
 
 #if defined(VAEG_EXT)
-#if 1
 static void toolwinpaint2(HWND hWnd, HDC hdc);
 
 static void doordraw(HWND hWnd, int doorstat) {
@@ -428,50 +427,10 @@ static void doordraw(HWND hWnd, int doorstat) {
 	toolwinpaint2(hWnd, hdc);
 	EndPaint(hWnd, &ps);
 }
-#else
-///@@@@@@@
-static void doordraw(HWND hWnd, int doorstat) {
-	
-
-
-	HDC			hdc;
-	HDC			hmdc;
-	PAINTSTRUCT	ps;
-	RECT		rc;
-	RECT		toolwinRc;
-
-	hdc = BeginPaint(hWnd, &ps);
-	hmdc = CreateCompatibleDC(hdc);
-
-	// 描画するbitmap
-	if (doorstat && toolwin.hbmp2) {
-		// door closed
-		SelectObject(hmdc, toolwin.hbmp2);
-	}
-	else {
-		// door opened
-		SelectObject(hmdc, toolwin.hbmp);
-	}
-
-	// 描画位置
-	GetClientRect(hWnd, &rc);		// static に対する描画範囲
-									// 左上は常に0,0
-	toolwinRc = rc;
-	MapWindowPoints(hWnd, toolwin.hwnd, (POINT *)&toolwinRc, 2); 
-									// toolwinRc にtoolWindowsに対する描画範囲を
-									// 求める
-
-	// 描画
-	BitBlt(hdc, 0, 0, rc.right, rc.bottom,
-					hmdc, toolwinRc.left, toolwinRc.top, SRCCOPY);
-
-	DeleteDC(hmdc);
-	EndPaint(hWnd, &ps);
-
-}
-#endif
 #endif
 
+
+// ---- コントロールのWindowProcedure
 
 static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
@@ -577,32 +536,11 @@ static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 	else if (msg == WM_SETFOCUS) {
 		SetWindowLong(GetParent(hWnd), GTWL_FOCUS, idc);
 	}
-#if defined(VAEG_EXT)
-/*
-	else if (msg == WM_MOUSEMOVE) {
-		TRACKMOUSEEVENT tme;
-
-		tme.cbSize = sizeof(tme);
-		tme.dwFlags = TME_LEAVE;
-		tme.hwndTrack = hWnd;
-		_TrackMouseEvent(&tme);
-	}
-	else if (msg == WM_MOUSELEAVE) {
-		RECT rect;
-		POINT pt;
-
-		GetClientRect(toolwin.hwnd,&rect);
-		MapWindowPoints(toolwin.hwnd,NULL,(LPPOINT)&rect,2);
-		GetCursorPos(&pt);
-		if (!PtInRect(&rect,pt)) {
-			//quiet();
-			toolwin.mouseover = FALSE;
-		}
-	}
-*/
-#endif
 	return(CallWindowProc(toolwin.subproc[idc], hWnd, msg, wp, lp));
 }
+
+
+// ---- メインウィンドウのWindowProcedureから使うサブルーチン
 
 static void toolwincreate(HWND hWnd) {
 
@@ -769,7 +707,6 @@ static void toolwindestroy(void) {
 hbmpのrectの部分をhWndに描画する。
 hbmpはtool windowの左上隅に位置するとする。
 */
-#if 1
 static void paintskin(HWND hWnd, HDC hdc, HBITMAP *hbmp, RECT *rect)
 {
 	RECT dstrect;
@@ -792,35 +729,6 @@ static void paintskin(HWND hWnd, HDC hdc, HBITMAP *hbmp, RECT *rect)
 	SetViewportOrgEx(hdc, oldorg.x, oldorg.y, NULL);
 	DeleteDC(hmdc);
 }
-#else
-///@@@@@@@@
-static void paintskin(HWND hWnd, HDC hdc, HBITMAP *hbmp, RECT *rect)
-{
-	RECT srcrect;
-	RECT dstrect;
-	RECT andrect;
-	RECT andrectToolwin;
-	HDC hmdc;
-
-	hmdc = CreateCompatibleDC(hdc);
-
-	GetClientRect(hWnd, &dstrect);	// dstrectはhWndの座標系
-	srcrect = *rect;
-	MapWindowPoints(toolwin.hwnd, hWnd, (POINT *)&srcrect ,2);
-					// tool window 座標→hWnd座標
-	if (IntersectRect(&andrect, &dstrect, &srcrect)) {
-		// andrect: 実際に描画する範囲
-		andrectToolwin = andrect;
-		MapWindowPoints(hWnd, toolwin.hwnd, (POINT*)&andrectToolwin, 2);
-					// andrect の tool window 座標
-		SelectObject(hmdc, *hbmp);
-		BitBlt(hdc, andrect.left, andrect.top, andrect.right, andrect.bottom,
-			   hmdc, andrectToolwin.left, andrectToolwin.top, SRCCOPY);
-	}
-
-	DeleteDC(hmdc);
-}
-#endif
 
 
 // ドライブドアの状況を含めて描画
@@ -947,7 +855,7 @@ static void tooldrawbutton(HWND hWnd, UINT idc, LPDRAWITEMSTRUCT lpdis) {
 }
 #endif
 
-// ----
+// ---- スキンメニュー
 
 static HMENU createskinmenu(void) {
 
@@ -1141,21 +1049,10 @@ static void checkmouseleave(void) {
 	}
 }
 
-/*
-static void trackmouseleave(void) {
-	TRACKMOUSEEVENT tme;
-
-	if (!toolwin.mousetracking) {
-		toolwin.mousetracking = TRUE;
-		tme.cbSize = sizeof(tme);
-		tme.dwFlags = TME_LEAVE;
-		tme.hwndTrack = toolwin.hwnd;
-		_TrackMouseEvent(&tme);
-	}
-}
-*/
 #endif
 
+
+// ---- ポップアップメニュー
 
 static void openpopup(HWND hWnd, LPARAM lp) {
 
@@ -1177,6 +1074,9 @@ static void openpopup(HWND hWnd, LPARAM lp) {
 	TrackPopupMenu(hMenu, TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
 	DestroyMenu(hMenu);
 }
+
+
+// ---- ウィンドウのWindowProcedure
 
 static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 
@@ -1409,44 +1309,10 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			sysmng_update(SYS_UPDATEOSCFG);
 			break;
 #if defined(VAEG_EXT)
-/*
-		case WM_ACTIVATE:
-			if (LOWORD(wp) == WA_INACTIVE) {
-				quiet();
-			}
-			else {
-				prominent();
-			}
-			break;
-*/
 		case WM_MOUSEMOVE:
-			/*
-			if (!toolwin.mouseover) {
-				prominent();
-				toolwin.mouseover = TRUE;
-			}
-			trackmouseleave();
-			*/
 			checkmouseenter();
 			startmousetracking();
 			break;
-			/*
-		case WM_MOUSELEAVE:
-			toolwin.mousetracking = FALSE;
-			if (toolwin.mouseover) {
-				RECT rect;
-				POINT pt;
-
-				GetClientRect(hWnd,&rect);
-				MapWindowPoints(hWnd,NULL,(LPPOINT)&rect,2);
-				GetCursorPos(&pt);
-				if (!PtInRect(&rect,pt)) {
-					quiet();
-					toolwin.mouseover = FALSE;
-				}
-			}
-			break;
-			*/
 		case WM_TIMER:
 			checkmouseleave();
 			checkquietdelaycount();
@@ -1457,6 +1323,9 @@ static LRESULT CALLBACK twproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 	}
 	return(0);
 }
+
+
+// ---- 外向けAPI
 
 BOOL toolwin_initapp(HINSTANCE hInstance) {
 
@@ -1647,6 +1516,8 @@ void toolwin_hddaccess(BYTE drv) {
 
 #if defined(SUPPORT_PC88VA)
 /*
+モードLEDのON
+	IN:
 		num		LEDの番号 0.V1, 1.V2, 3.V3
 		sw		0.OFF, その他.ON
 */

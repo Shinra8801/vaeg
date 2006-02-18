@@ -13,7 +13,7 @@ enum {
 };
 typedef struct {
 	UINT16	y;						// 現在処理中のラスタ(グラフィック画面の座標系で)
-	BOOL	r200lines;				// 解像度200/204ラインならTRUE
+//	BOOL	r200lines;				// 解像度200/204ラインならTRUE
 	BOOL	r320dots;				// 解像度320ドットならTRUE
 	int		pixelmode;				// 0..1bit, 1..4bit, 2..8bit, 3..16bit
 									// bit3 0..パレット 1..直接色指定
@@ -423,7 +423,7 @@ static void drawraster_s16(SCREEN screen) {
 
 static void drawraster(SCREEN screen) {
 
-	if (!screen->r200lines || (work.screeny & 1) == 0) {
+//	if (!screen->r200lines || (work.screeny & 1) == 0) {
 		if (screen->framebuffer != NULL) {
 			if (screen->framebuffer->dsp + screen->framebuffer->dsh == screen->y) {
 				screen->framebuffer = NULL;
@@ -463,13 +463,13 @@ static void drawraster(SCREEN screen) {
 		}
 		screen->y++;
 
-	}
+//	}
 }
 		
 void makegrphva_initialize(void) {
 }
 
-void makegrphva_begin(void) {
+void makegrphva_begin(BOOL *scrn200) {
 
 	work.screeny = 0;
 
@@ -480,8 +480,8 @@ void makegrphva_begin(void) {
 
 	work.screen[0].r320dots = videova.grres & 0x0010;
 	work.screen[1].r320dots = videova.grres & 0x1000;
-	work.screen[0].r200lines = videova.grmode & 0x0002;
-	work.screen[1].r200lines = videova.grmode & 0x0002;
+//	work.screen[0].r200lines = videova.grmode & 0x0002;
+//	work.screen[1].r200lines = videova.grmode & 0x0002;
 	if (videova.grmode & 0x0800)  {
 		// 2画面モード
 		work.screen[0].addrmask = 0x0001ffffL;
@@ -499,20 +499,26 @@ void makegrphva_begin(void) {
 	work.screen[1].y = 0;
 	selectframe(&work.screen[0], -1);
 	selectframe(&work.screen[1], -1);
+
+	*scrn200 = videova.grmode & 0x0002;
+}
+
+void makegrphva_blankraster(void) {
+	int i;
+	UINT16 xp;
+
+	for (i = 0; i < GRPHVA_SCREENS; i++) {
+		for (xp = 0; xp < SURFACE_WIDTH; xp++) {
+			work.screen[i].rasterbuf[xp] = 0;
+		}
+	}
 }
 
 void makegrphva_raster(void) {
 
 	if (!(videova.grmode & 0x8000)) {
 		// グラフィック表示禁止
-		UINT16 xp;
-		int i;
-
-		for (i = 0; i < GRPHVA_SCREENS; i++) {
-			for (xp = 0; xp < SURFACE_WIDTH; xp++) {
-				work.screen[i].rasterbuf[xp] = 0;
-			}
-		}
+		makegrphva_blankraster();
 	}
 	else if (videova.grmode & 0x0400) {
 		// シングルプレーンモード

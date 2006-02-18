@@ -52,6 +52,7 @@
 #include	"memoryva.h"
 #include	"tsp.h"
 #include	"sgp.h"
+#include	"videova.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -613,6 +614,8 @@ void screenvsync(NEVENTITEM item) {
 static void drawscreenva(void) {
 
 	int y;
+	BOOL text200;
+	BOOL grph200;
 
 	tsp_updateclock();
 
@@ -620,16 +623,136 @@ static void drawscreenva(void) {
 		return;
 	}
 
-	maketextva_begin();
-	makesprva_begin();
-	makegrphva_begin();
-	scrndrawva_compose_begin();
-	for (y = 0; y < SURFACE_HEIGHT; y++) {
-		maketextva_raster();
-		makesprva_raster();
-		makegrphva_raster();
-		scrndrawva_compose_raster();
+	if (tsp.flag & TSP_F_LINESCHANGED) {
+		/* dispsync_renewalvertical() */
+		UINT16 lines = tsp.screenlines;
+		if (tsp.hsync15khz) lines *= 2;
+		if (lines > SURFACE_HEIGHT) lines = SURFACE_HEIGHT;
+		scrnmng_setheight(0, lines);
+		tsp.flag &= ~TSP_F_LINESCHANGED;
 	}
+
+	maketextva_begin(&text200);
+	makesprva_begin();
+	makegrphva_begin(&grph200);
+	scrndrawva_compose_begin();
+
+	if (tsp.hsync15khz) {
+		// 15KHz
+		switch(videova.grmode & 0x00c0) {
+		case 0x00:	// ノンインターレースモード0
+			// TODO: 未実装
+		case 0x40:	// ノンインターレースモード1
+			// TODO: 未実装
+		case 0x80:	// インターレースモード0
+			for (y = 0; y < SURFACE_HEIGHT;) {
+				// 偶数ライン
+				maketextva_raster();
+				makesprva_raster();
+				makegrphva_raster();
+				scrndrawva_compose_raster();
+				y++;
+				// 奇数ライン(直前のラインと同一内容)
+				if (text200) {
+					// 直前のラインと同一内容
+				}
+				else {
+					maketextva_raster();
+				}
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		case 0xc0:	// インターレースモード1
+			for (y = 0; y < SURFACE_HEIGHT;) {
+				// 偶数ライン
+				maketextva_raster();
+				makesprva_raster();
+				makegrphva_raster();
+				scrndrawva_compose_raster();
+				y++;
+				// 奇数ライン
+				if (text200) {
+					// 直前のラインと同一内容
+				}
+				else {
+					maketextva_raster();
+				}
+					// スプライトは常に200ライン(直前のラインと同一内容)
+				if (grph200) {
+					// 直前のラインと同一内容
+				}
+				else {
+					makegrphva_raster();
+				}
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		}
+	}
+	else {
+		// 24KHz
+		switch(videova.grmode & 0x00c0) {
+		case 0x00:	// ノンインターレースモード0
+			for (y = 0; y < SURFACE_HEIGHT;) {
+				// 偶数ライン
+				maketextva_raster();
+				makesprva_raster();
+				makegrphva_raster();
+				scrndrawva_compose_raster();
+				y++;
+				// 奇数ライン
+				maketextva_raster();
+				makesprva_raster();
+				if (grph200) {
+					makegrphva_blankraster();
+				}
+				else {
+					makegrphva_raster();
+				}
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		case 0x40:	// ノンインターレースモード1
+			for (y = 0; y < SURFACE_HEIGHT;) {
+				// 偶数ライン
+				maketextva_raster();
+				makesprva_raster();
+				makegrphva_raster();
+				scrndrawva_compose_raster();
+				y++;
+				// 奇数ライン
+				maketextva_raster();
+				makesprva_raster();
+				if (grph200) {
+					// 直前のラインと同一内容
+				}
+				else {
+					makegrphva_raster();
+				}
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		case 0x80:	// インターレースモード0
+		case 0xc0:	// インターレースモード1
+			// 禁止
+			for (y = 0; y < SURFACE_HEIGHT;) {
+				maketextva_blankraster();
+				makesprva_blankraster();
+				makegrphva_blankraster();
+				scrndrawva_compose_raster();
+				y++;
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		}
+	}
+
+
 	screenupdate |= 2;			// 今のところVA用描画ルーチンは全体描画しか実装していない
 
 	if (screenupdate) {

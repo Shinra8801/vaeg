@@ -2,7 +2,6 @@
  * CGROMVA.C: PC-88VA Character generator
  *
  * ToDo:
- *   I/Oポートからの読み出し
  *   ハードウェア文字コードが不正の場合の動作を実機にあわせる。
  *	 8x8フォントへの対応
  */
@@ -23,6 +22,11 @@
 
 		_CGROMVA	cgromva;
 
+static BYTE tofu[32] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+						0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+						0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+						0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 /*
 フォントを取得する
   IN:	hccode		ハードウェア文字コード
@@ -42,8 +46,8 @@ BYTE *cgromva_font(UINT16 hccode) {
 	jis1 = (hccode & 0x7f) + 0x20;
 	jis2 = (hccode >> 8) & 0x7f;
 
-	if (jis2 == 0) {
-		// ANK
+	if (jis2 == 0 && lr == 0) {
+		// ANK (lr == 1の場合はANKとして扱わない)
 		base = fontmem;
 		font = 0x40000 + ((hccode & 0xff) << 4);
 	}
@@ -106,11 +110,18 @@ BYTE *cgromva_font(UINT16 hccode) {
 		}
 		else if (jis1 < 0x78) {
 			// 外字
-			base = backupmem;
-			font = lr + 
-					((jis2 & 0x60) << 6) +
-					((jis1 & 0x01) << 10) +
-					((jis2 & 0x1f) << 5);
+			if (jis1 == 0x77 && (jis2 == 0x7e || jis2 == 0x7f)) {
+				// 777e, 777f は豆腐が表示される
+				base = tofu;
+				font = lr;
+			}
+			else {
+				base = backupmem;
+				font = lr + 
+						((jis2 & 0x60) << 6) +
+						((jis1 & 0x01) << 10) +
+						((jis2 & 0x1f) << 5);
+			}
 		}
 		else {
 			// 未定義
@@ -134,12 +145,13 @@ int cgromva_width(UINT16 hccode) {
 }
 
 /*
-CGROMアクセスOポートにセットされたハードウェア文字コードを、
+CGROMアクセスポートにセットされたハードウェア文字コードを、
 TVRAMに格納するためのハードウェア文字コードに変換する。
 */
 static UINT16 curhccode(void) {
 	UINT16 hccode;
 
+	/*
 	if (cgromva.cgaddr & 0x7f00) {
 		hccode = cgromva.cgaddr & 0x7fff | ((cgromva.cgrow & 0x20) ? 0x0000 : 0x8000);
 	}
@@ -147,6 +159,8 @@ static UINT16 curhccode(void) {
 		// ANK
 		hccode = cgromva.cgaddr;
 	}
+	*/
+	hccode = cgromva.cgaddr & 0x7fff | ((cgromva.cgrow & 0x20) ? 0x0000 : 0x8000);
 	return hccode;
 }
 
@@ -171,21 +185,53 @@ static REG8 IOINPCALL cgromva_i14e(UINT port) {
 	font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
 
 	return *font;
+
+		/*
+			厳密には、JIS 777E, 777Fに対して返却する値は不定
+		*/
 }
 
 static void IOOUTCALL cgromva_o14e(UINT port, REG8 dat) {
-	BYTE *font;
-	UINT16 hccode;
-	UINT16 jis1;
-	UINT16 jis;
+	int		lr;
+	UINT16	jis1;
+	UINT16	jis2;
+	UINT16	hccode;
+	int		writable = FALSE;
+	BYTE	*font;
 
 	hccode = curhccode();
+	lr = hccode>>15;
 	jis1 = (hccode & 0x7f) + 0x20;
-	jis = (jis << 8) | ((hccode >> 8) & 0x7f);
-	if (jis >= 0x7620 && jis < 0x7770) {
-		// ToDo: ここでは、メモリ領域と学習領域を書き換えないようにしているが、
-		// 実機ではここまでガードかけていないかもしれない。
-		
+	jis2 = (hccode >> 8) & 0x7f;
+
+	if (jis2 == 0 && lr == 0) {
+		// ANK (lr == 1の場合はANKとして扱わない)
+		writable = FALSE;
+	}
+	else {
+		if (jis1 < 0x76) {
+			writable = FALSE;
+		}
+		else if (jis1 < 0x77) {
+			// 外字 (76xx)
+			writable = TRUE;
+		}
+		else if (jis1 < 0x78) {
+			// 外字 (77xx)
+			if (jis2 == 0x7e || jis2 == 0x7f) {
+				// 777e, 777f は変更不可
+				writable = FALSE;
+			}
+			else {
+				writable = TRUE;
+			}
+		}
+		else {
+			writable = FALSE;
+		}
+	}
+	
+	if (writable) {
 		font = cgromva_font(hccode);
 		font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
 		*font = dat;

@@ -58,7 +58,8 @@ typedef struct {		// テキスト分割画面制御テーブル(のコピー)
 } _TEXTVAFRAME, *TEXTVAFRAME;
 
 typedef struct {
-	UINT	y;			// 現在処理中のラスタ
+	UINT	screeny;	// 現在処理中のラスタ(画面共通の座標系で)
+	UINT	y;			// 現在処理中のラスタ(テキストの座標系で)
 	UINT	raster;
 	UINT	texty;
 	UINT	lineheight;	// 1行のラスタ数
@@ -252,6 +253,43 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 
 }
 
+/*
+40桁に拡大する処理(linebitmapを加工)
+*/
+static void conv40cm(UINT16 rwchar) {
+	BYTE	*b;
+	UINT	r;
+	UINT	x;
+
+	if (rwchar > TEXTVA_SURFACE_WIDTH / TEXTVA_CHARWIDTH) {
+		rwchar = TEXTVA_SURFACE_WIDTH / TEXTVA_CHARWIDTH;
+	}
+
+	b = linebitmap;
+	for (r = 0; r < work.lineheight; r++) {
+		for (x = 0; x < rwchar; x++) {
+			BYTE tmp[4];
+			if (x & 1) {
+				// 80桁換算時に奇数桁→右半分を拡大
+				*(DWORD *)tmp = *((DWORD *)(b + 4));
+			}
+			else {
+				// 80桁換算時に偶数桁→左半分を拡大
+				*(DWORD *)tmp = *(DWORD *)b;
+			}
+			*b++ = tmp[0];
+			*b++ = tmp[0];
+			*b++ = tmp[1];
+			*b++ = tmp[1];
+			*b++ = tmp[2];
+			*b++ = tmp[2];
+			*b++ = tmp[3];
+			*b++ = tmp[3];
+		}
+		b += TEXTVA_SURFACE_WIDTH - rwchar * TEXTVA_CHARWIDTH;
+	}
+}
+
 #if 0
 void maketextva(void) {
 	UINT	x;
@@ -320,7 +358,7 @@ static void selectframe(int no) {
 	work.synattr = synattrtbl[work.frame->mode & 0x07];
 }
 
-void maketextva_begin(void) {
+void maketextva_begin(BOOL *scrn200) {
 	int i;
 	BYTE *fbinfo;
 
@@ -331,6 +369,8 @@ void maketextva_begin(void) {
 	work.rwchar = work.rw / 8 + 2;
 */
 	work.y = 0;
+	work.screeny = 0;
+
 	work.lineheight = tsp.lineheight;
 	if (work.lineheight > TEXTVA_LINEHEIGHTMAX) {
 		work.lineheight = TEXTVA_LINEHEIGHTMAX;
@@ -361,6 +401,12 @@ void maketextva_begin(void) {
 	}
 
 	selectframe(0);
+
+	*scrn200 = tsp.hsync15khz && ((tsp.syncparam[0] & 0xc0) != 0x40);
+}
+
+void maketextva_blankraster(void) {
+	ZeroMemory(textraster, sizeof(textraster));
 }
 
 void maketextva_raster(void) {
@@ -373,68 +419,73 @@ void maketextva_raster(void) {
 
 	if (videova.txtmode & 0x80) {
 		// テキスト表示OFF
-		for (x = 0; x < SURFACE_WIDTH; x++) {
-			textraster[x] = 0;
-		}
+		maketextva_blankraster();
 		return;
 	}
 
-	if (work.y >= SURFACE_HEIGHT) return;
+	if (!tsp.textmg || (work.screeny & 1) == 0) {
 
-	while (work.y >= work.framelimit) {
-		work.frameno++;
-		selectframe(work.frameno);
-	}
+		if (work.y >= SURFACE_HEIGHT) return;
 
-	f = work.frame;
+		while (work.y >= work.framelimit) {
+			work.frameno++;
+			selectframe(work.frameno);
+		}
 
-	if (!work.linebitmap_ready) {
-		v = textmem + f->rsa + f->vw * work.texty;
-		makeline(v, f->rwchar);
+		f = work.frame;
 
-		work.texty++;
-		work.linebitmap_ready = TRUE;
-	}
-/*
-	b = textraster;
-	lb = linebitmap + SURFACE_WIDTH * work.raster;
-	for (x = 0; x < SURFACE_WIDTH; x++) {
-		*b = *lb;
-		b++;
-		lb++;
-	}
-*/
-	b = textraster;
-	lbs = linebitmap + TEXTVA_SURFACE_WIDTH * work.raster;
-	if (f->rxp) {
-		lb = lbs + TEXTVA_SURFACE_WIDTH - f->rxp;
-	}
-	else {
-		lb = lbs;
-	}
-	x = 0;
-	if (f->rxp < SURFACE_WIDTH) {
-		for (; x < f->rxp; x++) {
+		if (!work.linebitmap_ready) {
+			v = textmem + f->rsa + f->vw * work.texty;
+			makeline(v, f->rwchar);
+			if (! videova.txtmode8 & 0x01) {
+				// 40桁モード
+				conv40cm(f->rwchar);
+			}
+
+			work.texty++;
+			work.linebitmap_ready = TRUE;
+		}
+	/*
+		b = textraster;
+		lb = linebitmap + SURFACE_WIDTH * work.raster;
+		for (x = 0; x < SURFACE_WIDTH; x++) {
 			*b = *lb;
 			b++;
 			lb++;
 		}
-		lb = lbs;
-	}
-	for (; x < SURFACE_WIDTH; x++) {
-		*b = *lb;
-		b++;
-		lb++;
-	}
+	*/
+		b = textraster;
+		lbs = linebitmap + TEXTVA_SURFACE_WIDTH * work.raster;
+		if (f->rxp) {
+			lb = lbs + TEXTVA_SURFACE_WIDTH - f->rxp;
+		}
+		else {
+			lb = lbs;
+		}
+		x = 0;
+		if (f->rxp < SURFACE_WIDTH) {
+			for (; x < f->rxp; x++) {
+				*b = *lb;
+				b++;
+				lb++;
+			}
+			lb = lbs;
+		}
+		for (; x < SURFACE_WIDTH; x++) {
+			*b = *lb;
+			b++;
+			lb++;
+		}
 
-	work.raster++;
-	if (work.raster >= work.lineheight) {
-		work.linebitmap_ready = FALSE;
-		work.raster = 0;
+		work.raster++;
+		if (work.raster >= work.lineheight) {
+			work.linebitmap_ready = FALSE;
+			work.raster = 0;
+		}
+
+		work.y++;
 	}
-
-	work.y++;
-
+	work.screeny++;
 }
 
 #endif

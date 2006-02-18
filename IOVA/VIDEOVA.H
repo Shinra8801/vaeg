@@ -29,6 +29,8 @@ typedef struct {
 } _FRAMEBUFFER, *FRAMEBUFFER;
 
 typedef struct {
+	BYTE	txtmode8;		// 030h テキスト制御ポート
+	BYTE	dmy1;
 	WORD	grmode;			// 100h 表示画面制御レジスタ
 	WORD	grres;			// 102h グラフィック画面制御レジスタ
 	WORD	colcomp;		// 106h パレット指定画面制御レジスタ
@@ -45,6 +47,7 @@ typedef struct {
 	WORD	msktop;			// 134h
 	WORD	mskbot;			// 136h
 	BYTE	txtmode;		// 148h テキスト制御ポート
+	BYTE	dmy2;
 	WORD	palette[VIDEOVA_PALETTES];
 
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];

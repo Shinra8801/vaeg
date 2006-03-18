@@ -18,6 +18,7 @@ enum {
 	// func
 	FUNC_FETCH_COMMAND		= 0,
 	FUNC_EXEC_BITBLT,
+	FUNC_EXEC_CLS,
 };
 
 		_SGP	sgp;
@@ -34,22 +35,32 @@ static void MEMCALL mainw_wt(UINT32 address, REG16 value) {
 }
 
 static REG16 MEMCALL bmsw_rd(UINT32 address) {
+	// TODO
 	return 0;
 }
 
 static void MEMCALL bmsw_wt(UINT32 address, REG16 value) {
+	// TODO
 }
 
 static REG16 MEMCALL tvramw_rd(UINT32 address) {
-	return 0;
+	address -= 0x180000L;
+	return *(REG16 *)(textmem + address);
 }
 
 static void MEMCALL tvramw_wt(UINT32 address, REG16 value) {
+	address -= 0x180000L;
+	if (address == 0x8f40) {
+		int x;
+		x=0;
+	}
+	*(UINT16 *)(textmem + address) = value;
 }
 
 static REG16 MEMCALL gvramw_rd(UINT32 address) {
 	address -= 0x200000L;
-	return _gvram_rd(address) | ((REG16)_gvram_rd(address + 1) << 8);
+	//return _gvram_rd(address) | ((REG16)_gvram_rd(address + 1) << 8);
+	return *(REG16 *)(grphmem + address);
 }
 
 static void MEMCALL gvramw_wt(UINT32 address, REG16 value) {
@@ -63,14 +74,17 @@ static void MEMCALL gvramw_wt(UINT32 address, REG16 value) {
 }
 
 static REG16 MEMCALL knj1w_rd(UINT32 address) {
+	// TODO
 	return 0;
 }
 
 static REG16 MEMCALL knj2w_rd(UINT32 address) {
+	// TODO
 	return 0;
 }
 
 static void MEMCALL knj2w_wt(UINT32 address, REG16 value) {
+	// TODO
 }
 
 static REG16 MEMCALL nonw_rd(UINT32 address) {
@@ -268,9 +282,9 @@ static void fetch_block(UINT32 address, SGP_BLOCK block) {
 	dat = sgp_memoryread_w(address);
 	block->scrnmode = dat & 0x03;
 	block->dot = (dat >> 4) & (dotcountmax[block->scrnmode] -1);
-	block->width = sgp_memoryread_w(address + 2) & 0x0fff;
-	block->height = sgp_memoryread_w(address + 4) & 0x0fff;
-	block->fbw = sgp_memoryread_w(address + 6) & 0xfffc;
+	block->width = sgp_memoryread_w(address + 2) & 0x3fff;	/* VA2は14bitまで可能 */
+	block->height = sgp_memoryread_w(address + 4);			/* VA2は16bitまで可能 */
+	block->fbw = sgp_memoryread_w(address + 6) & 0xfffe;	/* bit1も有効 */
 	block->address = sgp_memoryread_w(address + 8) & 0xfffe | ((UINT32)sgp_memoryread_w(address + 10) << 16);
 
 	// ToDo とりあえずのつじつまあわせ(R-TYPE)
@@ -320,8 +334,17 @@ static void write_dest(void) {
 	case 0:		// 0
 		dat = 0;
 		break;
+	case 1:		// S AND D
+		dat = dat & dest;
+		break;
+	case 2:		// NOT(S) AND D
+		dat = ~dat & dest;
+		break;
 	case 3:		// NOP
 		mask = 0;
+		break;
+	case 4:		// S AND NOT(D)
+		dat = dat & ~dest;
 		break;
 	case 5:		// S
 	default:
@@ -332,8 +355,26 @@ static void write_dest(void) {
 	case 7:		// S OR D
 		dat = dat | dest;
 		break;
+	case 8:		// NOT(S OR D)
+		dat = ~(dat | dest);
+		break;
+	case 9:		// NOT(S XOR D)
+		dat = ~(dat ^ dest);
+		break;
 	case 0x0a:	// NOT(S)
 		dat = ~dat;
+		break;
+	case 0x0b:	// NOT(S) OR D
+		dat = ~dat | dest;
+		break;
+	case 0x0c:	// NOT(D)
+		dat = ~dest;
+		break;
+	case 0x0d:	// S OR NOT(D)
+		dat = dat | ~dest;
+		break;
+	case 0x0e:	// NOT(S AND D)
+		dat = ~(dat & dest);
 		break;
 	case 0x0f:	// 1
 		dat = 0xffff;
@@ -427,150 +468,11 @@ static void cmd_set_destination(void) {
 }
 
 static void cmd_set_color(void) {
-	TRACEOUT(("SGP: cmd: set color"));
+	sgp.color = sgp_memoryread_w(sgp.pc);
+	TRACEOUT(("SGP: cmd: set color: color=0x%x", sgp.color));
 	sgp.pc += 2;
 }
 
-static void exec_bitblt(void) {
-	UINT16 dat;
-	UINT16 datmask;
-	int BPP = bpp[sgp.dest.scrnmode];
-	UINT16 PIXMASK = ~(0xffff << BPP);
-
-	if (sgp.src.dotcount == 0) {
-		read_word(&sgp.src);
-	}
-	dat = sgp.src.buf >> (16 - BPP);
-
-	switch (sgp.bltmode & SGP_BLTMODE_TP) {
-	case 0x0000:		// ソースをそのまま転送
-		datmask = 0xffff;
-		break;
-	case 0x0100:		// ソースが0の部分は転送しない
-		datmask = dat ? 0xffff : 0;
-		break;
-	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
-		//ToDo:
-		datmask = 0xffff;
-		break;
-	case 0x0300:		// 禁止
-		//ToDo:
-		datmask = 0xffff;
-		break;
-	}
-/*
-	switch (sgp.bltmode & SGP_BLTMODE_OP) {
-	case 0:		// 0
-		dat = 0;
-		break;
-	case 3:		// NOP
-		datmask = 0;
-		break;
-	case 5:		// S
-	default:
-		break;
-	case 6:		// S XOR D
-
-		break;
-	case 0x0a:	// NOT(S)
-		dat = ~dat;
-		break;
-	case 0x0f:	// 1
-		dat = 0xffff;
-		break;
-	}
-*/
-/*
-	sgp.dest.buf = (sgp.dest.buf << 4) | dat;
-	sgp.dest.mask = (sgp.dest.mask << 4) | (dat ? 0x000f : 0);
-*/
-	sgp.newval = (sgp.newval << BPP) | (dat & PIXMASK);
-	sgp.newvalmask = (sgp.newvalmask << BPP) | (datmask & PIXMASK);
-	sgp.dest.dotcount--;
-
-	sgp.src.buf <<= BPP;
-	sgp.src.dotcount--;
-
-	sgp.dest.xcount--;
-	sgp.src.xcount--;
-
-	if (sgp.dest.dotcount == 0 || sgp.dest.xcount == 0) {
-/*
-		sgp.dest.buf <<= sgp.dest.dotcount * 4;
-		sgp.dest.mask <<= sgp.dest.dotcount * 4;
-*/
-		sgp.newval <<= sgp.dest.dotcount * BPP;
-		sgp.newvalmask <<= sgp.dest.dotcount * BPP;
-//		write_word(&sgp.dest);
-		write_dest();
-		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
-			sgp.remainclock -= 10 * 2;
-		}
-		else {
-			sgp.remainclock -= 8 * 2;
-		}
-	}
-
-	if (sgp.dest.xcount == 0) {
-		sgp.dest.ycount--;
-		sgp.src.ycount--;
-		if (sgp.dest.ycount == 0) {
-			//sgp.func = fetch_command;
-			sgp.func = FUNC_FETCH_COMMAND;
-		}
-		else {
-			sgp.remainclock -= 14 * 2;
-
-			if (sgp.bltmode & SGP_BLTMODE_VD) {
-				sgp.src.lineaddress -= (SINT32)sgp.src.fbw;
-				sgp.dest.lineaddress -= (SINT32)sgp.dest.fbw;
-			}
-			else {
-				sgp.src.lineaddress += (SINT32)sgp.src.fbw;
-				sgp.dest.lineaddress += (SINT32)sgp.dest.fbw;
-
-				{	// ToDo とりあえずのつじつまあわせ(神羅万象)
-					UINT16 width_w;
-
-					// ブロックが横切るワード数
-					width_w = (sgp.src.width + sgp.src.dot + dotcountmax[sgp.src.scrnmode] - 1) / dotcountmax[sgp.src.scrnmode];
-					if (width_w * 2 > sgp.src.fbw) {
-						sgp.src.lineaddress = sgp.src.nextaddress;
-					}
-					/*
-					神羅万象では、ソースフレームバッファの幅として4バイトの倍数に合わない
-					幅(4bbpで12dot,20dotなど)を使用している。この場合、fbwに、実際の幅を超えない
-					4バイトの倍数(12dot->4, 20dot->8)を指定している。		
-
-					lineが変わるときは、
-					nextaddress += (fbw>>2 - width_w>>1) << 2 
-					とするのが正しい？
-
-					nextaddressを増やすタイミングはメモリからの読み取り直前に変更して、
-					lineが変わるときは、
-					nextaddres += fbw + 2(byte) - width 
-					とするのが正しい？
-					*/
-				}
-			}
-			if (sgp.src.ycount == 0) {
-				// PATBLTで、destの高さがsrcより大きかった場合で、
-				// 垂直ラップアラウンドが発生した場合
-				init_block(&sgp.src);
-			}
-			sgp.src.nextaddress = sgp.src.lineaddress;
-			sgp.dest.nextaddress = sgp.dest.lineaddress;
-			init_src_line(&sgp.src);
-			init_dest_line(&sgp.dest);
-		}
-	}
-	else if (sgp.src.xcount == 0) {
-		// PATBLTで、destの幅がsrcより大きかった場合で、
-		// 水平ラップアラウンドが発生した場合
-		sgp.src.nextaddress = sgp.src.lineaddress;
-		init_src_line(&sgp.src);
-	}
-}
 
 static void cmd_bitblt(void) {
 
@@ -622,8 +524,17 @@ static void cmd_line(void) {
 }
 
 static void cmd_cls(void) {
-	TRACEOUT(("SGP: cmd: cls (not implemented)"));
-	sgp.pc += 4;
+	sgp.clsaddr = (UINT32)sgp_memoryread_w(sgp.pc) |
+		          (((UINT32)sgp_memoryread_w(sgp.pc + 2)) << 16) &
+				  0xfffffffeL;
+	sgp.clscount = (UINT32)sgp_memoryread_w(sgp.pc + 4) |
+		           (((UINT32)sgp_memoryread_w(sgp.pc + 6)) << 16) ;
+	sgp.pc += 8;
+	sgp.remainclock -= 8 * 2; // TODO 未測定
+
+	sgp.func = FUNC_EXEC_CLS;
+
+	TRACEOUT(("SGP: cmd: cls: addr=%0lx, size(word)=%0lx",sgp.clsaddr, sgp.clscount));
 }
 
 static void cmd_scan_right(void) {
@@ -633,6 +544,165 @@ static void cmd_scan_right(void) {
 static void cmd_scan_left(void) {
 	TRACEOUT(("SGP: cmd: scan left (not implemented)"));
 }
+
+
+// ----
+
+static void exec_bitblt(void) {
+	UINT16 dat;
+	UINT16 datmask;
+	int BPP = bpp[sgp.dest.scrnmode];
+	UINT16 PIXMASK = ~(0xffff << BPP);
+	BOOL EXTPIX = sgp.src.scrnmode == 0 && sgp.dest.scrnmode != 0;	// 1bppからの拡張転送
+
+	if (sgp.src.dotcount == 0) {
+		read_word(&sgp.src);
+	}
+	if (EXTPIX) {
+		if (sgp.src.buf & 0x8000) {
+			dat = sgp.color  
+				  >>  
+				  (((sgp.src.dotcount - 1) % dotcountmax[sgp.dest.scrnmode]) * BPP );
+                  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			      //この部分が、4bppなら3,2,1,0,3,2,... と、
+			      //            8bppなら1,0,1,0,... と繰り返し、16bppなら常に0
+			      //sgp.colorからはsrcの位置にあわせて必要なbitを切り出す
+			      //(ToDo:実機でそうなってるか?)
+		}
+		else {
+			dat = 0;
+		}
+	}
+	else {
+		dat = sgp.src.buf >> (16 - BPP);
+	}
+
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0000:		// ソースをそのまま転送
+		datmask = 0xffff;
+		break;
+	case 0x0100:		// ソースが0の部分は転送しない
+		datmask = dat ? 0xffff : 0;
+		break;
+	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+		//ToDo:
+		datmask = 0xffff;
+		break;
+	case 0x0300:		// 禁止
+		//ToDo:
+		datmask = 0xffff;
+		break;
+	}
+/*
+	sgp.dest.buf = (sgp.dest.buf << 4) | dat;
+	sgp.dest.mask = (sgp.dest.mask << 4) | (dat ? 0x000f : 0);
+*/
+	sgp.newval = (sgp.newval << BPP) | (dat & PIXMASK);
+	sgp.newvalmask = (sgp.newvalmask << BPP) | (datmask & PIXMASK);
+	sgp.dest.dotcount--;
+
+	if (EXTPIX) {
+		sgp.src.buf <<= 1;
+	}
+	else {
+		sgp.src.buf <<= BPP;
+	}
+	sgp.src.dotcount--;
+
+	sgp.dest.xcount--;
+	sgp.src.xcount--;
+
+	if (sgp.dest.dotcount == 0 || sgp.dest.xcount == 0) {
+/*
+		sgp.dest.buf <<= sgp.dest.dotcount * 4;
+		sgp.dest.mask <<= sgp.dest.dotcount * 4;
+*/
+		sgp.newval <<= sgp.dest.dotcount * BPP;
+		sgp.newvalmask <<= sgp.dest.dotcount * BPP;
+//		write_word(&sgp.dest);
+		write_dest();
+		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
+			sgp.remainclock -= 10 * 2;
+		}
+		else {
+			sgp.remainclock -= 8 * 2;
+		}
+	}
+
+	if (sgp.dest.xcount == 0) {
+		sgp.dest.ycount--;
+		sgp.src.ycount--;
+		if (sgp.dest.ycount == 0) {
+			//sgp.func = fetch_command;
+			sgp.func = FUNC_FETCH_COMMAND;
+		}
+		else {
+			sgp.remainclock -= 14 * 2;
+
+			if (sgp.bltmode & SGP_BLTMODE_VD) {
+				sgp.src.lineaddress -= (SINT32)sgp.src.fbw;
+				sgp.dest.lineaddress -= (SINT32)sgp.dest.fbw;
+			}
+			else {
+				sgp.src.lineaddress += (SINT32)sgp.src.fbw;
+				sgp.dest.lineaddress += (SINT32)sgp.dest.fbw;
+#if 0
+				{	// ToDo とりあえずのつじつまあわせ(神羅万象)
+					UINT16 width_w;
+
+					// ブロックが横切るワード数
+					width_w = (sgp.src.width + sgp.src.dot + dotcountmax[sgp.src.scrnmode] - 1) / dotcountmax[sgp.src.scrnmode];
+					if (width_w * 2 > sgp.src.fbw) {
+						sgp.src.lineaddress = sgp.src.nextaddress;
+					}
+					/*
+					神羅万象では、ソースフレームバッファの幅として4バイトの倍数に合わない
+					幅(4bbpで12dot,20dotなど)を使用している。この場合、fbwに、実際の幅を超えない
+					4バイトの倍数(12dot->4, 20dot->8)を指定している。		
+
+					lineが変わるときは、
+					nextaddress += (fbw>>2 - width_w>>1) << 2 
+					とするのが正しい？
+
+					nextaddressを増やすタイミングはメモリからの読み取り直前に変更して、
+					lineが変わるときは、
+					nextaddres += fbw + 2(byte) - width 
+					とするのが正しい？
+					*/
+				}
+#endif
+			}
+			if (sgp.src.ycount == 0) {
+				// PATBLTで、destの高さがsrcより大きかった場合で、
+				// 垂直ラップアラウンドが発生した場合
+				init_block(&sgp.src);
+			}
+			sgp.src.nextaddress = sgp.src.lineaddress;
+			sgp.dest.nextaddress = sgp.dest.lineaddress;
+			init_src_line(&sgp.src);
+			init_dest_line(&sgp.dest);
+		}
+	}
+	else if (sgp.src.xcount == 0) {
+		// PATBLTで、destの幅がsrcより大きかった場合で、
+		// 水平ラップアラウンドが発生した場合
+		sgp.src.nextaddress = sgp.src.lineaddress;
+		init_src_line(&sgp.src);
+	}
+}
+
+
+static void exec_cls(void) {
+	sgp_memorywrite_w(sgp.clsaddr, sgp.color);
+	sgp.clsaddr += 2;
+	sgp.clscount--;
+	if (sgp.clscount == 0) {
+		sgp.func = FUNC_FETCH_COMMAND;
+	}
+	sgp.remainclock -= 8 * 2;	// TODO 未測定
+}
+
+
 
 // ---- 
 
@@ -690,6 +760,9 @@ void sgp_step(void) {
 		case FUNC_EXEC_BITBLT:
 			exec_bitblt();
 			break;
+		case FUNC_EXEC_CLS:
+			exec_cls();
+			break;
 		case FUNC_FETCH_COMMAND:
 		default:
 			fetch_command();
@@ -736,6 +809,7 @@ static void IOOUTCALL sgp_o506(UINT port, REG8 dat) {
 		//sgp.func = fetch_command;
 		sgp.func = FUNC_FETCH_COMMAND;
 		sgp.pc = sgp.initialpc;
+		TRACEOUT(("SGP: start: pc=%04x", sgp.pc));
 	}
 	sgp.busy = dat;
 }

@@ -50,6 +50,7 @@ typedef struct {
 	BYTE	dmy2;
 	WORD	palette[VIDEOVA_PALETTES];
 
+	UINT16	blinkcnt;		// 1サイクルごとにインクリメントされるカウンタ
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];
 } _VIDEOVA, *VIDEOVA;
 

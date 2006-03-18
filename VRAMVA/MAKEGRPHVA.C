@@ -37,13 +37,14 @@ typedef struct {
 
 static	_GRPHVAWORK	work;
 
-		WORD grph0_raster[SURFACE_WIDTH + 32];
-		WORD grph1_raster[SURFACE_WIDTH + 32];
+		WORD grph0_raster[SURFACE_WIDTH + 64];
+		WORD grph1_raster[SURFACE_WIDTH + 64];
 											// 1ラスタ分のピクセルデータ
 											// 各ピクセルはカラーコード(16bit) または
 											// パレット番号
 											// 画面横幅 + 
-											// 最大4バイト(ex.1bit/pixelなら32dot)分
+											// 最大4バイト(ex.1bit/pixelなら32dot,
+											// 水平解像度320ならその倍)分
 											// 使用する
 
 #define addr18(scrn, x) ( (x) & ((scrn)->addrmask) | ((scrn)->addrofs) )
@@ -111,6 +112,106 @@ static void endraster(SCREEN screen) {
 		screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
 	}
 }
+
+
+// シングルプレーン1bit/pixel
+static void drawraster_s1(SCREEN screen) {
+	UINT16		xp;
+	UINT16		wrapcount;
+	UINT32		addr;
+	WORD		*b;
+	DWORD		dd;
+	BYTE		fg;
+	UINT16		i;
+
+	addr = screen->lineaddr;
+	b = screen->rasterbuf;
+	if (screen->framebuffer->ofx == 0xffff) {
+		// screen 1 (ラップアラウンドなし)
+		wrapcount = 0;
+	}
+	else {
+		wrapcount = screen->framebuffer->fbw - screen->framebuffer->ofx;
+	}
+
+	// フォアグラウンドカラーのパレット番号
+	fg = (videova.pagemsk & 0x0f00) >> 8;
+
+
+	if (screen->r320dots) {
+		// 320 dots
+		dd = ((DWORD)grphmem[addr+0] << 24) | 
+			 ((DWORD)grphmem[addr+1] << 16) | 
+			 ((DWORD)grphmem[addr+2] << 8) | 
+			 grphmem[addr+3];
+		addr = addr18(screen, addr + 4);
+
+		i = screen->framebuffer->dot & 0x1f;
+		dd <<= i;
+		for (; i < 32; i++) {
+			b[0] = b[1] = (dd & 0x80000000L) ? fg : 0;
+			b += 2;
+			dd <<= 1;
+		}
+		for (xp = 0; xp < 320/32; xp++) {
+			wrapcount -= 4;
+			if (wrapcount == 0) {
+				addr = screen->wrappedaddr;
+			}
+
+			dd = ((DWORD)grphmem[addr+0] << 24) | 
+				 ((DWORD)grphmem[addr+1] << 16) | 
+				 ((DWORD)grphmem[addr+2] << 8) | 
+				 grphmem[addr+3];
+			addr = addr18(screen, addr + 4);
+
+			for (i = 0; i < 32; i++) {
+				b[0] = b[1] = (dd & 0x80000000L) ? fg : 0;
+				b += 2;
+				dd <<= 1;
+			}
+		}
+
+
+
+	}
+	else {
+		// 640 dots
+
+		dd = ((DWORD)grphmem[addr+0] << 24) | 
+			 ((DWORD)grphmem[addr+1] << 16) | 
+			 ((DWORD)grphmem[addr+2] << 8) | 
+			 grphmem[addr+3];
+		addr = addr18(screen, addr + 4);
+
+		i = screen->framebuffer->dot & 0x1f;
+		dd <<= i;
+		for (; i < 32; i++) {
+			*b++ = (dd & 0x80000000L) ? fg : 0;
+			dd <<= 1;
+		}
+		for (xp = 0; xp < 640/32; xp++) {
+			wrapcount -= 4;
+			if (wrapcount == 0) {
+				addr = screen->wrappedaddr;
+			}
+
+			dd = ((DWORD)grphmem[addr+0] << 24) | 
+				 ((DWORD)grphmem[addr+1] << 16) | 
+				 ((DWORD)grphmem[addr+2] << 8) | 
+				 grphmem[addr+3];
+			addr = addr18(screen, addr + 4);
+
+			for (i = 0; i < 32; i++) {
+				*b++ = (dd & 0x80000000L) ? fg : 0;
+				dd <<= 1;
+			}
+		}
+	}
+
+	endraster(screen);
+}
+
 
 // シングルプレーン4bit/pixel
 static void drawraster_s4(SCREEN screen) {
@@ -448,6 +549,7 @@ static void drawraster(SCREEN screen) {
 			else {
 				switch (screen->pixelmode) {
 				case 0:
+					drawraster_s1(screen);
 					break;
 				case 1:
 					drawraster_s4(screen);

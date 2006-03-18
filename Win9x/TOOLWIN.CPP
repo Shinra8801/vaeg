@@ -581,10 +581,15 @@ const char		*cls;
 	ReleaseDC(NULL, hdc);
 	SelectObject(toolwin.hdcfont, toolwin.hfont);
 
+#if defined(SUPPORT_PC88VA)
+	toolwin.access[0] = CreateSolidBrush(0x405040);
+	toolwin.access[1] = CreateSolidBrush(0x2040ff);
+#else
 	toolwin.access[0] = CreateSolidBrush(0x000060);
 	toolwin.access[1] = CreateSolidBrush(0x0000ff);
+#endif
 #if defined(SUPPORT_PC88VA) || defined(VAEG_EXT)
-	toolwin.access[2] = CreateSolidBrush(0x006000);
+	toolwin.access[2] = CreateSolidBrush(0x405040);
 	toolwin.access[3] = CreateSolidBrush(0x00ff00);
 #endif
 
@@ -1471,7 +1476,11 @@ const DISKACC	*acc;
 	if (num < (sizeof(diskacc)/sizeof(DISKACC))) {
 		acc = diskacc + num;
 		sub = NULL;
+#if defined(VAEG_EXT)
+		if (*(acc->counter) == 0 || *(acc->color) != color) {
+#else
 		if (*(acc->counter) == 0) {
+#endif
 			sub = toolwin.sub[acc->idc];
 		}
 		*(acc->counter) = count;

@@ -27,6 +27,7 @@ typedef struct {
 	UINT8	busy;		// bit0:ビジー
 	UINT32	lastclock;
 	SINT32	remainclock;
+	UINT16	color;		// SET COLORで指定された色
 
 	//void (*func)();
 	UINT16	func;
@@ -36,6 +37,9 @@ typedef struct {
 	UINT16	newval;
 	UINT16	newvalmask;
 	UINT16	bltmode;
+
+	UINT32	clsaddr;	// CLS アドレス
+	UINT32	clscount;	// CLS 残りワード数
 } _SGP, *SGP;
 
 enum {

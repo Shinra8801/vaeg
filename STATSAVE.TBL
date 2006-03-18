@@ -54,6 +54,7 @@ static const PROCTBL evtproc[] = {
 #if defined(SUPPORT_PC88VA)
 			{PROCID('e','s','0','V'), screendispva},
 			{PROCID('e','s','1','V'), screenvsyncva},
+			{PROCID('e','s','2','V'), screenvsyncva2},
 #endif
 #if defined(VAEG_EXT)
 			{PROCID('e','f','t','m'), fdc_timer},

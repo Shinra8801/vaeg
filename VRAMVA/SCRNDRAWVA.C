@@ -154,14 +154,14 @@ enum {
 typedef struct {
 	WORD	*raster;		// 1ライン分の色データ(パレット番号orVA8bit/16bitカラーコード)
 	BOOL	mask[2];		// マスク領域の内側([0]),外側([1])をマスク
-
-							// 直接色指定画面の場合のみ
 	int		pixelmode;		// ピクセルサイズ
 							// 0..1bpp, 1..4bpp, 2..8bpp, 3..16bpp
 
 							// パレット指定画面の場合のみ
 	BYTE	palflip;		// パレット番号に XORするデータ
 							// パレットセット0使用時は0, 1使用時は0x10
+	BYTE	pixelmask;		// xxxx_raster[]から読み出した値に適用するマスク
+							// 通常0x0f, 32色モード時のみ0x1f
 	DWORD	xpar;			// 透明色フラグ(bit0:パレット0～bit31:パレット31)
 
 } _COMPSCRN, *COMPSCRN;
@@ -198,8 +198,10 @@ void scrndrawva_compose_raster(void) {
 	BYTE palcode;
 	WORD c;
 	WORD tscr;
-	DWORD dd;
+	WORD comp;
 	BYTE defaultflip;
+	WORD xparhigh;
+	int blinkfreq;
 
 	// テキストとスプライトの出力を重ね合わせ、
 	// テキスト/スプライト判別境界カラーで分離する
@@ -223,12 +225,27 @@ void scrndrawva_compose_raster(void) {
 	defaultflip = palmode == 1 ? 0x10 : 0x00;
 	palset1scrn = (videova.palmode >> 4) & 3;
 
-	dd = videova.colcomp | ((DWORD)videova.rgbcomp << 16);
+	// パレットブリンク機能
+	blinkfreq = (videova.palmode >> 2) & 3;
+	if (palmode < 2 && blinkfreq > 0) {
+		// ブリンクon
+		// (ブリンクはパレットモード0,1でのみ有効)
+		static UINT16 blinkontimetbl[4] = {1, 2, 4, 6};	// ポート10c bit1,0→ブリンクデューティー n/8
+		static UINT16 cyclelentbl[4] = {0, 5, 6, 7};	// 1サイクル 2^n フレーム
+		UINT16 current = (videova.blinkcnt >> (cyclelentbl[blinkfreq] - 3)) & 7;
+						// blinkcnt の第cyclelentbl[blinkfreq] bitから3bit取得
+		if (current >= blinkontimetbl[videova.palmode & 3]) {
+			// onタイムでない→パレットセットを反転
+			defaultflip ^= 0x10;
+		}
+	}
+
 
 	scrn = work.scrn;
+	comp = videova.colcomp;
 	for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
-		type = (int)(dd & 0x0f);
-		dd >>= 4;
+		type = comp & 0x0f;
+		comp >>= 4;
 		if (type < 8) {
 			scrn->raster = NULL;
 			/*
@@ -242,6 +259,7 @@ void scrndrawva_compose_raster(void) {
 			type &= 0x03;
 			scrn->palflip = defaultflip;
 			if (palmode == 2 && type == palset1scrn) scrn->palflip = 0x10;
+			scrn->pixelmask = 0x0f;
 
 			switch (type) {
 			case VIDEOVA_TEXTSCREEN:
@@ -256,7 +274,14 @@ void scrndrawva_compose_raster(void) {
 				if (videova.grmode & 0x8000) {
 					// GDEN0 = 1 (グラフィック表示イネーブル)
 					scrn->raster = grph0_raster;
-					scrn->xpar = videova.xpar_g0 | ((DWORD)videova.xpar_g0 << 16);
+					scrn->pixelmode = videova.grres & 0x0003;
+					xparhigh = videova.xpar_g0;
+					if (palmode == 3 && scrn->pixelmode >= 2) {
+						// 32色モード
+						scrn->pixelmask = 0x1f;
+						xparhigh = 0x0000;
+					}
+					scrn->xpar = videova.xpar_g0 | ((DWORD)xparhigh << 16);
 				}
 				else {
 					// GDEN0 = 0 (グラフィック表示禁止)
@@ -267,7 +292,14 @@ void scrndrawva_compose_raster(void) {
 				if (videova.grmode & 0x8000) {
 					// GDEN0 = 1 (グラフィック表示イネーブル)
 					scrn->raster = grph1_raster;
-					scrn->xpar = videova.xpar_g1 | ((DWORD)videova.xpar_g1 << 16);
+					scrn->pixelmode = (videova.grres >> 8) & 0x0003;
+					xparhigh = videova.xpar_g1;
+					if (palmode == 3 && scrn->pixelmode >= 2) {
+						// 32色モード (8bpp/16bpp, パレットモード3)
+						scrn->pixelmask = 0x1f;
+						xparhigh = 0x0000;
+					}
+					scrn->xpar = videova.xpar_g1 | ((DWORD)xparhigh << 16);
 				}
 				else {
 					// GDEN0 = 0 (グラフィック表示禁止)
@@ -275,7 +307,6 @@ void scrndrawva_compose_raster(void) {
 				}
 				break;
 			}
-			// ToDo: palette mode 3
 
 			// screen mask
 			maskpos = (videova.mskmode >> 4) & 3;
@@ -304,9 +335,10 @@ void scrndrawva_compose_raster(void) {
 	}
 
 	//scrn = &work.scrn[VIDEOVA_PALETTE_SCREENS];
+	comp = videova.rgbcomp;
 	for (i = 0; i < VIDEOVA_RGB_SCREENS; i++, scrn++) {
-		type = (int)(dd & 0x0f);
-		dd >>= 4;
+		type = comp & 0x0f;
+		comp >>= 4;
 		if (type < 8 || type > 9) {
 			scrn->raster = NULL;
 			/*
@@ -382,7 +414,7 @@ void scrndrawva_compose_raster(void) {
 			scrn = &work.scrn[0];
 			for (i = 0; i < VIDEOVA_PALETTE_SCREENS; i++, scrn++) {
 				if (!scrn->mask[side] /*&& scrn->raster != NULL*/) {
-					palcode = (scrn->raster[x] & 0x0f) ^ scrn->palflip;
+					palcode = (scrn->raster[x] & scrn->pixelmask) ^ scrn->palflip;
 					if ((scrn->xpar & (1 << palcode)) == 0) {
 						// 不透明色
 						c = videova.palette[palcode];

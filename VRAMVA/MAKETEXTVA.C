@@ -1,3 +1,15 @@
+/*
+ * MAKETEXTVA.C: PC-88VA Text
+ */
+/*
+ToDo:
+	TEXTVA_ATR_UL	= 0x20,		// アンダーライン
+	TEXTVA_ATR_DWID	= 0x40,		// ダブルウィドス
+	TEXTVA_ATR_DWIDC= 0x80,		// ダブルウィドスコントロール
+
+    アトリビュートモード2,3,4,5
+*/
+
 #include	"compiler.h"
 #include	"cpucore.h"
 #include	"pccore.h"
@@ -161,8 +173,9 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 	int		fontw;
 	UINT	fonth;
 	_CHARATTR	charattr;
-	UINT8	bg;
-	UINT8	fg;
+	UINT8	bg;		//バックグラウンドカラー
+	UINT8	fg;		//フォアグラウンドカラー
+	UINT8	ul;		//アンダーラインのカラー
 #if defined(USETABLE2)
 	DWORD	bg4;
 	DWORD	fg4;
@@ -195,8 +208,14 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 			bg = charattr.bg;
 			fg = charattr.fg;
 		}
+		ul = fg;
 		if (charattr.attr & TEXTVA_ATR_ST) {
 			fg = bg;
+				// アンダーラインは表示される(シークレットにならない)
+		}
+		else if ((charattr.attr & TEXTVA_ATR_BL) && ((tsp.blinkcnt2 & 0x18) == 0x08)) {
+			fg = bg;
+				// アンダーラインはブリンクしない
 		}
 
 #if defined(USETABLE2)
@@ -219,7 +238,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 				font += fontw;
 				if ((charattr.attr & (TEXTVA_ATR_HL | TEXTVA_ATR_HL2)) && r == tsp.hlinepos) {
 					for (i = 0; i < 8; i++) {
-						b[i] = fg;
+						b[i] = ul;
 					}
 				}
 				else if (r < fonth) {

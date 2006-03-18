@@ -787,23 +787,38 @@ void screenvsyncva(NEVENTITEM item) {
 //	MEMWAIT_GRCG = np2cfg.wait[5];
 //	gdc_work(GDCWORK_MASTER);
 	tsp.vsync = 0x20;
-	
+
+	videova.blinkcnt++;
 	if (--tsp.blinkcnt == 0) {
 		tsp.blinkcnt = tsp.blink;
 		tsp.blinkcnt2++;
 	}
-
+#if 0
 	if (/*gdc.vsyncint ||*/ pccore.model_va != PCMODEL_NOTVA) {
 //		gdc.vsyncint = 0;
 		pic_setirq(2);
 	}
 	nevent_set(NEVENT_FLAMES, tsp.vsyncclock, screendispva, NEVENT_RELATIVE);
-
+#else
+	// 割り込みは6クロック遅れて発生させる。
+	// (割り込みより前に IN AL,40hでVSYNC(bit5)=1が検出される場合がある
+	// 「最終平気UPO」ハング対策)
+	nevent_set(NEVENT_FLAMES, 6, screenvsyncva2, NEVENT_RELATIVE);
+#endif
 	// drawscreenで pccore.vsyncclockが変更される可能性があります
 	if (np2cfg.DISPSYNC) {
 		drawscreenva();
 	}
 }
+
+#if 1
+void screenvsyncva2(NEVENTITEM item) {
+
+	pic_setirq(2);
+	nevent_set(NEVENT_FLAMES, tsp.vsyncclock - 6, screendispva, NEVENT_RELATIVE);
+
+}
+#endif
 
 #endif
 

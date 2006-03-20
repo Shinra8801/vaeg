@@ -385,12 +385,19 @@ static void write_dest(void) {
 }
 
 static void init_src_line(SGP_BLOCK block) {
+	int dot;
+	if (sgp.bltmode & SGP_BLTMODE_SF) {
+		dot = sgp.dest.dot;
+		if (sgp.dest.dot < block->dot) {
+			block->nextaddress += 2;
+		}
+	}
+	else {
+		dot = block->dot;
+	}
 	read_word(block);
 	block->nextaddress += 2;
-	//block->dotcount = dotcountmax[block->scrnmode];
-	//if (!sf) {
-		block->dotcount -= block->dot;
-	//}
+	block->dotcount -= dot;
 	block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
 
 	block->xcount = block->width;
@@ -489,7 +496,7 @@ static void cmd_bitblt(void) {
 
 	TRACEOUT(("SGP: cmd: bitblt: %04x", sgp.bltmode));
 
-	// ToDo: SF,HDの実現
+	// ToDo: HDの実現
 
 	// BITBLTの場合、SET DESTINATIONで設定した幅、高さは無視され、
 	// SET SOURCEで指定した幅、高さだけ転送される

@@ -18,6 +18,7 @@ enum {
 	// func
 	FUNC_FETCH_COMMAND		= 0,
 	FUNC_EXEC_BITBLT,
+	FUNC_EXEC_BITBLT_HD,
 	FUNC_EXEC_CLS,
 };
 
@@ -378,45 +379,33 @@ static void write_dest(void) {
 	sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode];
 
 #else
+	/*
 	sgp.dest.nextaddress += 2;
 	read_word(&sgp.dest);
-	//sgp.dest.nextaddress -= 2;
+	*/
 #endif
 }
 
-static void init_src_line(SGP_BLOCK block) {
+static void init_src_line(void) {
 	int dot;
 	if (sgp.bltmode & SGP_BLTMODE_SF) {
 		dot = sgp.dest.dot;
-		if (sgp.dest.dot < block->dot) {
-			block->nextaddress += 2;
+		if (sgp.dest.dot < sgp.src.dot) {
+			sgp.src.nextaddress += 2;
 		}
 	}
 	else {
-		dot = block->dot;
+		dot = sgp.src.dot;
 	}
-	read_word(block);
-	block->nextaddress += 2;
-	block->dotcount -= dot;
-	block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
+	read_word(&sgp.src);
+	sgp.src.nextaddress += 2;
+	sgp.src.dotcount -= dot;
+	sgp.src.buf <<= (dotcountmax[sgp.src.scrnmode] - sgp.src.dotcount) * bpp[sgp.src.scrnmode];
 
-	block->xcount = block->width;
+	sgp.src.xcount = sgp.src.width;
 }
-/*
-static void init_dest_line(SGP_BLOCK block) {
-	block->buf = 0;
-	block->mask = 0;
-	//read_word(block);
-	block->dotcount = dotcountmax[block->scrnmode];
-	//if (!sf) {
-		block->dotcount -= block->dot;
-	//}
-	//block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
 
-	block->xcount = block->width;
-}
-*/
-static void init_dest_line(SGP_BLOCK block) {
+static void init_dest_line(void) {
 	sgp.newval = 0;
 	sgp.newvalmask = 0;
 #if 0
@@ -427,16 +416,51 @@ static void init_dest_line(SGP_BLOCK block) {
 	//}
 	//block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
 #else
-	read_word(block);
+	read_word(&sgp.dest);
 	//sgp.dest.nextaddress-=2;
 	//sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode];
 	//if (!sf) {
 		sgp.dest.dotcount -= sgp.dest.dot;
 	//}
-	block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
+	sgp.dest.buf <<= (dotcountmax[sgp.dest.scrnmode] - sgp.dest.dotcount) * bpp[sgp.dest.scrnmode];
 #endif
 	sgp.dest.xcount = sgp.dest.width;
 }
+
+// HD = 1 の場合
+static void init_src_line_hd(void) {
+	int dot;
+	if (sgp.bltmode & SGP_BLTMODE_SF) {
+		dot = sgp.dest.dot;
+		if (sgp.dest.dot > sgp.src.dot) {
+			sgp.src.nextaddress -= 2;
+		}
+	}
+	else {
+		dot = sgp.src.dot;
+	}
+
+	read_word(&sgp.src);
+	sgp.src.nextaddress -= 2;
+	sgp.src.dotcount = dot + 1;
+	sgp.src.buf >>= (dotcountmax[sgp.src.scrnmode] - sgp.src.dotcount) * bpp[sgp.src.scrnmode];
+
+	sgp.src.xcount = sgp.src.width;
+}
+
+// HD = 1 の場合
+static void init_dest_line_hd(void) {
+	sgp.newval = 0;
+	sgp.newvalmask = 0;
+
+	read_word(&sgp.dest);
+	sgp.dest.dotcount = sgp.dest.dot + 1;
+	sgp.dest.buf >>= (dotcountmax[sgp.dest.scrnmode] - sgp.dest.dotcount) * bpp[sgp.dest.scrnmode];
+	sgp.dest.xcount = sgp.dest.width;
+}
+
+
+
 
 static void cmd_unknown(void) {
 	// 無効な命令
@@ -496,8 +520,6 @@ static void cmd_bitblt(void) {
 
 	TRACEOUT(("SGP: cmd: bitblt: %04x", sgp.bltmode));
 
-	// ToDo: HDの実現
-
 	// BITBLTの場合、SET DESTINATIONで設定した幅、高さは無視され、
 	// SET SOURCEで指定した幅、高さだけ転送される
 	sgp.dest.width = sgp.src.width;
@@ -505,11 +527,16 @@ static void cmd_bitblt(void) {
 
 	init_block(&sgp.src);
 	init_block(&sgp.dest);
-	init_src_line(&sgp.src);
-	init_dest_line(&sgp.dest);
-
-	//sgp.func = exec_bitblt;
-	sgp.func = FUNC_EXEC_BITBLT;
+	if (sgp.bltmode & SGP_BLTMODE_HD) {
+		init_src_line_hd();
+		init_dest_line_hd();
+		sgp.func = FUNC_EXEC_BITBLT_HD;
+	}
+	else {
+		init_src_line();
+		init_dest_line();
+		sgp.func = FUNC_EXEC_BITBLT;
+	}
 }
 
 static void cmd_patblt(void) {
@@ -520,15 +547,18 @@ static void cmd_patblt(void) {
 
 	TRACEOUT(("SGP: cmd: patblt: %04x", sgp.bltmode));
 
-	// ToDo: SF,HDの実現
-
 	init_block(&sgp.src);
 	init_block(&sgp.dest);
-	init_src_line(&sgp.src);
-	init_dest_line(&sgp.dest);
-
-	//sgp.func = exec_bitblt;
-	sgp.func = FUNC_EXEC_BITBLT;		// BITBLTと共通のルーチン
+	if (sgp.bltmode & SGP_BLTMODE_HD) {
+		init_src_line_hd();
+		init_dest_line_hd();
+		sgp.func = FUNC_EXEC_BITBLT_HD;
+	}
+	else {
+		init_src_line();
+		init_dest_line();
+		sgp.func = FUNC_EXEC_BITBLT;		// BITBLTと共通のルーチン
+	}
 }
 
 
@@ -645,6 +675,8 @@ static void exec_bitblt(void) {
 		}
 //		write_word(&sgp.dest);
 		write_dest();
+		sgp.dest.nextaddress += 2;
+		read_word(&sgp.dest);
 		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
 			sgp.remainclock -= 10 * 2;
 		}
@@ -678,15 +710,120 @@ static void exec_bitblt(void) {
 			}
 			sgp.src.nextaddress = sgp.src.lineaddress;
 			sgp.dest.nextaddress = sgp.dest.lineaddress;
-			init_src_line(&sgp.src);
-			init_dest_line(&sgp.dest);
+			init_src_line();
+			init_dest_line();
 		}
 	}
 	else if (sgp.src.xcount == 0) {
 		// PATBLTで、destの幅がsrcより大きかった場合で、
 		// 水平ラップアラウンドが発生した場合
 		sgp.src.nextaddress = sgp.src.lineaddress;
-		init_src_line(&sgp.src);
+		init_src_line();
+	}
+}
+
+// HD = 1 の場合
+static void exec_bitblt_hd(void) {
+	UINT16 dat;
+	UINT16 dest;
+	UINT16 datmask;
+	int BPP = bpp[sgp.dest.scrnmode];
+	UINT16 PIXMASK = ~(0xffff << BPP);
+	BOOL EXTPIX = sgp.src.scrnmode == 0 && sgp.dest.scrnmode != 0;	// 1bppからの拡張転送
+
+	if (sgp.src.dotcount == 0) {
+		read_word(&sgp.src);
+		sgp.src.nextaddress -= 2;
+	}
+	if (EXTPIX) {
+		dat = (sgp.src.buf & 0x0001) ? 0xffff : 0;
+	}
+	else {
+		dat = sgp.src.buf;
+	}
+	dest = sgp.dest.buf & PIXMASK;
+
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0000:		// ソースをそのまま転送
+		datmask = 0xffff;
+		break;
+	case 0x0100:		// ソースが0の部分は転送しない
+		datmask = dat ? 0xffff : 0;
+		break;
+	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+	case 0x0300:		// 禁止 → 0x0200と同じ
+		datmask = dest ? 0 : 0xffff;
+		break;
+	}
+
+	sgp.newval = (sgp.newval >> BPP) | ((dat & PIXMASK) << (16 - BPP));
+	sgp.newvalmask = (sgp.newvalmask >> BPP) | ((datmask & PIXMASK) << (16 - BPP));
+	sgp.dest.dotcount--;
+	sgp.dest.buf >>= BPP;
+
+	if (EXTPIX) {
+		sgp.src.buf >>= 1;
+	}
+	else {
+		sgp.src.buf >>= BPP;
+	}
+
+	sgp.src.dotcount--;
+
+	sgp.dest.xcount--;
+	sgp.src.xcount--;
+
+	if (sgp.dest.dotcount == 0 || sgp.dest.xcount == 0) {
+
+		sgp.newval >>= sgp.dest.dotcount * BPP;
+		sgp.newvalmask >>= sgp.dest.dotcount * BPP;
+		if (EXTPIX) {
+			sgp.newval &= SWAPWORD(sgp.color);
+		}
+		write_dest();
+		sgp.dest.nextaddress -= 2;
+		read_word(&sgp.dest);
+		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
+			sgp.remainclock -= 10 * 2;
+		}
+		else {
+			sgp.remainclock -= 8 * 2;
+		}
+	}
+
+	if (sgp.dest.xcount == 0) {
+		sgp.dest.ycount--;
+		sgp.src.ycount--;
+		if (sgp.dest.ycount == 0) {
+			sgp.func = FUNC_FETCH_COMMAND;
+		}
+		else {
+			sgp.remainclock -= 14 * 2;
+
+			if (sgp.bltmode & SGP_BLTMODE_VD) {
+				sgp.src.lineaddress -= (SINT32)sgp.src.fbw;
+				sgp.dest.lineaddress -= (SINT32)sgp.dest.fbw;
+			}
+			else {
+				sgp.src.lineaddress += (SINT32)sgp.src.fbw;
+				sgp.dest.lineaddress += (SINT32)sgp.dest.fbw;
+			}
+			if (sgp.src.ycount == 0) {
+				// PATBLTで、destの高さがsrcより大きかった場合で、
+				// 垂直ラップアラウンドが発生した場合
+				init_block(&sgp.src);
+			}
+			sgp.src.nextaddress = sgp.src.lineaddress;
+			sgp.dest.nextaddress = sgp.dest.lineaddress;
+			init_src_line_hd();
+			init_dest_line_hd();
+		}
+	}
+	else if (sgp.src.xcount == 0) {
+		// PATBLTで、destの幅がsrcより大きかった場合で、
+		// 水平ラップアラウンドが発生した場合
+		sgp.src.nextaddress = sgp.src.lineaddress;
+		init_src_line_hd();
 	}
 }
 
@@ -758,6 +895,9 @@ void sgp_step(void) {
 		switch (sgp.func) {
 		case FUNC_EXEC_BITBLT:
 			exec_bitblt();
+			break;
+		case FUNC_EXEC_BITBLT_HD:
+			exec_bitblt_hd();
 			break;
 		case FUNC_EXEC_CLS:
 			exec_cls();

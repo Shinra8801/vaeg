@@ -477,8 +477,9 @@ static void cmd_end(void) {
 	TRACEOUT(("SGP: cmd: end"));
 
 	sgp.busy &= ~SGP_BUSY;
-	// ToDo: äÑÇËçûÇ›ÇÃî≠ê∂
-
+	if (sgp.ctrl & SGP_INTF) {
+		pic_setirq(8);
+	}
 }
 
 static void cmd_set_work(void) {
@@ -932,6 +933,12 @@ static void IOOUTCALL sgp_o500(UINT port, REG8 dat) {
 static void IOOUTCALL sgp_o504(UINT port, REG8 dat) {
 	dat &= SGP_INTF | SGP_ABORT;
 	sgp.ctrl = dat;
+	if (!(sgp.ctrl & SGP_INTF)) {
+		pic_resetirq(8);
+	}
+	if (sgp.ctrl & SGP_ABORT) {
+		sgp.busy &= ~SGP_BUSY;
+	}
 }
 
 static REG8 IOINPCALL sgp_i504(UINT port) {

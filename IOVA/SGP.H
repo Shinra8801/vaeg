@@ -25,6 +25,9 @@ typedef struct {
 	UINT32	workmem;
 	UINT8	ctrl;		// bit2:割り込み許可 bit1=中断要求
 	UINT8	busy;		// bit0:ビジー
+
+	UINT8	intreq;			// 割り込み要求
+	UINT8	maskedintreq;	// ctrl bit2でマスクした割り込み要求
 	UINT32	lastclock;
 	SINT32	remainclock;
 	UINT16	color;		// SET COLORで指定された色

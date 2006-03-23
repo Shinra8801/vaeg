@@ -460,6 +460,17 @@ static void init_dest_line_hd(void) {
 }
 
 
+static void onintreqchanged(void) {
+	UINT8 newval = sgp.intreq && (sgp.ctrl & SGP_INTF);
+	if (!sgp.maskedintreq && newval) {
+		pic_setirq(8);
+		nevent_forceexit();
+	}
+	else if (sgp.maskedintreq && !newval) {
+		pic_resetirq(8);
+	}
+	sgp.maskedintreq = newval;
+}
 
 
 static void cmd_unknown(void) {
@@ -477,9 +488,8 @@ static void cmd_end(void) {
 	TRACEOUT(("SGP: cmd: end"));
 
 	sgp.busy &= ~SGP_BUSY;
-	if (sgp.ctrl & SGP_INTF) {
-		pic_setirq(8);
-	}
+	sgp.intreq = 1;
+	onintreqchanged();
 }
 
 static void cmd_set_work(void) {
@@ -932,13 +942,14 @@ static void IOOUTCALL sgp_o500(UINT port, REG8 dat) {
 */
 static void IOOUTCALL sgp_o504(UINT port, REG8 dat) {
 	dat &= SGP_INTF | SGP_ABORT;
-	sgp.ctrl = dat;
-	if (!(sgp.ctrl & SGP_INTF)) {
-		pic_resetirq(8);
-	}
-	if (sgp.ctrl & SGP_ABORT) {
+	if (dat & SGP_ABORT) {
 		sgp.busy &= ~SGP_BUSY;
 	}
+	if (!(dat & SGP_INTF)) {
+		sgp.intreq = 0;
+	}
+	sgp.ctrl = dat;
+	onintreqchanged();
 }
 
 static REG8 IOINPCALL sgp_i504(UINT port) {

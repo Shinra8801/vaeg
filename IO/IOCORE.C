@@ -11,6 +11,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
+#include	"sgp.h"
 #endif
 
 	_ARTIC		artic;

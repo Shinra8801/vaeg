@@ -9,6 +9,8 @@
 #include	"iocoreva.h"
 #include	"memoryva.h"
 #include	"gvramva.h"
+#include	"sgp.h"
+#include	"bmsio.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -36,12 +38,20 @@ static void MEMCALL mainw_wt(UINT32 address, REG16 value) {
 }
 
 static REG16 MEMCALL bmsw_rd(UINT32 address) {
-	// TODO
-	return 0;
+	address -= 0x080000L;
+	if (!bmsio.nomem) {
+		return *(REG16 *)(bmsiowork.bmsmem + (bmsio.bank << 17) + address);
+	}
+	else {
+		return 0xffff;
+	}
 }
 
 static void MEMCALL bmsw_wt(UINT32 address, REG16 value) {
-	// TODO
+	address -= 0x080000L;
+	if (!bmsio.nomem) {
+		*(REG16 *)(bmsiowork.bmsmem + (bmsio.bank << 17) + address) = value;
+	}
 }
 
 static REG16 MEMCALL tvramw_rd(UINT32 address) {
@@ -460,17 +470,17 @@ static void init_dest_line_hd(void) {
 }
 
 
-static void onintreqchanged(void) {
-	UINT8 newval = sgp.intreq && (sgp.ctrl & SGP_INTF);
-	if (!sgp.maskedintreq && newval) {
-		pic_setirq(8);
-		nevent_forceexit();
+static void setintreq(void) {
+	if (sgp.ctrl & SGP_INTF) {
+		if (!sgp.intreq) {
+			sgp.intreq = 1;
+			pic_setirq(8);
+			nevent_forceexit();
+		}
 	}
-	else if (sgp.maskedintreq && !newval) {
-		pic_resetirq(8);
-	}
-	sgp.maskedintreq = newval;
 }
+
+
 
 
 static void cmd_unknown(void) {
@@ -488,8 +498,7 @@ static void cmd_end(void) {
 	TRACEOUT(("SGP: cmd: end"));
 
 	sgp.busy &= ~SGP_BUSY;
-	sgp.intreq = 1;
-	onintreqchanged();
+	setintreq();
 }
 
 static void cmd_set_work(void) {
@@ -497,7 +506,7 @@ static void cmd_set_work(void) {
 	// 作業領域(58バイト)の設定
 	sgp.workmem = sgp_memoryread_w(sgp.pc) & 0xfffe | ((UINT32)sgp_memoryread_w(sgp.pc + 2) << 16);
 	sgp.pc += 4;
-	sgp.remainclock -= 10;		// ToDo 根拠なし
+	sgp.remainclock -= 23 * 2;
 
 }
 
@@ -619,21 +628,6 @@ static void exec_bitblt(void) {
 		sgp.src.nextaddress += 2;
 	}
 	if (EXTPIX) {
-#if 0
-		if (sgp.src.buf & 0x8000) {
-			dat = sgp.color  
-				  >>  
-				  (((sgp.src.dotcount - 1) % dotcountmax[sgp.dest.scrnmode]) * BPP );
-                  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			      //この部分が、4bppなら3,2,1,0,3,2,... と、
-			      //            8bppなら1,0,1,0,... と繰り返し、16bppなら常に0
-			      //sgp.colorからはsrcの位置にあわせて必要なbitを切り出す
-			      //(ToDo:実機でそうなってるか?→なっていない)
-		}
-		else {
-			dat = 0;
-		}
-#endif
 		dat = (sgp.src.buf & 0x8000) ? 0xffff : 0;
 	}
 	else {
@@ -942,14 +936,17 @@ static void IOOUTCALL sgp_o500(UINT port, REG8 dat) {
 */
 static void IOOUTCALL sgp_o504(UINT port, REG8 dat) {
 	dat &= SGP_INTF | SGP_ABORT;
-	if (dat & SGP_ABORT) {
-		sgp.busy &= ~SGP_BUSY;
-	}
-	if (!(dat & SGP_INTF)) {
-		sgp.intreq = 0;
-	}
 	sgp.ctrl = dat;
-	onintreqchanged();
+	if (sgp.ctrl & SGP_ABORT) {
+		sgp.busy &= ~SGP_BUSY;
+		setintreq();
+	}
+	if (!(sgp.ctrl & SGP_INTF)) {
+		if (sgp.intreq) {
+			sgp.intreq = 0;
+			pic_resetirq(8);
+		}
+	}
 }
 
 static REG8 IOINPCALL sgp_i504(UINT port) {

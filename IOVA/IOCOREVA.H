@@ -4,7 +4,6 @@
 
 #include	"memctrlva.h"
 #include	"tsp.h"
-#include	"sgp.h"
 #include	"videova.h"
 #include	"fdsubsys.h"
 #include	"sysportva.h"

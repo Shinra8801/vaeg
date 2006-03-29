@@ -52,11 +52,13 @@ enum {
 
 	// サブシステムコマンド
 	CMD_INITIALIZE			= 0x00,
+	CMD_WRITE_DATA			= 0x01,
 	CMD_READ_DATA			= 0x02,
 	CMD_SEND_DATA			= 0x03,
 	CMD_SEND_RESULT_STATUS	= 0x06,
 	CMD_RECEIVE_MEMORY		= 0x0c,
 	CMD_EXECUTE_COMMAND		= 0x0d,
+	CMD_LOAD_DATA			= 0x0e,
 	CMD_SET_SURFACE_MODE	= 0x17,
 	CMD_SET_DISK_MODE		= 0x1f,
 	CMD_SEND_DISK_MODE		= 0x20,
@@ -302,6 +304,11 @@ static void subsys_cmd_received(void) {
 	case CMD_SEND_RESULT_STATUS:
 	case CMD_SLEEP:
 		break;
+	case CMD_WRITE_DATA:
+		recvdatacnt = 4;
+		recvbuf = parambuf;
+		parambuf[5] = 0;
+		break;
 	case CMD_READ_DATA:
 		recvdatacnt = 4;
 		recvbuf = parambuf;
@@ -317,6 +324,10 @@ static void subsys_cmd_received(void) {
 		break;
 	case CMD_SET_DISK_MODE:
 		recvdatacnt = 2;
+		recvbuf = parambuf;
+		break;
+	case CMD_LOAD_DATA:
+		recvdatacnt = 6;
 		recvbuf = parambuf;
 		break;
 	case CMD_SET_SURFACE_MODE:
@@ -395,6 +406,30 @@ static void subsys_exec_initialize(void) {
 	*/
 	subsysmem[WORK_DISK_MODE + 0] = 0x01;
 	subsysmem[WORK_DISK_MODE + 1] = 0x01;
+}
+
+/*
+0x01 ライトデータ
+*/
+static void subsys_exec_write_data(void) {
+	if (parambuf[5] == 0) {
+		BYTE sectorcnt = parambuf[0];
+		BYTE drv = parambuf[1];
+		BYTE track = parambuf[2];
+		BYTE sector = parambuf[3];
+
+		TRACEOUT(("fdsubsys: write data (not implemented): sectorcnt=%d, drv=%d, track=%d, sector=%d",sectorcnt, drv, track, sector));
+
+		recvdatacnt = 256 * sectorcnt;
+		if (recvdatacnt) {
+			recvbuf = &subsysmem[WORK_DATA_BUF];
+			state = ST_RECV_DATA;
+			parambuf[5] = 1;		// データ本体の受信にとりかかったことを表すフラグ
+		}
+	}
+	else {
+	
+	}
 }
 
 /*
@@ -523,6 +558,20 @@ static void subsys_exec_execute_command(void) {
 }
 
 /*
+0x0e ロード・データ
+*/
+static void subsys_exec_load_data(void) {
+	BYTE sectorcnt = parambuf[0];
+	BYTE drv = parambuf[1];
+	BYTE track = parambuf[2];
+	BYTE sector = parambuf[3];
+	WORD addr = (parambuf[4] << 8) | parambuf[5];
+
+	TRACEOUT(("fdsubsys: load data (not implemented): sectorcount=%d, drv=%d, track=%d, sector=%d, address=0x%04x", sectorcnt, drv, track, sector, addr));
+}
+
+
+/*
 0x17 サーフェースモードの設定
 */
 static void subsys_exec_set_surface_mode(void) {
@@ -628,6 +677,9 @@ static void subsys_exec_cmd(void) {
 	case CMD_INITIALIZE:
 		subsys_exec_initialize();
 		break;
+	case CMD_WRITE_DATA:
+		subsys_exec_write_data();
+		break;
 	case CMD_READ_DATA:
 		subsys_exec_read_data();
 		break;
@@ -642,6 +694,9 @@ static void subsys_exec_cmd(void) {
 		break;
 	case CMD_EXECUTE_COMMAND:
 		subsys_exec_execute_command();
+		break;
+	case CMD_LOAD_DATA:
+		subsys_exec_load_data();
 		break;
 	case CMD_SET_SURFACE_MODE:
 		subsys_exec_set_surface_mode();
@@ -706,6 +761,7 @@ static void subsys_exec(void) {
 
 static void subsys_reset(void) {
 	state = ST_RECV_CMD;
+	hsstate = HSST_STOPPED;
 	cmdrecvd = FALSE;
 	subsys_resetportc(DAVBIT);
 	subsys_resetportc(RFDBIT);

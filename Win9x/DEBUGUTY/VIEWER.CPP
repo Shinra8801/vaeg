@@ -5,6 +5,10 @@
 #include	"viewcmn.h"
 #include	"cpucore.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"cpucva/Z80.h"
+#include	"subsystem.h"
+#endif
 
 
 static	char		np2viewclass[] = "NP2-ViewWindow";
@@ -100,6 +104,18 @@ LRESULT CALLBACK ViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 				case IDM_VIEWMODEVIDEOVA:
 					viewer_segmode(hWnd, VIEWMODE_VIDEOVA);
+					break;
+
+				case IDM_VIEWMODESUBMEM:
+					viewer_segmode(hWnd, VIEWMODE_SUBMEM);
+					break;
+
+				case IDM_VIEWMODESUBREG:
+					viewer_segmode(hWnd, VIEWMODE_SUBREG);
+					break;
+
+				case IDM_VIEWMODESUBASM:
+					viewer_segmode(hWnd, VIEWMODE_SUBASM);
 					break;
 #endif
 
@@ -292,6 +308,13 @@ static	DWORD	last = 0;
 					view->pos = 0;
 					viewcmn_setvscroll(view->hwnd, view);
 				}
+#if defined(SUPPORT_PC88VA)
+				else if (view->type == VIEWMODE_SUBASM) {
+					view->off = subsystem_getcpuregs()->pc;
+					view->pos = 0;
+					viewcmn_setvscroll(view->hwnd, view);
+				}
+#endif
 				viewcmn_setbank(view);
 				InvalidateRect(view->hwnd, NULL, TRUE);
 			}

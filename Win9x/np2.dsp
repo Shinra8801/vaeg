@@ -859,6 +859,18 @@ SOURCE=.\DEBUGUTY\VIEWSND.CPP
 # End Source File
 # Begin Source File
 
+SOURCE=.\DEBUGUTY\VIEWSUBASM.CPP
+# End Source File
+# Begin Source File
+
+SOURCE=.\DEBUGUTY\VIEWSUBMEM.CPP
+# End Source File
+# Begin Source File
+
+SOURCE=.\DEBUGUTY\VIEWSUBREG.CPP
+# End Source File
+# Begin Source File
+
 SOURCE=.\DEBUGUTY\VIEWVABANK.CPP
 # End Source File
 # Begin Source File
@@ -1504,6 +1516,10 @@ SOURCE=..\IOVA\GACTRLVA.C
 # End Source File
 # Begin Source File
 
+SOURCE=..\IOVA\I8255.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\IOVA\IOCOREVA.C
 # End Source File
 # Begin Source File
@@ -1517,6 +1533,18 @@ SOURCE=..\IOVA\MOUSEIFVA.C
 # Begin Source File
 
 SOURCE=..\IOVA\SGP.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\SUBSYSTEM.CPP
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\SUBSYSTEMIF.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\IOVA\SUBSYSTEMMX.C
 # End Source File
 # Begin Source File
 
@@ -1537,6 +1565,14 @@ SOURCE=..\IOVA\VIDEOVA.C
 # Begin Source File
 
 SOURCE=..\CPUCVA\GVRAMVA.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\CPUCVA\Z80c.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\CPUCVA\Z80diag.cpp
 # End Source File
 # End Group
 # Begin Source File
@@ -1617,6 +1653,10 @@ SOURCE=..\IOVA\SGP.H
 # End Source File
 # Begin Source File
 
+SOURCE=..\IOVA\SUBSYSTEM.H
+# End Source File
+# Begin Source File
+
 SOURCE=..\IOVA\TSP.H
 # End Source File
 # Begin Source File
@@ -1626,6 +1666,10 @@ SOURCE=..\IOVA\VIDEOVA.H
 # Begin Source File
 
 SOURCE=.\DEBUGUTY\VIEWVIDEOVA.H
+# End Source File
+# Begin Source File
+
+SOURCE=..\CPUCVA\Z80if.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

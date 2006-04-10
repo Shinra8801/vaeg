@@ -11,6 +11,7 @@
 #include	"iocore.h"
 #include	"memoryva.h"
 #include	"biosva.h"
+#include	"subsystem.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -19,9 +20,7 @@
 #define VAROM00ROM "VAROM00.ROM"
 #define VAROM08ROM "VAROM08.ROM"
 #define VAROM1ROM  "VAROM1.ROM"
-
-#define VAFONT1ROM "VAFONT1.ROM"
-#define VAFONT2ROM "VAFONT2.ROM"
+#define VASUBSYSROM "VASUBSYS.ROM"
 
 void biosva_initialize(void) {
 	char	path[MAX_PATH];
@@ -63,21 +62,13 @@ void biosva_initialize(void) {
 		file_close(fh);
 	}
 
-/*
-	getbiospath(path, VAFONT1ROM, sizeof(path));
+	getbiospath(path, VASUBSYSROM, sizeof(path));
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
-		success = (file_read(fh, fontmem, 0x40000) == 0x40000);
+		success = (file_read(fh, subsystem_getrombuf(), 0x2000) == 0x2000);
 		file_close(fh);
 	}
 
-	getbiospath(path, VAFONT2ROM, sizeof(path));
-	fh = file_open_rb(path);
-	if (fh != FILEH_INVALID) {
-		success = (file_read(fh, fontmem + 0x40000, 0x10000) == 0x10000);
-		file_close(fh);
-	}
-*/
 
 }
 

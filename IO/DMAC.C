@@ -525,9 +525,6 @@ static REG8 IOINPCALL dmacva_i16f(UINT port) {
 	return ret;
 }
 
-/*
-	ToDo: VA2/3 システムメモリエリアDMA用バンク指定
-*/
 
 #endif
 

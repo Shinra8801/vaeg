@@ -12,6 +12,7 @@
 #if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
 #include	"sgp.h"
+#include	"subsystemmx.h"
 #endif
 
 	_ARTIC		artic;
@@ -470,7 +471,7 @@ static const IOCBFN resetfn[] = {
 			tsp_reset,
 			sgp_reset,
 			videova_reset,
-			fdsubsys_reset,
+			subsystemmx_reset,
 			systemportva_reset,
 			mouseifva_reset,
 			gactrlva_reset,
@@ -501,7 +502,7 @@ static const IOCBFN bindfn[] = {
 			tsp_bind,
 			sgp_bind,
 			videova_bind,
-			fdsubsys_bind,
+			subsystemmx_bind,
 			systemportva_bind,
 			mouseifva_bind,
 			gactrlva_bind,

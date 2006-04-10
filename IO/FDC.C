@@ -11,6 +11,8 @@
 
 #include	"iocoreva.h"
 
+#include	"subsystem.h"
+
 enum {
 	FDC_DMACH2HD	= 2,
 	FDC_DMACH2DD	= 3,
@@ -211,17 +213,41 @@ void fdc_stepwait(NEVENTITEM item) {
 #endif
 
 // ----------------------------------------------------------------------
+// interrupt
 
 void fdc_intwait(NEVENTITEM item) {
 
 	if (item->flag & NEVENT_SETEVENT) {
 		fdc.intreq = TRUE;
+		TRACEOUT(("fdc: send interrupt request"));
+#if defined(SUPPORT_PC88VA)
+		if (pccore.model_va == PCMODEL_NOTVA) {
+			if (fdc.chgreg & 1) {
+				pic_setirq(0x0b);
+			}
+			else {
+				pic_setirq(0x0a);
+			}
+		}
+		else {
+			// VA
+			if (fdc.fddifmode) {
+				// DMA mode
+				pic_setirq(0x0b);
+			}
+			else {
+				// Intelligent mode
+				subsystem_irq(TRUE);
+			}
+		}
+#else
 		if (fdc.chgreg & 1) {
 			pic_setirq(0x0b);
 		}
 		else {
 			pic_setirq(0x0a);
 		}
+#endif
 	}
 }
 
@@ -239,6 +265,21 @@ static BOOL fdc_isfdcinterrupt(void) {
 
 	return(fdc.intreq);
 }
+
+#if defined(SUPPORT_PC88VA)
+static void fdc_resetirq(void) {
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		// VA
+		if (!fdc.fddifmode) {
+			// Intelligent mode
+			subsystem_irq(FALSE);
+		}
+	}
+}
+#endif
+
+
+// ----------------------------------------------------------------------
 
 REG8 DMACCALL fdc_dmafunc(REG8 func) {
 #if defined(VAEG_EXT)
@@ -310,6 +351,9 @@ static void fdc_dmaready(REG8 enable) {
 void fdcsend_error7(void) {
 
 	fdc.tc = 0;
+#if defined(SUPPORT_PC88VA)
+	fdc.tcacceptable = FALSE;
+#endif
 	fdc.event = FDCEVENT_BUFSEND;
 	fdc.bufp = 0;
 	fdc.bufcnt = 7;
@@ -333,6 +377,9 @@ void fdcsend_error7(void) {
 void fdcsend_success7(void) {
 
 	fdc.tc = 0;
+#if defined(SUPPORT_PC88VA)
+	fdc.tcacceptable = FALSE;
+#endif
 	fdc.event = FDCEVENT_BUFSEND;
 	fdc.bufp = 0;
 	fdc.bufcnt = 7;
@@ -352,7 +399,7 @@ void fdcsend_success7(void) {
 	fdc_dmaready(0);
 	dmac_check();
 
-	TRACEOUT(("fdc: send interrupt"));
+	//TRACEOUT(("fdc: send interrupt"));
 	fdc_interrupt();
 
 #if defined(VAEG_EXT)
@@ -668,6 +715,11 @@ static void readsector(void) {
 #else
 	fdc.status = FDCSTAT_RQM | FDCSTAT_DIO | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
+#if defined(SUPPORT_PC88VA)
+	if (fdc.nd) {
+		fdc_interrupt();
+	}
+#endif
 	fdc_dmaready(1);
 	dmac_check();
 }
@@ -679,6 +731,9 @@ static void FDC_ReadData(void) {						// cmd: 06
 			get_hdus();
 			get_chrn();
 			get_eotgsldtl();
+#if defined(SUPPORT_PC88VA)
+			fdc.tcacceptable = TRUE;
+#endif
 			readsector();
 			break;
 
@@ -1027,6 +1082,9 @@ REG8 DMACCALL fdc_dataread(void) {
 #if defined(VAEG_EXT)
 		update_head();
 #endif
+#if defined(SUPPORT_PC88VA)
+		fdc_resetirq();
+#endif
 
 //	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO))
 //									== (FDCSTAT_RQM | FDCSTAT_DIO)) {
@@ -1078,6 +1136,13 @@ REG8 DMACCALL fdc_dataread(void) {
 					fdc.status &= ~(FDCSTAT_RQM | FDCSTAT_NDM);
 					FDC_Ope[fdc.cmd & 0x1f]();
 				}
+#if defined(SUPPORT_PC88VA)
+				else {
+					if (fdc.nd) {
+						fdc_interrupt();
+					}
+				}
+#endif
 				break;
 		}
 //	}
@@ -1115,6 +1180,13 @@ void fdc_fddmotor(NEVENTITEM item) {
 #endif
 
 // ---- I/O
+
+#if defined(SUPPORT_PC88VA)
+static void IOOUTCALL fdcva_o1b0(UINT port, REG8 dat) {
+	fdc.fddifmode = dat & 1;
+}
+#endif
+
 
 static void IOOUTCALL fdc_o92(UINT port, REG8 dat) {
 
@@ -1352,6 +1424,35 @@ static void IOOUTCALL fdcva_o1b4(UINT port, REG8 dat) {
 }
 #endif
 
+// ---- for FD Sub System
+
+BYTE fdcsubsys_ifdc0(void) {
+	return fdcva_i1b8(0);
+}
+
+BYTE fdcsubsys_ifdc1(void) {
+	return fdcva_i1ba(0);
+}
+
+void fdcsubsys_ofdc1(BYTE dat) {
+	fdcva_o1ba(0, dat);
+}
+
+void fdcsubsys_omotor(BYTE dat) {
+	fdcva_o1b4(0, dat);
+}
+
+void fdcsubsys_odrvctrl(BYTE dat) {
+	fdcva_o1b2(0, dat);
+}
+
+void fdcsubsys_otc(void) {
+	if (fdc.tcacceptable) {
+		fdc.tc = 1;
+		fdcsend_success7();
+	}
+}
+
 // ---- I/F
 
 static const IOOUT fdco90[4] = {
@@ -1382,6 +1483,9 @@ void fdc_reset(void) {
 #if defined(VAEG_EXT)
 	fdc.headlastactive = -1;
 #endif
+#if defined(SUPPORT_PC88VA)
+	fdc.fddifmode = 0;
+#endif
 }
 
 void fdc_bind(void) {
@@ -1399,7 +1503,7 @@ void fdc_bind(void) {
 	iocore_attachsysinpex(0x00be, 0x0cff, fdcibe, 1);
 
 #if defined(SUPPORT_PC88VA)
-	// 0x1b0 ñ¢çÏê¨
+	iocoreva_attachout(0x01b0, fdcva_o1b0);
 	iocoreva_attachout(0x01b2, fdcva_o1b2);
 	iocoreva_attachout(0x01b4, fdcva_o1b4);
 	iocoreva_attachout(0x01b6, fdcva_o1b6);

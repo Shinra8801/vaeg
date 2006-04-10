@@ -114,6 +114,11 @@ typedef struct {
 	UINT8	headpcn[4];			// ヘッドがどのシリンダにあるか
 	UINT8	headncn[4];			// ヘッドの移動先のシリンダ
 #endif
+#if defined(SUPPORT_PC88VA)
+	UINT8	fddifmode;			// 1B0h FDDインタフェースモード
+								//      0..インテリジェント 1..DMA
+	BOOL	tcacceptable;		// TC信号を受け入れ可能か
+#endif
 
 	UINT8	cmd;
 	BYTE	cmds[15];
@@ -147,6 +152,15 @@ void fdcsend_success7(void);
 
 void fdc_reset(void);
 void fdc_bind(void);
+
+#if defined(SUPPORT_PC88VA)
+BYTE fdcsubsys_ifdc0(void);
+BYTE fdcsubsys_ifdc1(void);
+void fdcsubsys_ofdc1(BYTE dat);
+void fdcsubsys_omotor(BYTE dat);
+void fdcsubsys_odrvctrl(BYTE dat);
+void fdcsubsys_otc(void);
+#endif
 
 #ifdef __cplusplus
 }

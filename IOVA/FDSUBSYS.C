@@ -1,5 +1,5 @@
 /*
- * FDSUBSYS.C: PC-88VA FD sub system
+ * FDSUBSYS.C: PC-88VA FD Sub System (mock-up type)
  */
 
 #include	"compiler.h"

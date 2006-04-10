@@ -20,7 +20,8 @@ enum {
 extern "C" {
 #endif
 
-extern	_MOUSEIFVA	mouseifva;
+extern	_MOUSEIFVA		mouseifva;
+extern	_MOUSEIFVACFG	mouseifvacfg;
 
 void mouseifva_reset(void);
 void mouseifva_bind(void);
@@ -32,7 +33,6 @@ void mouseva_outstrobe(UINT8 strobe);
 void mouseva_indata(UINT8 *data, UINT8 *button);
 void joypad_indata(UINT8 *data, UINT8 *button);
 
-extern	_MOUSEIFVACFG	mouseifvacfg;
 
 #ifdef __cplusplus
 }

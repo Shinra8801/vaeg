@@ -53,6 +53,8 @@
 #include	"tsp.h"
 #include	"sgp.h"
 #include	"videova.h"
+#include	"subsystem.h"
+#include	"subsystemmx.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -262,6 +264,8 @@ void pccore_init(void) {
 	maketextva_initialize();
 	makesprva_initialize();
 	makegrphva_initialize();
+	subsystem_initialize();
+	subsystemmx_initialize();
 #endif
 	dispsync_initialize();
 	sxsi_initialize();
@@ -393,6 +397,12 @@ void pccore_reset(void) {
 	}
 #endif
 
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		subsystem_reset();
+	}
+#endif
+
 	sound_changeclock();
 	beep_changeclock();
 	sound_reset();
@@ -419,7 +429,9 @@ void pccore_reset(void) {
 
 	bios_initialize();
 #if defined(SUPPORT_PC88VA)
-	biosva_initialize();
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		biosva_initialize();
+	}
 #endif
 	CS_BASE = 0xf0000;
 	CPU_CS = 0xf000;
@@ -893,7 +905,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 }
 
 void pccore_debugint(UINT32 no) {
-	if (no != 0x82 && !(no == 0x83 && CPU_AX==0x2e00) && no != 0x96) {
+	if (no != 0x82 && !(no == 0x83 /*&& CPU_AX==0x2e00*/) && no != 0x96) {
 		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
 		no, CPU_CS, CPU_IP,  memoryva.rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
 	}
@@ -1011,6 +1023,7 @@ void pccore_exec(BOOL draw) {
 			}
 #if defined(SUPPORT_PC88VA)
 			if (pccore.model_va != PCMODEL_NOTVA) {
+				subsystem_exec();
 				sgp_step();
 			}
 #endif
@@ -1084,6 +1097,7 @@ void pccore_exec(BOOL draw) {
 			}
 #if defined(SUPPORT_PC88VA)
 			if (pccore.model_va != PCMODEL_NOTVA) {
+				subsystem_exec();
 				sgp_step();
 			}
 #endif

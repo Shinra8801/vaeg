@@ -2,7 +2,7 @@
 //	Z80 Disassembler
 //	Copyright (C) cisc 1999.
 // ---------------------------------------------------------------------------
-//	$Id: Z80diag.cpp,v 1.1 2006/04/10 05:04:06 shinra Exp $
+//	$Id: Z80diag.cpp,v 1.2 2006/04/10 05:07:55 shinra Exp $
 
 #define VAEG	// Shinra
 

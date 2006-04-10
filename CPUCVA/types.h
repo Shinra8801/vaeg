@@ -2,7 +2,7 @@
 //	M88 - PC-8801 series emulator
 //	Copyright (C) cisc 1999.
 // ----------------------------------------------------------------------------
-//	$Id: types.h,v 1.1 2006/04/10 05:04:06 shinra Exp $
+//	$Id: types.h,v 1.2 2006/04/10 05:07:55 shinra Exp $
 
 #define VAEG		// Shinra
 

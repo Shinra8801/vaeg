@@ -9,9 +9,10 @@
 #include	"iocore.h"
 #include	"fddfile.h"
 
+#if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
-
 #include	"subsystem.h"
+#endif
 
 enum {
 	FDC_DMACH2HD	= 2,
@@ -221,7 +222,8 @@ void fdc_intwait(NEVENTITEM item) {
 		fdc.intreq = TRUE;
 		TRACEOUT(("fdc: send interrupt request"));
 #if defined(SUPPORT_PC88VA)
-		if (pccore.model_va == PCMODEL_NOTVA) {
+		if (fdc.fddifmode) {
+			// DMA mode
 			if (fdc.chgreg & 1) {
 				pic_setirq(0x0b);
 			}
@@ -230,15 +232,8 @@ void fdc_intwait(NEVENTITEM item) {
 			}
 		}
 		else {
-			// VA
-			if (fdc.fddifmode) {
-				// DMA mode
-				pic_setirq(0x0b);
-			}
-			else {
-				// Intelligent mode
-				subsystem_irq(TRUE);
-			}
+			// Intelligent mode
+			subsystem_irq(TRUE);
 		}
 #else
 		if (fdc.chgreg & 1) {
@@ -252,34 +247,28 @@ void fdc_intwait(NEVENTITEM item) {
 }
 
 void fdc_interrupt(void) {
-
 	nevent_set(NEVENT_FDCINT, 512, fdc_intwait, NEVENT_ABSOLUTE);
 }
 
 static void fdc_interruptreset(void) {
-
 	fdc.intreq = FALSE;
 }
 
 static BOOL fdc_isfdcinterrupt(void) {
-
 	return(fdc.intreq);
 }
 
-#if defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 static void fdc_resetirq(void) {
-	if (pccore.model_va != PCMODEL_NOTVA) {
-		// VA
-		if (!fdc.fddifmode) {
-			// Intelligent mode
-			subsystem_irq(FALSE);
-		}
+	if (!fdc.fddifmode) {
+		// Intelligent mode
+		subsystem_irq(FALSE);
 	}
 }
 #endif
 
-
 // ----------------------------------------------------------------------
+// DMA 
 
 REG8 DMACCALL fdc_dmafunc(REG8 func) {
 #if defined(VAEG_EXT)
@@ -336,7 +325,12 @@ REG8 DMACCALL fdc_dmafunc(REG8 func) {
 }
 
 static void fdc_dmaready(REG8 enable) {
-
+#if defined(SUPPORT_PC88VA)
+	if (!fdc.fddifmode) {
+		// Intelligent
+		return;
+	}
+#endif
 	if (fdc.chgreg & 1) {
 		dmac.dmach[FDC_DMACH2HD].ready = enable;
 	}
@@ -366,9 +360,12 @@ void fdcsend_error7(void) {
 	fdc.buf[6] = fdc.N;
 	fdc.status = FDCSTAT_RQM | FDCSTAT_CB | FDCSTAT_DIO;
 	fdc.stat[fdc.us] = 0;										// ver0.29
+
 	fdc_dmaready(0);
 	dmac_check();
+
 	fdc_interrupt();
+
 #if defined(VAEG_EXT)
 	deactivate_head();
 #endif
@@ -399,13 +396,14 @@ void fdcsend_success7(void) {
 	fdc_dmaready(0);
 	dmac_check();
 
-	//TRACEOUT(("fdc: send interrupt"));
 	fdc_interrupt();
 
 #if defined(VAEG_EXT)
 	deactivate_head();
 #endif
 }
+
+// ----------------------------------------------------------------------
 
 #if 0
 // FDCのタイムアウト			まぁ本当はこんなんじゃダメだけど…	ver0.29
@@ -424,6 +422,8 @@ static void fdc_timeoutset(void) {
 #endif
 
 
+// ----------------------------------------------------------------------
+// Command subroutines
 
 static BOOL FDC_DriveCheck(BOOL protectcheck) {
 
@@ -439,8 +439,6 @@ static BOOL FDC_DriveCheck(BOOL protectcheck) {
 	}
 	return(TRUE);
 }
-
-// ----------------------------------------------------------------------
 
 static void get_mtmfsk(void) {
 
@@ -470,7 +468,7 @@ static void get_eotgsldtl(void) {
 	fdc.dtl = fdc.cmds[7];
 }
 
-#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 
 static BOOL inc_fdcR(void) {
 	BOOL	over;			// シリンダをまたがった
@@ -497,6 +495,7 @@ static BOOL inc_fdcR(void) {
 #endif
 
 // --------------------------------------------------------------------------
+// Commands
 
 static void FDC_Invalid(void) {							// cmd: xx
 
@@ -617,8 +616,19 @@ static BOOL writesector(void) {
 	fdc.bufcnt = 128 << fdc.N;
 	fdc.bufp = 0;
 	fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
+#if defined(VAEG_FIX)
+	if (fdc.nd) {
+		fdc_interrupt();
+	}
+	else {
+		// DMA
+		fdc_dmaready(1);
+		dmac_check();
+	}
+#else
 	fdc_dmaready(1);
 	dmac_check();
+#endif
 	return(SUCCESS);
 }
 
@@ -645,8 +655,19 @@ static void FDC_WriteData(void) {						// cmd: 05
 #else
 				fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
+#if defined(VAEG_FIX)
+				if (fdc.nd) {
+					fdc_interrupt();
+				}
+				else {
+					// DMA
+					fdc_dmaready(1);
+					dmac_check();
+				}
+#else
 				fdc_dmaready(1);
 				dmac_check();
+#endif
 			}
 			break;
 
@@ -654,7 +675,7 @@ static void FDC_WriteData(void) {						// cmd: 05
 			if (writesector()) {
 				return;
 			}
-#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 			{
 				BOOL	over;
 				over = inc_fdcR();
@@ -715,13 +736,19 @@ static void readsector(void) {
 #else
 	fdc.status = FDCSTAT_RQM | FDCSTAT_DIO | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
-#if defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 	if (fdc.nd) {
 		fdc_interrupt();
 	}
-#endif
+	else {
+		// DMA
+		fdc_dmaready(1);
+		dmac_check();
+	}
+#else
 	fdc_dmaready(1);
 	dmac_check();
+#endif
 }
 
 static void FDC_ReadData(void) {						// cmd: 06
@@ -739,6 +766,7 @@ static void FDC_ReadData(void) {						// cmd: 06
 
 		case FDCEVENT_NEXTDATA:
 			fdc.bufcnt = 0;
+//@@@@@@@ WriteDataと同じ修正が必要なはず
 			if (fdc.R++ == fdc.eot) {
 				fdc.stat[fdc.us] = fdc.us | (fdc.hd << 2) |
 													FDCRLT_IC0 | FDCRLT_EN;
@@ -901,8 +929,19 @@ static void FDC_WriteID(void) {							// cmd: 0d
 #else
 				fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
+#if defined(VAEG_FIX)
+				if (fdc.nd) {
+					fdc_interrupt();
+				}
+				else {
+					// DMA
+					fdc_dmaready(1);
+					dmac_check();
+				}
+#else
 				fdc_dmaready(1);
 				dmac_check();
+#endif
 			}
 			break;
 
@@ -925,6 +964,16 @@ static void FDC_WriteID(void) {							// cmd: 0d
 			}
 #else
 			fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
+#endif
+#if defined(VAEG_FIX)
+			if (fdc.nd) {
+				fdc_interrupt();
+			}
+			else {
+				// DMA
+				fdc_dmaready(1);
+				dmac_check();
+			}
 #endif
 			break;
 
@@ -1038,6 +1087,9 @@ void DMACCALL fdc_datawrite(REG8 data) {
 #if defined(VAEG_EXT)
 		update_head();
 #endif
+#if defined(VAEG_FIX)
+		fdc_resetirq();
+#endif
 
 //	if ((fdc.status & (FDCSTAT_RQM | FDCSTAT_DIO)) == FDCSTAT_RQM) {
 		switch(fdc.event) {
@@ -1048,6 +1100,13 @@ void DMACCALL fdc_datawrite(REG8 data) {
 					fdc.status &= ~FDCSTAT_RQM;
 					FDC_Ope[fdc.cmd & 0x1f]();
 				}
+#if defined(VAEG_FIX)
+				else {
+					if (fdc.nd) {
+						fdc_interrupt();
+					}
+				}
+#endif
 				break;
 
 			case FDCEVENT_CMDRECV:
@@ -1082,7 +1141,7 @@ REG8 DMACCALL fdc_dataread(void) {
 #if defined(VAEG_EXT)
 		update_head();
 #endif
-#if defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 		fdc_resetirq();
 #endif
 
@@ -1105,7 +1164,8 @@ REG8 DMACCALL fdc_dataread(void) {
 				if (fdc.tc) {
 					if (!fdc.bufcnt) {						// ver0.26
 						fdc.R++;
-#if defined(VAEG_EXT) || defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							/* ToDo:
 								fdd_seeksectorがfalseを返した場合のみ
@@ -1136,7 +1196,7 @@ REG8 DMACCALL fdc_dataread(void) {
 					fdc.status &= ~(FDCSTAT_RQM | FDCSTAT_NDM);
 					FDC_Ope[fdc.cmd & 0x1f]();
 				}
-#if defined(SUPPORT_PC88VA)
+#if defined(VAEG_FIX)
 				else {
 					if (fdc.nd) {
 						fdc_interrupt();
@@ -1484,7 +1544,14 @@ void fdc_reset(void) {
 	fdc.headlastactive = -1;
 #endif
 #if defined(SUPPORT_PC88VA)
-	fdc.fddifmode = 0;
+	if (pccore.model_va == PCMODEL_NOTVA) {
+		// 98
+		fdc.fddifmode = 1;	// DMA mode
+	}
+	else {
+		// VA
+		fdc.fddifmode = 0;	// Intelligent mode
+	}
 #endif
 }
 

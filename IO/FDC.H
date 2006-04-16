@@ -7,7 +7,15 @@ enum {
 	FDCEVENT_BUFSEND,
 	FDCEVENT_BUFSEND2,
 	FDCEVENT_NEXTDATA,
-	FDCEVENT_BUSY
+	FDCEVENT_BUSY,
+#if defined(VAEG_FIX)
+	FDCEVENT_FIRSTDATA,
+	FDCEVENT_STARTBUFSEND2,
+	FDCEVENT_FIRSTSTARTBUFSEND2,
+	FDCEVENT_STARTBUFRECV,
+	FDCEVENT_FIRSTSTARTBUFRECV,
+	FDCEVENT_TC,
+#endif
 };
 
 enum {
@@ -102,6 +110,14 @@ typedef struct {
 	int		bufp;
 	int		bufcnt;
 
+#if defined(VAEG_FIX)
+	UINT8	tcreserved;
+	//UINT8	lastwritedata;
+	UINT8	rqm;
+	SINT32	rqmlastclock;
+	SINT32	rqminterval;
+	int		priampcnt;
+#endif
 #if defined(VAEG_EXT)
 	SINT32	drqlastclock;
 	SINT32	drqinterval;

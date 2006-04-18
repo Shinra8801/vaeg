@@ -352,7 +352,7 @@ REG8 DMACCALL fdc_dmafunc(REG8 func) {
 #endif
 			break;
 
-#if defined(VAEG_EXT)
+#if defined(VAEG_FIX)
 		case DMAEXT_DRQ: 
 			return fdc.rqm ? 0 : 1;
 /*@@@@@@@@@@
@@ -397,12 +397,10 @@ static void fdc_dmaready(REG8 enable) {
 
 void fdcsend_error7(void) {
 
-	fdc.tc = 0;
-#if defined(SUPPORT_PC88VA)
-//	fdc.tcacceptable = FALSE;
-#endif
 #if defined(VAEG_FIX)
 	stop_executionphase();
+#else
+	fdc.tc = 0;
 #endif
 	fdc.event = FDCEVENT_BUFSEND;
 	fdc.bufp = 0;
@@ -433,12 +431,10 @@ void fdcsend_error7(void) {
 
 void fdcsend_success7(void) {
 
-	fdc.tc = 0;
-#if defined(SUPPORT_PC88VA)
-//	fdc.tcacceptable = FALSE;
-#endif
 #if defined(VAEG_FIX)
 	stop_executionphase();
+#else
+	fdc.tc = 0;
 #endif
 	fdc.event = FDCEVENT_BUFSEND;
 	fdc.bufp = 0;
@@ -1029,14 +1025,27 @@ static void FDC_WriteID(void) {							// cmd: 0d
 			fdc.d = fdc.cmds[4];
 			if (FDC_DriveCheck(TRUE)) {
 //				TRACE_("FDC_WriteID FDC_DriveCheck", 0);
-#if defined(VAEG_EXT)
-				activate_head();
-#endif
 				if (fdd_formatinit()) {
 //					TRACE_("FDC_WriteID fdd_formatinit", 0);
 					fdcsend_error7();
 					break;
 				}
+#if defined(VAEG_FIX)
+
+				start_executionphase();
+				fdc.event = FDCEVENT_FIRSTSTARTBUFRECV;
+				fdc.status = FDCSTAT_NDM | FDCSTAT_CB;
+				if (!fdc.nd) {
+					// DMA
+					fdc_dmaready(1);
+					dmac_check();
+				}
+#if defined(VAEG_EXT)
+				activate_head();
+#endif
+
+#else
+				
 //				TRACE_("FDC_WriteID FDCEVENT_BUFRECV", 0);
 				fdc.event = FDCEVENT_BUFRECV;
 				fdc.bufcnt = 4;
@@ -1049,27 +1058,46 @@ static void FDC_WriteID(void) {							// cmd: 0d
 #else
 				fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
-#if defined(VAEG_FIX)
-				if (fdc.nd) {
-					fdc_interrupt();
-				}
-				else {
-					// DMA
-					fdc_dmaready(1);
-					dmac_check();
-				}
-#else
 				fdc_dmaready(1);
 				dmac_check();
+#if defined(VAEG_EXT)
+				activate_head();
+#endif
+
 #endif
 			}
 			break;
+
+
+#if defined(VAEG_FIX)
+		case FDCEVENT_FIRSTSTARTBUFRECV:
+		case FDCEVENT_STARTBUFRECV:
+			fdc.event = FDCEVENT_BUFRECV;
+			fdc.bufcnt = 4;
+			fdc.bufp = 0;
+			break;
+
+
+#endif
+
 
 		case FDCEVENT_BUFRECV:
 			if (fdd_formating(fdc.buf)) {
 				fdcsend_error7();
 				break;
 			}
+#if defined(VAEG_FIX)
+			if (!fdd_isformating()) {
+				fdcsend_success7();
+				break;
+			}
+
+			fdc.event = FDCEVENT_STARTBUFRECV;
+			fdc.bufp = 0;
+			break;
+
+#else
+
 			if ((fdc.tc) || (!fdd_isformating())) {
 				fdcsend_success7();
 				return;
@@ -1085,17 +1113,15 @@ static void FDC_WriteID(void) {							// cmd: 0d
 #else
 			fdc.status = FDCSTAT_RQM | FDCSTAT_NDM | FDCSTAT_CB;
 #endif
-#if defined(VAEG_FIX)
-			if (fdc.nd) {
-				fdc_interrupt();
-			}
-			else {
-				// DMA
-				fdc_dmaready(1);
-				dmac_check();
-			}
-#endif
 			break;
+#endif	/* VAEG_FIX */
+
+
+#if defined(VAEG_FIX)
+		case FDCEVENT_TC:
+			fdcsend_success7();
+			break;
+#endif
 
 		default:
 			fdc.event = FDCEVENT_NEUTRAL;
@@ -1371,6 +1397,7 @@ static void update_executionphase(void) {
 #endif
 
 // --------------------------------------------------------------------------
+// TC
 
 #if defined(VAEG_FIX)
 
@@ -1899,13 +1926,6 @@ void fdcsubsys_odrvctrl(BYTE dat) {
 
 void fdcsubsys_otc(void) {
 	settc();
-/*@@@@@@
-	if (fdc.tcacceptable) {
-		fdc.tc = 1;
-		//@@@@@@@@ R ‚ð +1 ‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢‚Í‚¸
-		fdcsend_success7();
-	}
-*/
 }
 
 // ---- I/F

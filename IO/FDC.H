@@ -91,7 +91,11 @@ typedef struct {
 	UINT8	status;
 	UINT8	intreq;
 	UINT8	lastdata;
+#if defined(VAEG_FIX)
+	UINT8	dummy;
+#else
 	UINT8	tc;
+#endif
 
 	UINT8	crcn;
 	UINT8	ctrlreg;
@@ -112,7 +116,6 @@ typedef struct {
 
 #if defined(VAEG_FIX)
 	UINT8	tcreserved;
-	//UINT8	lastwritedata;
 	UINT8	rqm;
 	SINT32	rqmlastclock;
 	SINT32	rqminterval;
@@ -133,7 +136,6 @@ typedef struct {
 #if defined(SUPPORT_PC88VA)
 	UINT8	fddifmode;			// 1B0h FDDインタフェースモード
 								//      0..インテリジェント 1..DMA
-	BOOL	tcacceptable;		// TC信号を受け入れ可能か
 #endif
 
 	UINT8	cmd;

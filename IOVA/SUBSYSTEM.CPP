@@ -195,14 +195,14 @@ uint IFCALL Subsystem::In(uint port) {
 
 	switch(port) {
 	case 0xf8:
-		fdcsubsys_otc();
+		fdcsubsys_o_tc();
 		ret = 0xff;
 		break;
 	case 0xfa:
-		ret = fdcsubsys_ifdc0();
+		ret = fdcsubsys_i_fdc0();
 		break;
 	case 0xfb:
-		ret = fdcsubsys_ifdc1();
+		ret = fdcsubsys_i_fdc1();
 		break;
 	case 0xfc:
 		ret = i8255_inporta(&i8255cfg);
@@ -233,13 +233,13 @@ void IFCALL Subsystem::Out(uint port, uint dat) {
 		intopcode = dat;
 		break;
 	case 0xf4:
-		fdcsubsys_odrvctrl(dat);
+		fdcsubsys_o_dskctl(dat);
 		break;
 	case 0xf8:
-		fdcsubsys_omotor(dat);
+		fdcsubsys_o_mtrctl(dat);
 		break;
 	case 0xfb:
-		fdcsubsys_ofdc1(dat);
+		fdcsubsys_o_fdc1(dat);
 		break;
 	case 0xfc:
 		i8255_outporta(&i8255cfg, dat);

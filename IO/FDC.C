@@ -65,7 +65,7 @@ static void update_head(void) {
 	SINT32 now;
 	SINT32 d;
 
-	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+	now = getnow();
 
 	// TODO: 供給クロックが4MHzの場合と8MHzの場合とで、hlt/srt/hutの
 	//		 あらわす時間が異なるかもしれないので、それに対応。
@@ -76,7 +76,6 @@ static void update_head(void) {
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_STABLE;
 			fdc.headlastclock += d;
-			fdc.drqlastclock = fdc.headlastclock;
 		}
 		break;
 	case FDD_HEAD_IDLE:
@@ -93,7 +92,7 @@ static void update_head(void) {
 static void activate_head(void) {
 	SINT32 now;
 
-	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+	now = getnow();
 
 	if (fdc.headlastactive == fdc.us) {
 		switch (fdc.head) {
@@ -117,7 +116,7 @@ static void activate_head(void) {
 static void deactivate_head(void) {
 	SINT32 now;
 
-	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+	now = getnow();
 
 	if (fdc.headlastactive == fdc.us) {
 		switch (fdc.head) {
@@ -315,33 +314,10 @@ static void fdc_resetirq(void) {
 // DMA 
 
 REG8 DMACCALL fdc_dmafunc(REG8 func) {
-#if defined(VAEG_EXT)
-	SINT32 now;
-
-	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
-#endif
-
 	//TRACEOUT(("fdc_dmafunc = %d", func));
 
 	switch(func) {
 		case DMAEXT_START:
-/*@@@@@@@@@@@@@@
-#if defined(VAEG_EXT)
-			{
-				int rpm;
-				int tracklen;
-				fdc.drqlastclock = now;
-				switch(CTRL_FDMEDIA[fdc.us]) {
-				// TODO: 2DD/2Dの場合
-				default: // 2HD
-					rpm = 360;
-					tracklen = 1024 * 8;	// DOSのフォーマットで代表させる
-					break;
-				}
-				fdc.drqinterval = pccore.realclock * 60 / (tracklen * rpm);
-			}
-#endif
-*/
 			return(1);
 
 		case DMAEXT_END:				// TC
@@ -355,23 +331,6 @@ REG8 DMACCALL fdc_dmafunc(REG8 func) {
 #if defined(VAEG_FIX)
 		case DMAEXT_DRQ: 
 			return fdc.rqm ? 0 : 1;
-/*@@@@@@@@@@
-			{
-				update_head();
-				if (fdc.head == FDD_HEAD_STABLE) {
-					if (now - fdc.drqlastclock < fdc.drqinterval) {
-						return 1;	// not ready
-					}
-					else {
-						fdc.drqlastclock += fdc.drqinterval;
-						return 0;
-					}
-				}
-				else {
-					return 1;	// not ready
-				}
-			}
-*/
 #endif
 	}
 	return(0);
@@ -1277,30 +1236,7 @@ static void update_executionphase_read(void){
 	now = getnow();
 	d = now - fdc.rqmlastclock;
 	if (!fdc.rqm && d >= fdc.rqminterval) {
-/*
-		if (fdc.bufcnt) {
-#if defined(VAEG_EXT)
-			if (fdc.head == FDD_HEAD_STABLE) {
-#endif
-				fdc.lastdata = fdc.buf[fdc.bufp++];
-				fdc.bufcnt--;
-				setrqm();
-#if defined(VAEG_EXT)
-			}
-#endif
-		}
-		else {
-			// 読み込み済みのデータはない
-			// 次のデータを読む
-			if (fdc.event == FDCEVENT_STARTBUFSEND2) {
-				fdc.event = FDCEVENT_FIRSTDATA;
-			}
-			else {
-				fdc.event = FDCEVENT_NEXTDATA;
-			}
-			FDC_Ope[fdc.cmd & 0x1f]();
-		}
-*/
+
 #if defined(VAEG_EXT)
 		if (fdc.head == FDD_HEAD_STABLE) {
 #endif
@@ -1361,15 +1297,7 @@ static void update_executionphase_write(void){
 				setrqm();
 				break;
 			}
-/*
-			if (fdc.event == FDCEVENT_FIRSTSTARTBUFRECV ||
-				fdc.event == FDCEVENT_STARTBUFRECV) {
-					FDC_Ope[fdc.cmd & 0x1f]();
-			}
-			if (fdc.event == FDCEVENT_BUFRECV) {
-				setrqm();
-			}
-*/
+
 #if defined(VAEG_EXT)
 		}
 		else {
@@ -1424,6 +1352,7 @@ void settc(void) {
 #endif
 
 // --------------------------------------------------------------------------
+// FDC data port read/write
 
 static void fdcstatusreset(void) {
 
@@ -1432,9 +1361,7 @@ static void fdcstatusreset(void) {
 }
 
 void DMACCALL fdc_datawrite(REG8 data) {
-#if defined(VAEG_EXT)
-		update_head();
-#endif
+
 #if defined(VAEG_FIX)
 		fdc_resetirq();
 #endif
@@ -1501,9 +1428,7 @@ void DMACCALL fdc_datawrite(REG8 data) {
 }
 
 REG8 DMACCALL fdc_dataread(void) {
-#if defined(VAEG_EXT)
-		update_head();
-#endif
+
 #if defined(VAEG_FIX)
 		fdc_resetirq();
 #endif
@@ -1520,7 +1445,6 @@ REG8 DMACCALL fdc_dataread(void) {
 				break;
 
 #if defined(VAEG_FIX)
-//@@@@@@@@@@@@@@@@@@@@@
 			case FDCEVENT_BUFSEND2:
 				if (fdc.rqm) {
 					resetrqm();
@@ -1547,30 +1471,11 @@ REG8 DMACCALL fdc_dataread(void) {
 				if (fdc.tc) {
 					if (!fdc.bufcnt) {						// ver0.26
 						fdc.R++;
-#if defined(VAEG_FIX)
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
-							/* ToDo:
-								fdd_seeksectorがfalseを返した場合のみ
-								以下の処理をする、というのは正しいのか？
-								fdc.cmd bit7=1のときのみ fdd_seeksectorをする、
-								というのは正しいのか？
-							*/
-							fdc.C += fdc.hd;
-							fdc.H = fdc.hd ^ 1;
-							fdc.R = 1;
-						}
-						else {
-							fdc.R--;	// inc_fdcRの中で+1するので。
-							inc_fdcR();
-						}
-#else
 						if ((fdc.cmd & 0x80) && fdd_seeksector()) {
 							fdc.C += fdc.hd;
 							fdc.H = fdc.hd ^ 1;
 							fdc.R = 1;
 						}
-#endif
 					}
 					fdcsend_success7();
 				}
@@ -1579,15 +1484,8 @@ REG8 DMACCALL fdc_dataread(void) {
 					fdc.status &= ~(FDCSTAT_RQM | FDCSTAT_NDM);
 					FDC_Ope[fdc.cmd & 0x1f]();
 				}
-#if defined(VAEG_FIX)
-				else {
-					if (fdc.nd) {
-						fdc_interrupt();
-					}
-				}
-#endif
 				break;
-#endif
+#endif /* VAEG_FIX */
 		}
 //	}
 #if defined(VAEG_FIX)
@@ -1599,14 +1497,16 @@ REG8 DMACCALL fdc_dataread(void) {
 	return(fdc.lastdata);
 }
 
-#if defined(VAEG_EXT)
+#if defined(VAEG_FIX)
 // --------------------------------------------------------------------------
 // State watch timer
 
 static void start_statewatch(void);
 
 void fdc_statewatch(NEVENTITEM item) {
+#if defined(VAEG_EXT)
 	update_head();
+#endif
 	update_executionphase();
 	
 	start_statewatch();
@@ -1620,6 +1520,9 @@ static void stop_statewatch(void) {
 	nevent_reset(NEVENT_FDCSTATE);
 }
 
+#endif
+
+#if defined(VAEG_EXT)
 // --------------------------------------------------------------------------
 // FDC timer
 
@@ -1651,13 +1554,6 @@ void fdc_fddmotor(NEVENTITEM item) {
 
 // ---- I/O
 
-#if defined(SUPPORT_PC88VA)
-static void IOOUTCALL fdcva_o1b0(UINT port, REG8 dat) {
-	fdc.fddifmode = dat & 1;
-}
-#endif
-
-
 static void IOOUTCALL fdc_o92(UINT port, REG8 dat) {
 
 //	TRACEOUT(("fdc out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
@@ -1687,7 +1583,7 @@ static void IOOUTCALL fdc_o94(UINT port, REG8 dat) {
 
 #if defined(SUPPORT_PC88VA)
 
-static void IOOUTCALL fdcva_o1ba(UINT port, REG8 dat) {
+static void IOOUTCALL fdcva_o_fdc1(UINT port, REG8 dat) {
 
 //	TRACEOUT(("fdc out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
 
@@ -1696,7 +1592,7 @@ static void IOOUTCALL fdcva_o1ba(UINT port, REG8 dat) {
 	}
 }
 
-static void IOOUTCALL fdcva_o1b6(UINT port, REG8 dat) {
+static void IOOUTCALL fdcva_o_dskmisc(UINT port, REG8 dat) {
 
 //	TRACEOUT(("fdc out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
 
@@ -1764,7 +1660,7 @@ static REG8 IOINPCALL fdc_i94(UINT port) {
 
 #if defined(SUPPORT_PC88VA)
 
-static REG8 IOINPCALL fdcva_i1b8(UINT port) {
+static REG8 IOINPCALL fdcva_i_fdc0(UINT port) {
 #if defined(VAEG_EXT)
 	fdc.status = fdc.status & 0xf0 | fdbusybits();
 #endif
@@ -1775,7 +1671,7 @@ static REG8 IOINPCALL fdcva_i1b8(UINT port) {
 	return(fdc.status);
 }
 
-static REG8 IOINPCALL fdcva_i1ba(UINT port) {
+static REG8 IOINPCALL fdcva_i_fdc1(UINT port) {
 
 	REG8	ret;
 
@@ -1790,7 +1686,7 @@ static REG8 IOINPCALL fdcva_i1ba(UINT port) {
 	return(ret);
 }
 
-static REG8 IOINPCALL fdcva_i1b6(UINT port) {
+static REG8 IOINPCALL fdcva_i_dskmisc(UINT port) {
 	REG8	ret;
 
 	ret = 0xa6 | 0x10;			// 常にready
@@ -1837,7 +1733,7 @@ static REG8 IOINPCALL fdc_ibe(UINT port) {
 
 #if defined(SUPPORT_PC88VA)
 
-static void IOOUTCALL fdcva_o1b2(UINT port, REG8 dat) {
+static void IOOUTCALL fdcva_o_dskctl(UINT port, REG8 dat) {
 /*
 	ToDo:
 	ドライブのモードにあわせて CTRL_FDMEDIA を切り替える必要があるが、
@@ -1877,7 +1773,7 @@ static REG8 IOINPCALL fdc_i4be(UINT port) {
 
 #if defined(SUPPORT_PC88VA)
 
-static void IOOUTCALL fdcva_o1b4(UINT port, REG8 dat) {
+static void IOOUTCALL fdcva_o_mtrctl(UINT port, REG8 dat) {
 //	TRACEOUT(("fdcva: out %.2x %.2x [%.4x:%.4x]", port, dat, CPU_CS, CPU_IP));
 
 	// TODO: ドライブ1と2のモーターを区別せず駆動している。
@@ -1902,31 +1798,73 @@ static void IOOUTCALL fdcva_o1b4(UINT port, REG8 dat) {
 }
 #endif
 
+// ---- for PC-88VA Main System
+
+#if defined(SUPPORT_PC88VA)
+
+static void IOOUTCALL fdcva_o1b0(UINT port, REG8 dat) {
+	fdc.fddifmode = dat & 1;
+}
+
+static void IOOUTCALL fdcva_o1b2(UINT port, REG8 dat) {
+	fdcva_o_dskctl(port, dat);
+}
+
+static void IOOUTCALL fdcva_o1b4(UINT port, REG8 dat) {
+	fdcva_o_mtrctl(port, dat);
+}
+
+static void IOOUTCALL fdcva_o1b6(UINT port, REG8 dat) {
+	fdcva_o_dskmisc(port, dat);
+}
+
+static void IOOUTCALL fdcva_o1ba(UINT port, REG8 dat) {
+	fdcva_o_fdc1(port, dat);
+}
+
+static REG8 IOINPCALL fdcva_i1b6(UINT port) {
+	return fdcva_i_dskmisc(port);
+}
+
+static REG8 IOINPCALL fdcva_i1b8(UINT port) {
+	return fdcva_i_fdc0(port);
+}
+
+static REG8 IOINPCALL fdcva_i1ba(UINT port) {
+	return fdcva_i_fdc1(port);
+}
+
+#endif
+
 // ---- for FD Sub System
 
-BYTE fdcsubsys_ifdc0(void) {
-	return fdcva_i1b8(0);
+#if defined(SUPPORT_PC88VA)
+
+BYTE fdcsubsys_i_fdc0(void) {
+	return fdcva_i_fdc0(0);
 }
 
-BYTE fdcsubsys_ifdc1(void) {
-	return fdcva_i1ba(0);
+BYTE fdcsubsys_i_fdc1(void) {
+	return fdcva_i_fdc1(0);
 }
 
-void fdcsubsys_ofdc1(BYTE dat) {
-	fdcva_o1ba(0, dat);
+void fdcsubsys_o_fdc1(BYTE dat) {
+	fdcva_o_fdc1(0, dat);
 }
 
-void fdcsubsys_omotor(BYTE dat) {
-	fdcva_o1b4(0, dat);
+void fdcsubsys_o_mtrctl(BYTE dat) {
+	fdcva_o_mtrctl(0, dat);
 }
 
-void fdcsubsys_odrvctrl(BYTE dat) {
-	fdcva_o1b2(0, dat);
+void fdcsubsys_o_dskctl(BYTE dat) {
+	fdcva_o_dskctl(0, dat);
 }
 
-void fdcsubsys_otc(void) {
+void fdcsubsys_o_tc(void) {
 	settc();
 }
+
+#endif
 
 // ---- I/F
 

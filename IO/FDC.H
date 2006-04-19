@@ -122,8 +122,6 @@ typedef struct {
 	int		priampcnt;
 #endif
 #if defined(VAEG_EXT)
-	SINT32	drqlastclock;
-	SINT32	drqinterval;
 	UINT8	motor[4];
 	SINT32	headlastclock;
 	UINT8	head;				// ÉwÉbÉhÇÃèÛë‘
@@ -158,6 +156,9 @@ void fdc_timer(NEVENTITEM item);
 void fdc_fddmotor(NEVENTITEM item);
 void fdc_stepwait(NEVENTITEM item);
 #endif
+#if defined(VAEG_FIX)
+void fdc_statewatch(NEVENTITEM item);
+#endif
 
 void fdc_interrupt(void);
 
@@ -172,12 +173,12 @@ void fdc_reset(void);
 void fdc_bind(void);
 
 #if defined(SUPPORT_PC88VA)
-BYTE fdcsubsys_ifdc0(void);
-BYTE fdcsubsys_ifdc1(void);
-void fdcsubsys_ofdc1(BYTE dat);
-void fdcsubsys_omotor(BYTE dat);
-void fdcsubsys_odrvctrl(BYTE dat);
-void fdcsubsys_otc(void);
+BYTE fdcsubsys_i_fdc0(void);
+BYTE fdcsubsys_i_fdc1(void);
+void fdcsubsys_o_fdc1(BYTE dat);
+void fdcsubsys_o_mtrctl(BYTE dat);
+void fdcsubsys_o_dskctl(BYTE dat);
+void fdcsubsys_o_tc(void);
 #endif
 
 #ifdef __cplusplus

@@ -61,6 +61,9 @@ static const PROCTBL evtproc[] = {
 			{PROCID('e','f','m','o'), fdc_fddmotor},
 			{PROCID('e','f','s','w'), fdc_stepwait},
 #endif
+#if defined(VAEG_FIX)
+			{PROCID('e','f','s','t'), fdc_statewatch},
+#endif
 };
 
 static const ENUMTBL evtnum[] = {

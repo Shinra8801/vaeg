@@ -53,7 +53,6 @@
 #include	"tsp.h"
 #include	"sgp.h"
 #include	"videova.h"
-#include	"subsystem.h"
 #include	"subsystemmx.h"
 #endif
 
@@ -264,7 +263,6 @@ void pccore_init(void) {
 	maketextva_initialize();
 	makesprva_initialize();
 	makegrphva_initialize();
-	subsystem_initialize();
 	subsystemmx_initialize();
 #endif
 	dispsync_initialize();
@@ -394,12 +392,6 @@ void pccore_reset(void) {
 	if (sxsi_isscsi()) {
 		pccore.hddif |= PCHDD_SCSI;
 		TRACEOUT(("supported SCSI"));
-	}
-#endif
-
-#if defined(SUPPORT_PC88VA)
-	if (pccore.model_va != PCMODEL_NOTVA) {
-		subsystem_reset();
 	}
 #endif
 
@@ -1023,7 +1015,7 @@ void pccore_exec(BOOL draw) {
 			}
 #if defined(SUPPORT_PC88VA)
 			if (pccore.model_va != PCMODEL_NOTVA) {
-				subsystem_exec();
+				subsystemmx_exec();
 				sgp_step();
 			}
 #endif
@@ -1097,7 +1089,7 @@ void pccore_exec(BOOL draw) {
 			}
 #if defined(SUPPORT_PC88VA)
 			if (pccore.model_va != PCMODEL_NOTVA) {
-				subsystem_exec();
+				subsystemmx_exec();
 				sgp_step();
 			}
 #endif

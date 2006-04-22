@@ -1,11 +1,11 @@
 
 #if defined(SUPPORT_PC88VA)
 
-#define		NP2STATUS_VERSION		0x051126
+#define		NP2STATUS_VERSION		0x060422
 
 static const NP2FHDR np2flagdef = {
 						"VA-EG",
-						"create by VAEG.EXE",
+						"created by VAEG.EXE",
 						NP2STATUS_VERSION};
 
 #else
@@ -88,6 +88,14 @@ static const ENUMTBL evtnum[] = {
 			{PROCID('p','c','m','8'), NEVENT_86PCM},
 			{PROCID('s','a','s','i'), NEVENT_SASIIO},
 			{PROCID('s','c','s','i'), NEVENT_SCSIIO},
+#if defined(VAEG_EXT)
+			{PROCID('f','t','i','m'), NEVENT_FDCTIMER},
+			{PROCID('f','m','t','r'), NEVENT_FDDMOTOR},
+			{PROCID('f','s','t','p'), NEVENT_FDCSTEPWAIT},
+#endif
+#if defined(VAEG_FIX)
+			{PROCID('f','s','t','w'), NEVENT_FDCSTATE},
+#endif
 };
 
 static const PROCTBL dmaproc[] = {
@@ -192,6 +200,9 @@ static const SFENTRY np2tbl[] = {
 	{"CGROMVA",		0,	STATFLAG_BIN,	&cgromva,		sizeof(cgromva)},
 	{"SGP",			0,	STATFLAG_BIN,	&sgp,			sizeof(sgp)},
 	{"MOUSEVA",		0,	STATFLAG_BIN,	&mouseifva,		sizeof(mouseifva)},
+	{"SUBSYSIF",	0,	STATFLAG_BIN,	&subsystemif,	sizeof(subsystemif)},
+	{"SUBSYS",		0,	STATFLAG_BIN,	&subsystem,		sizeof(subsystem)},
+	{"SUBCPU",		0,	STATFLAG_SUBCPU,NULL,			0},
 #endif
 	{"TERMINATE",	0,	STATFLAG_TERM,	NULL,			0}};
 

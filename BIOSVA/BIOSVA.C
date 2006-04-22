@@ -65,7 +65,7 @@ void biosva_initialize(void) {
 	getbiospath(path, VASUBSYSROM, sizeof(path));
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
-		success = (file_read(fh, subsystem_getrombuf(), 0x2000) == 0x2000);
+		success = (file_read(fh, subsystem.rom, 0x2000) == 0x2000);
 		file_close(fh);
 	}
 

@@ -194,7 +194,7 @@ void viewsubasm_init(NP2VIEW_T *dst, NP2VIEW_T *src) {
 		}
 	}
 	if (!src) {
-		dst->off = subsystem_getcpuregs()->pc;
+		dst->off = subsystem_getcpureg()->pc;
 	}
 	dst->type = VIEWMODE_SUBASM;
 	dst->maxline = 256;

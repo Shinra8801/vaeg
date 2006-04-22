@@ -45,6 +45,8 @@
 #include	"gactrlva.h"
 #include	"sgp.h"
 #include	"mouseifva.h"
+#include	"subsystemif.h"
+#include	"subsystem.h"
 #endif
 
 #if defined(MACOS)
@@ -89,6 +91,9 @@ enum {
 	STATFLAG_MEM,
 #if defined(SUPPORT_BMS)
 	STATFLAG_BMS,
+#endif
+#if defined(SUPPORT_PC88VA)
+	STATFLAG_SUBCPU,
 #endif
 };
 
@@ -1225,6 +1230,44 @@ static int flagload_bms(STFLAGH sfh, const SFENTRY *tbl) {
 
 #endif
 
+// ---- FD sub system CPU
+
+#if defined(SUPPORT_PC88VA)
+
+static int flagsave_subsystemcpu(STFLAGH sfh, const SFENTRY *tbl) {
+	UINT bufsize;
+	UINT8 *buf;
+	int ret;
+
+	bufsize = subsystem_getcpustatussize();
+	buf = (UINT8 *)_MALLOC(bufsize, "SUBCPUSTS");
+	if (!buf) return STATFLAG_FAILURE;
+
+	subsystem_savecpustatus(buf);
+	ret = statflag_write(sfh, buf, bufsize);
+	_MFREE(buf);
+
+	return(ret);
+}
+
+static int flagload_subsystemcpu(STFLAGH sfh, const SFENTRY *tbl) {
+	UINT bufsize;
+	UINT8 *buf;
+	int ret;
+
+	bufsize = subsystem_getcpustatussize();
+	buf = (UINT8 *)_MALLOC(bufsize, "SUBCPUSTS");
+	if (!buf) return STATFLAG_FAILURE;
+
+	ret = statflag_read(sfh, buf, bufsize);
+	subsystem_loadcpustatus(buf);
+	_MFREE(buf);
+
+	return(ret);
+}
+
+#endif
+
 // ----
 
 static int flagcheck_versize(STFLAGH sfh, const SFENTRY *tbl) {
@@ -1328,6 +1371,12 @@ const SFENTRY	*tblterm;
 				ret |= flagsave_bms(&sffh->sfh, tbl);
 				break;
 #endif
+
+#if defined(SUPPORT_PC88VA)
+			case STATFLAG_SUBCPU:
+				ret |= flagsave_subsystemcpu(&sffh->sfh, tbl);
+				break;
+#endif
 		}
 		tbl++;
 	}
@@ -1389,6 +1438,9 @@ const SFENTRY	*tblterm;
 #endif
 #if defined(SUPPORT_BMS)
 				case STATFLAG_BMS:
+#endif
+#if defined(SUPPORT_PC88VA)
+				case STATFLAG_SUBCPU:
 #endif
 					ret |= flagcheck_veronly(&sffh->sfh, tbl);
 					break;
@@ -1526,6 +1578,18 @@ const SFENTRY	*tblterm;
 				case STATFLAG_MEM:
 					ret |= flagload_mem(&sffh->sfh, tbl);
 					break;
+
+#if defined(SUPPORT_BMS)
+				case STATFLAG_BMS:
+					ret |= flagload_bms(&sffh->sfh, tbl);
+					break;
+#endif
+
+#if defined(SUPPORT_PC88VA)
+				case STATFLAG_SUBCPU:
+					ret |= flagload_subsystemcpu(&sffh->sfh, tbl);
+					break;
+#endif
 
 				default:
 					ret |= STATFLAG_WARNING;

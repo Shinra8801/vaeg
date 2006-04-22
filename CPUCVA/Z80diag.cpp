@@ -1,20 +1,17 @@
+/*
+ *	Z80diag.cpp: Z80 Disassembler 
+ */
+
+// Original:
 // ---------------------------------------------------------------------------
 //	Z80 Disassembler
 //	Copyright (C) cisc 1999.
 // ---------------------------------------------------------------------------
-//	$Id: Z80diag.cpp,v 1.2 2006/04/10 05:07:55 shinra Exp $
+//	#Id: z80diag.cpp,v 1.6 2001/02/21 11:57:16 cisc Exp #
 
-#define VAEG	// Shinra
 
-#if defined(VAEG)
 #include "Z80diag.h"
 #include "Z80if.h"
-#else
-#include "headers.h"
-#include "Z80diag.h"
-#include "device_i.h"
-#include "diag.h"
-#endif
 
 
 // ---------------------------------------------------------------------------

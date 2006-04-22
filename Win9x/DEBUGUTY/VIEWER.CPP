@@ -310,7 +310,7 @@ static	DWORD	last = 0;
 				}
 #if defined(SUPPORT_PC88VA)
 				else if (view->type == VIEWMODE_SUBASM) {
-					view->off = subsystem_getcpuregs()->pc;
+					view->off = subsystem_getcpureg()->pc;
 					view->pos = 0;
 					viewcmn_setvscroll(view->hwnd, view);
 				}

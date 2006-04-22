@@ -3,6 +3,10 @@
  *
  */
 
+#if !defined(_i8255_h_)
+#define _i8255_h_
+
+
 typedef void (*I8255_busout)(BYTE);
 
 // èÛë‘
@@ -48,3 +52,5 @@ void i8255_businportc(I8255CFG p, BYTE dat);
 }
 #endif
 
+
+#endif	/* _i8255_h_ */

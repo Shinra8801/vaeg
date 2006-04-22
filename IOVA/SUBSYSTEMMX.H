@@ -19,6 +19,7 @@ extern _SUBSYSTEMMXCFG	subsystemmxcfg;
 void subsystemmx_initialize(void);
 void subsystemmx_reset(void);
 void subsystemmx_bind(void);
+void subsystemmx_exec(void);
 
 #ifdef __cplusplus
 }

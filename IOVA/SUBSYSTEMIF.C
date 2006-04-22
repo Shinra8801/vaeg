@@ -13,10 +13,6 @@
 
 #if defined(SUPPORT_PC88VA)
 
-typedef struct {
-	_I8255    i8255;
-} _SUBSYSTEMIF, *SUBSYSTEMIF;
-
 		_SUBSYSTEMIF subsystemif;
 static	_I8255CFG i8255cfg;
 

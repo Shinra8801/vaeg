@@ -3,9 +3,17 @@
  */
 
 
+#include	"i8255.h"
+
+typedef struct {
+	_I8255    i8255;
+} _SUBSYSTEMIF, *SUBSYSTEMIF;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern	_SUBSYSTEMIF subsystemif;
 
 void subsystemif_businporta(BYTE dat);
 void subsystemif_businportc(BYTE dat);

@@ -17,6 +17,10 @@
 
 #if defined(SUPPORT_PC88VA)
 
+static	_I8255CFG i8255cfg;
+		_SUBSYSTEM subsystem;
+
+
 // ---- Clock
 
 class Clock : public IClock
@@ -41,6 +45,22 @@ private:
 	int mul;
 };
 
+// ---- ClockCounter implementation
+
+void ClockCounter::SetMultiple(int _mul) {
+	mul = _mul;
+}
+
+void IFCALL ClockCounter::past(sint32 clock) {
+	remainclock -= clock * mul;
+}
+sint32 IFCALL ClockCounter::GetRemainclock() {
+	return remainclock;
+}
+void IFCALL ClockCounter::SetRemainclock(sint32 clock) {
+	remainclock = clock;
+}
+
 
 // ---- Subsystem
 
@@ -49,8 +69,6 @@ class Subsystem : public IMemoryAccess, public IIOAccess
 public:
 	Subsystem();
 	~Subsystem();
-
-	BYTE *GetRomBuf();
 
 	void Initialize();
 	void Reset();
@@ -82,42 +100,19 @@ private:
 	ClockCounter *clockcounter;
 	Clock *clock;
 
-	BYTE intopcode;		// 割り込みオペコード
-
-	BYTE rom[0x2000];
-	BYTE ram[0x4000];
-
-	_I8255    i8255;
-
 	uint ram_rd(uint addr);
 	uint rom_rd(uint addr);
 	uint nonmem_rd(uint addr);
 	void ram_wt(uint addr, uint data);
 };
 
-static	_I8255CFG i8255cfg;
 
-// ---- ClockCounter implementation
-
-void ClockCounter::SetMultiple(int _mul) {
-	mul = _mul;
-}
-
-void IFCALL ClockCounter::past(sint32 clock) {
-	remainclock -= clock * mul;
-}
-sint32 IFCALL ClockCounter::GetRemainclock() {
-	return remainclock;
-}
-void IFCALL ClockCounter::SetRemainclock(sint32 clock) {
-	remainclock = clock;
-}
 
 
 // ---- Sybsystem implementation
 
 Subsystem::Subsystem() {
-	z80 = new Z80C(DEV_ID('C','P','U','2'));
+	z80 = new Z80C();
 	clockcounter = new ClockCounter();
 	clock = new Clock();
 }
@@ -128,15 +123,15 @@ Subsystem::~Subsystem() {
 	if (clock) delete clock;
 }
 
-BYTE *Subsystem::GetRomBuf() {
-	return rom;
-}
+//BYTE *Subsystem::GetRomBuf() {
+//	return rom;
+//}
 
 void Subsystem::Initialize() {
 	z80->Init(this, this, clock, clockcounter, piac2);
 	//rom[0] = 0xf3;
 	//rom[1] = 0x76;
-	i8255_init(&i8255cfg, &i8255);
+	i8255_init(&i8255cfg, &subsystem.i8255);
 	i8255cfg.busoutportb = subsystemif_businporta;
 	i8255cfg.busoutportc = subsystemif_businportc;
 }
@@ -145,7 +140,7 @@ void Subsystem::Reset() {
 	clockcounter->SetMultiple(pccore.multiple);
 	z80->Reset();
 	i8255_reset(&i8255cfg);
-	intopcode = 0x7f;
+	subsystem.intopcode = 0x7f;
 }
 
 void Subsystem::IRQ(BOOL irq) {
@@ -157,15 +152,15 @@ void Subsystem::Exec() {
 }
 
 uint Subsystem::ram_rd(uint addr) {
-	return ram[addr-0x4000];
+	return subsystem.ram[addr-0x4000];
 }
 
 void Subsystem::ram_wt(uint addr, uint data) {
-	ram[addr-0x4000] = data;
+	subsystem.ram[addr-0x4000] = data;
 }
 
 uint Subsystem::rom_rd(uint addr) {
-	return rom[addr];
+	return subsystem.rom[addr];
 }
 
 uint Subsystem::nonmem_rd(uint addr) {
@@ -217,20 +212,20 @@ uint IFCALL Subsystem::In(uint port) {
 	// 仮想ポート
 	case piac2:
 		// 割り込み受理
-		ret = intopcode;
+		ret = subsystem.intopcode;
 		//z80->IRQ(0,0);
 		break;
 	}
-	if (port != 0xfe) TRACEOUT(("subsys: in : %02x -> %02x  [%04x]", port, ret, z80->reg.pc));
+	if (port != 0xfe) TRACEOUT(("subsys: in : %02x -> %02x  [%04x]", port, ret, z80->GetReg()->pc));
 	return ret;
 }
 
 void IFCALL Subsystem::Out(uint port, uint dat) {
-	TRACEOUT(("subsys: out: %02x <- %02x  [%04x]", port, dat, z80->reg.pc));
+	TRACEOUT(("subsys: out: %02x <- %02x  [%04x]", port, dat, z80->GetReg()->pc));
 
 	switch(port) {
 	case 0xf0:
-		intopcode = dat;
+		subsystem.intopcode = dat;
 		break;
 	case 0xf4:
 		fdcsubsys_o_dskctl(dat);
@@ -262,26 +257,7 @@ void IFCALL Subsystem::Out(uint port, uint dat) {
 	}
 }
 
-
-// ---- C - C++ bridge for Subsystem
-
-	Subsystem subsystem;
-
-void subsystem_initialize(void) {
-	subsystem.Initialize();	
-}
-
-void subsystem_reset(void) {
-	subsystem.Reset();
-}
-
-void subsystem_irq(BOOL irq) {
-	subsystem.IRQ(irq);
-}
-
-void subsystem_exec(void) {
-	subsystem.Exec();
-}
+// ---- Main → Subsystem connection
 
 void subsystem_businporta(BYTE dat) {
 	i8255_businporta(&i8255cfg, dat);
@@ -291,19 +267,48 @@ void subsystem_businportc(BYTE dat) {
 	i8255_businportc(&i8255cfg, (BYTE)(dat >> 4));
 }
 
+// ---- C - C++ bridge for Subsystem
+
+	Subsystem subsystemobj;
+
+void subsystem_initialize(void) {
+	subsystemobj.Initialize();	
+}
+
+void subsystem_reset(void) {
+	subsystemobj.Reset();
+}
+
+void subsystem_irq(BOOL irq) {
+	subsystemobj.IRQ(irq);
+}
+
+void subsystem_exec(void) {
+	subsystemobj.Exec();
+}
+
 BYTE subsystem_readmem(WORD addr) {
-	return subsystem.Read8(addr);
+	return subsystemobj.Read8(addr);
 }
 
-struct Z80Reg *subsystem_getcpuregs(void) {
-	return &subsystem.z80->reg;
-}
-
-BYTE *subsystem_getrombuf(void) {
-	return subsystem.GetRomBuf();
+const struct Z80Reg *subsystem_getcpureg(void) {
+	return subsystemobj.z80->GetReg();
 }
 
 WORD subsystem_disassemble(WORD pc, char *str) {
-	return subsystem.z80->GetDiag()->Disassemble(pc,str);
+	return subsystemobj.z80->GetDiag()->Disassemble(pc,str);
 }
+
+UINT subsystem_getcpustatussize(void) {
+	return subsystemobj.z80->GetStatusSize();
+}
+
+void subsystem_savecpustatus(UINT8 *buf) {
+	subsystemobj.z80->SaveStatus(buf);
+}
+
+void subsystem_loadcpustatus(const UINT8 *buf) {
+	subsystemobj.z80->LoadStatus(buf);
+}
+
 #endif

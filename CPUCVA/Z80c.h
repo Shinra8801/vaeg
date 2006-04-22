@@ -1,26 +1,25 @@
+/*
+ *	Z80c.h: Z80
+ */
+
+// Original:
 // ---------------------------------------------------------------------------
 //	Z80 emulator in C++
 //	Copyright (C) cisc 1997, 1999.
 // ----------------------------------------------------------------------------
-//	$Id: Z80c.h,v 1.2 2006/04/10 05:07:55 shinra Exp $
+//	#Id: Z80c.h,v 1.26 2001/02/21 11:57:16 cisc Exp #
 
-#define VAEG	// Shinra
 
 #ifndef Z80C_h
 #define Z80C_h
 
 #include "types.h"
-//@@@#include "device.h"
-#if defined(VAEG)
 #include "Z80if.h"
-#endif
-//@@@#include "memmgr.h"
 #include "Z80.h"
 #include "Z80diag.h"
 
-class IOBus;
 
-//@@@#define Z80C_STATISTICS
+#define Z80C_STATISTICS
 
 // ----------------------------------------------------------------------------
 //	Z80 Emulator
@@ -30,24 +29,19 @@ class IOBus;
 //	INT
 //	NMI
 //	
-//	bool Init(MemoryManager* mem, IOBus* bus)
+//	bool Init(IMemoryAccess* memory, IIOAccess* bus, IClock* clock, IClockCounter* clockcounter, int iack)
 //	Z80 エミュレータを初期化する
-//	in:		bus		CPU をつなぐ Bus
+//	in:		memory  メモリインタフェース
+//			bus		I/O インタフェース
+//			clock	時刻取得インタフェース
+//			clockcounter	経過時間管理インタフェース
+//			iack	割り込み受理時に読み込む(仮想)I/Oポート
 //	out:			問題なければ true
 //	
-//	uint Exec(uint clk)
-//	指定したクロック分だけ命令を実行する
-//	in:		clk		実行するクロック数
+//	uint Exec()
+//	命令を実行する
 //	out:			実際に実行したクロック数
 //	
-//	int Stop(int clk)
-//	実行残りクロック数を変更する
-//	in:		clk
-//
-//	uint GetCount()
-//	通算実行クロックカウントを取得
-//	out:
-//
 //	void Reset()
 //	Z80 CPU をリセットする
 //
@@ -64,11 +58,8 @@ class IOBus;
 //	in:		wait	止める場合 true
 //					wait 状態の場合 Exec が命令を実行しないようになる
 //
-class Z80C //@@@ : public Device
+class Z80C
 {
-#if defined(VAEG)
-	typedef uint32 ID;
-#endif
 
 public:
 	enum
@@ -87,29 +78,12 @@ public:
 	};
 
 public:
-	Z80C(const ID& id);
+	Z80C();
 	~Z80C();
 	
-//@@@	const Descriptor* IFCALL GetDesc() const { return &descriptor; } 
 	
-#if defined(VAEG)
 	bool Init(IMemoryAccess* memory, IIOAccess* bus, IClock* clock, IClockCounter* clockcounter, int iack);
 	void Exec();
-#else
-	bool Init(MemoryManager* mem, IOBus* bus, int iack);
-
-	int Exec(int count);
-	int ExecOne();
-	static int ExecSingle(Z80C* first, Z80C* second, int count);
-	static int ExecDual(Z80C* first, Z80C* second, int count);
-	static int ExecDual2(Z80C* first, Z80C* second, int count);
-	void Stop(int count);
-	static void StopDual(int count) { if (currentcpu) currentcpu->Stop(count); }
-#endif
-
-	
-	int GetCount();
-//@@@	static int GetCCount() { return currentcpu ? currentcpu->GetCount() - currentcpu->startcount : 0; }
 	
 	void IOCALL Reset(uint=0, uint=0);
 	void IOCALL IRQ(uint, uint d) { intr = d; }
@@ -122,9 +96,8 @@ public:
 	
 	uint GetPC();
 	void SetPC(uint newpc);
-	const Z80Reg& GetReg() { return reg; }
+	const Z80Reg *GetReg() { return &reg; }
 
-//@@@	bool GetPages(MemoryPage** rd, MemoryPage** wr) { *rd = rdpages, *wr = wrpages; return true; }
 	int* GetWaits() { return 0; }
 	
 	void TestIntr();
@@ -134,25 +107,10 @@ public:
 
 	Statistics* GetStatistics();
 
-#if defined(VAEG)
-	const ID& IFCALL GetID() const { return id; }
 	Z80Diag *GetDiag() { return &diag; }
-#endif
 
-	
-#if defined(VAEG)
-public:
-	Z80Reg reg;
-#endif
 
 private:
-	enum
-	{
-//@@@		pagebits = MemoryManagerBase::pagebits,
-//@@@		pagemask = MemoryManagerBase::pagemask,
-//@@@		idbit	 = MemoryManagerBase::idbit
-	};
-
 	enum
 	{
 		ssrev = 1,
@@ -164,56 +122,26 @@ private:
 		uint8 wait;
 		uint8 xf;
 		uint8 rev;
-#if defined(VAEG)
+
 		sint32 remainclock;
 		sint32 lastclock;
-#else
-		int execcount;
-#endif
 	};
 
 	void DumpLog();
 
-#if defined(VAEG)
-	uint inst;			// PC
-#else
-	uint8* inst;		// PC の指すメモリのポインタ，または PC そのもの
-	uint8* instlim;		// inst の有効上限
-	uint8* instbase;	// inst - PC		(PC = inst - instbase)
-	uint8* instpage;
-#endif
-	
-#if !defined(VAEG)
 	Z80Reg reg;
-#endif
+	uint inst;			// PC
 
-#if defined(VAEG)
 	IIOAccess* bus;
-#else
-	IOBus* bus;
-	static const Descriptor descriptor;
-	static const OutFuncPtr outdef[];
-#endif
-	static Z80C* currentcpu;
-	static int cbase;
+	IMemoryAccess* memory;
 
-#if defined(VAEG)
 	IClock *clock;
 	IClockCounter *clockcounter;
 	sint32 lastclock;
-#else
-	int execcount;
-	int clockcount;
-	int stopcount;
-	int delaycount;
-#endif
+
 	int intack;
 	int intr;
 	int waitstate;				// b0:HALT b1:WAIT
-#if !defined(VAEG)
-	int eshift;
-	int startcount;
-#endif
 
 	enum index { USEHL, USEIX, USEIY };
 	index index_mode;						/* HL/IX/IY どれを参照するか */
@@ -230,13 +158,6 @@ private:
 	FILE* dumplog;
 	Z80Diag diag;
 
-#if defined(VAEG)
-	ID id;
-	IMemoryAccess* memory;
-#else
-	MemoryPage rdpages[0x10000 >> MemoryManager::pagebits];
-	MemoryPage wrpages[0x10000 >> MemoryManager::pagebits];
-#endif
 
 #ifdef Z80C_STATISTICS
 	Statistics statistics;
@@ -292,25 +213,12 @@ private:
 };
 
 // ---------------------------------------------------------------------------
-//  クロックカウンタ取得
+//  
 //
-
-#if !defined(VAEG)
-
-inline int Z80C::GetCount()
-{
-	return execcount + (clockcount << eshift);
-}
-
-#endif
 
 inline uint Z80C::GetPC()
 {
-#if defined(VAEG)
 	return inst;
-#else
-	return inst - instbase;
-#endif
 }
 
 
@@ -322,16 +230,6 @@ inline Z80C::Statistics* Z80C::GetStatistics()
 	return 0;
 #endif
 }
-
-// ---------------------------------------------------------------------------
-
-#ifdef ENDIAN_IS_SMALL
- #define DEV_ID(a, b, c, d)		\
-    (Z80C::ID(a + (ulong(b) << 8) + (ulong(c) << 16) + (ulong(d) << 24)))
-#else
- #define DEV_ID(a, b, c, d)		\
-    (Z80C::ID(d + (ulong(c) << 8) + (ulong(b) << 16) + (ulong(a) << 24)))
-#endif
 
 
 #endif // Z80C.h

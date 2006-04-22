@@ -10,10 +10,11 @@
 #include	"subsystemif.h"
 #include	"fdsubsys.h"
 #include	"subsystemmx.h"
+#include	"subsystem.h"
 
 #if defined(SUPPORT_PC88VA)
 
-	_SUBSYSTEMMXCFG subsystemmxcfg = {1};
+	_SUBSYSTEMMXCFG subsystemmxcfg = {0};
 
 // ---- I/F
 
@@ -21,6 +22,7 @@ void subsystemmx_initialize(void) {
 	if (subsystemmxcfg.mockup) {
 	}
 	else {
+		subsystem_initialize();
 		subsystemif_initialize();
 	}
 }
@@ -30,6 +32,7 @@ void subsystemmx_reset(void) {
 		fdsubsys_reset();
 	}
 	else {
+		subsystem_reset();
 		subsystemif_reset();
 	}
 }
@@ -40,6 +43,14 @@ void subsystemmx_bind(void) {
 	}
 	else {
 		subsystemif_bind();
+	}
+}
+
+void subsystemmx_exec(void) {
+	if (subsystemmxcfg.mockup) {
+	}
+	else {
+		subsystem_exec();
 	}
 }
 

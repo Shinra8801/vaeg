@@ -30,13 +30,13 @@ static void viewsubmem_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	hfont = (HFONT)SelectObject(hdc, hfont);
 
 	if (view->lock) {
-		if (view->buf1.type != ALLOCTYPE_1MB) {
-			if (viewcmn_alloc(&view->buf1, 0x10fff0)) {
+		if (view->buf1.type != ALLOCTYPE_SUBMEM) {
+			if (viewcmn_alloc(&view->buf1, 0x10000)) {
 				view->lock = FALSE;
 				viewmenu_lock(view);
 			}
 			else {
-				view->buf1.type = ALLOCTYPE_1MB;
+				view->buf1.type = ALLOCTYPE_SUBMEM;
 				for (x=0; x<0x10000; x++) {
 					((BYTE *)view->buf1.ptr)[x] = subsystem_readmem(x);
 				}

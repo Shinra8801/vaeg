@@ -72,24 +72,24 @@ static void viewsubreg_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	SetTextColor(hdc, 0xffffff);
 	SetBkColor(hdc, 0x400000);
 	hfont = (HFONT)SelectObject(hdc, hfont);
-/*
+
 	if (view->lock) {
-		if (view->buf1.type != ALLOCTYPE_REG) {
-			if (viewcmn_alloc(&view->buf1, sizeof(i286core.s))) {
+		if (view->buf1.type != ALLOCTYPE_SUBREG) {
+			if (viewcmn_alloc(&view->buf1, sizeof(Z80Reg))) {
 				view->lock = FALSE;
 				viewmenu_lock(view);
 			}
 			else {
-				view->buf1.type = ALLOCTYPE_REG;
-				CopyMemory(view->buf1.ptr, &i286core.s, sizeof(i286core.s));
+				view->buf1.type = ALLOCTYPE_SUBREG;
+				CopyMemory(view->buf1.ptr, subsystem_getcpureg(), sizeof(Z80Reg));
 			}
 			viewcmn_putcaption(view);
 		}
 	}
-*/
+
 	pos = view->pos;
 	if (view->lock) {
-//		r = (I286STAT *)view->buf1.ptr;
+		r = (Z80Reg *)view->buf1.ptr;
 	}
 	else {
 		r = subsystem_getcpureg();

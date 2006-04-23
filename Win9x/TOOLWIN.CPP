@@ -583,7 +583,7 @@ const char		*cls;
 
 #if defined(SUPPORT_PC88VA)
 	toolwin.access[0] = CreateSolidBrush(0x405040);
-	toolwin.access[1] = CreateSolidBrush(0x40A0ff);
+	toolwin.access[1] = CreateSolidBrush(0x4080ff);
 #else
 	toolwin.access[0] = CreateSolidBrush(0x000060);
 	toolwin.access[1] = CreateSolidBrush(0x0000ff);

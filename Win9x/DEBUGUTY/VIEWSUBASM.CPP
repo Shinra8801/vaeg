@@ -15,16 +15,9 @@
 static void viewsubasm_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 
 	LONG		y;
-	DWORD		seg4;
 	WORD		off;
-	DWORD		pos;
-	BYTE		*p;
-	BYTE		buf[16];
 	char		str[32];
 	HFONT		hfont;
-	BOOL		opsize;
-	//_UNASM		una;
-	int			step;
 
 	hfont = CreateFont(16, 0, 0, 0, 0, 0, 0, 0, 
 					SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -32,74 +25,7 @@ static void viewsubasm_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	SetTextColor(hdc, 0xffffff);
 	SetBkColor(hdc, 0x400000);
 	hfont = (HFONT)SelectObject(hdc, hfont);
-/*
-	if (view->lock) {
-		if ((view->buf1.type != ALLOCTYPE_SEG) ||
-			(view->buf1.arg != view->seg)) {
-			if (viewcmn_alloc(&view->buf1, 0x10000)) {
-				view->lock = FALSE;
-				viewmenu_lock(view);
-			}
-			else {
-				view->buf1.type = ALLOCTYPE_SEG;
-				view->buf1.arg = view->seg;
-				viewmem_read(&view->dmem, view->buf1.arg << 4,
-											(BYTE *)view->buf1.ptr, 0x10000);
-				view->buf2.type = ALLOCTYPE_NONE;
-			}
-			viewcmn_putcaption(view);
-		}
-	}
-*/
 
-/*
-	seg4 = view->seg << 4;
-	pos = view->pos;
-	if (view->pos) {
-		if ((view->buf2.type != ALLOCTYPE_ASM) ||
-			(view->buf2.arg != (seg4 + view->off))) {
-			if (viewcmn_alloc(&view->buf2, 256*2)) {
-				pos = 0;
-			}
-			else {
-				int i;
-				WORD *r;
-				r = (WORD *)view->buf2.ptr;
-				view->buf2.type = ALLOCTYPE_ASM;
-				view->buf2.arg = seg4 + view->off;
-				off = view->off;
-				for (i=0; i<255; i++) {
-					off &= 0xffff;
-					*r++ = off;
-					if (view->lock) {
-						p = (BYTE *)view->buf1.ptr;
-						p += off;
-						if (off > 0xfff0) {
-							DWORD pos = 0x10000 - off;
-							CopyMemory(buf, p, pos);
-							CopyMemory(buf + pos, view->buf1.ptr, 16 - pos);
-							p = buf;
-						}
-					}
-					else {
-						p = buf;
-						viewmem_read(&(view->dmem), seg4 + off, buf, 16);
-					}
-					step = unasm(NULL, p, 16, FALSE, off);
-					off += (WORD)step;
-				}
-				*r = off;
-			}
-		}
-	}
-
-	if ((pos) && (pos < 256)) {
-		off = *(((WORD *)view->buf2.ptr) + pos);
-	}
-	else {
-		off = view->off;
-	}
-*/
 	off = view->off;
 	if (view->pos) {
 		unsigned int i;
@@ -113,24 +39,7 @@ static void viewsubasm_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 		wsprintf(str, "     %04x", off);
 		TextOut(hdc, 0, y, str, 9);
 		off &= 0xffff;
-/*
-		if (view->lock) {
-			p = (BYTE *)view->buf1.ptr;
-			p += off;
-			if (off > 0xfff0) {
-				DWORD pos = 0x10000 - off;
-				CopyMemory(buf, p, pos);
-				CopyMemory(buf + pos, view->buf1.ptr, 16 - pos);
-				p = buf;
-			}
-		}
-		else {
-*/
-			//p = buf;
-			//viewmem_read(&(view->dmem), seg4 + off, buf, 16);
-/*
-		}
-*/
+
 		off = subsystem_disassemble(off, str);
 		TextOut(hdc, 11 * 8, y, str, strlen(str));
 	}

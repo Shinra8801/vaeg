@@ -48,6 +48,7 @@ static	_GRPHVAWORK	work;
 											// 使用する
 
 #define addr18(scrn, x) ( (x) & ((scrn)->addrmask) | ((scrn)->addrofs) )
+#define issingleplane() (videova.grmode & 0x0400)
 
 static void selectframe(SCREEN screen, int no) {
 	FRAMEBUFFER	f;
@@ -59,8 +60,17 @@ static void selectframe(SCREEN screen, int no) {
 
 	f = &videova.framebuffer[no];
 	screen->framebuffer = f;
-	screen->lineaddr = addr18(screen, f->dsa);
-	screen->wrappedaddr = addr18(screen, f->dsa - f->ofx);
+	if (issingleplane()) {
+		// シングルプレーンモード
+		screen->lineaddr = addr18(screen, f->dsa);
+		screen->wrappedaddr = addr18(screen, f->dsa - f->ofx);
+	}
+	else {
+		// マルチプレーンモード
+		screen->addrofs = (f->fsa & 0x20000L) ? 0x00020000L/4 : 0;
+		screen->lineaddr = addr18(screen, f->dsa/4);
+		screen->wrappedaddr = addr18(screen, f->dsa/4 - f->ofx/4);
+	}
 	if (f->fbl == 0xffff) {
 		// screen 1 (垂直ラップアラウンドなし)
 		screen->vwrapcount = 0;
@@ -110,6 +120,19 @@ static void endraster(SCREEN screen) {
 	else {
 		screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw);
 		screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw);
+	}
+}
+
+static void endraster_m(SCREEN screen) {
+	screen->vwrapcount--;
+	if (screen->vwrapcount == 0) {
+		// 垂直ラップアラウンド
+		screen->wrappedaddr = addr18(screen, screen->framebuffer->fsa/4);
+		screen->lineaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->ofx/4);
+	}
+	else {
+		screen->lineaddr = addr18(screen, screen->lineaddr + screen->framebuffer->fbw/4);
+		screen->wrappedaddr = addr18(screen, screen->wrappedaddr + screen->framebuffer->fbw/4);
 	}
 }
 
@@ -522,6 +545,121 @@ static void drawraster_s16(SCREEN screen) {
 }
 
 
+// マルチプレーン4bit/pixel
+static void drawraster_m4(SCREEN screen) {
+	UINT16		xp;
+	UINT16		wrapcount;
+	UINT32		addr;
+	WORD		*b;
+	DWORD		dd;
+	BYTE		d0, d1, d2, d3;
+	BYTE		fg;
+	UINT16		i;
+
+	addr = screen->lineaddr;
+	b = screen->rasterbuf;
+	if (screen->framebuffer->ofx == 0xffff) {
+		// screen 1 (ラップアラウンドなし)
+		wrapcount = 0;
+	}
+	else {
+		wrapcount = screen->framebuffer->fbw/4 - screen->framebuffer->ofx/4;
+	}
+
+	// フォアグラウンドカラーのパレット番号
+	fg = (videova.pagemsk & 0x0f00) >> 8;
+
+
+	if (screen->r320dots) {
+		// 320 dots
+		dd = ((DWORD)grphmem[addr+0] << 24) | 
+			 ((DWORD)grphmem[addr+1] << 16) | 
+			 ((DWORD)grphmem[addr+2] << 8) | 
+			 grphmem[addr+3];
+		addr = addr18(screen, addr + 4);
+
+		i = screen->framebuffer->dot & 0x1f;
+		dd <<= i;
+		for (; i < 32; i++) {
+			b[0] = b[1] = (dd & 0x80000000L) ? fg : 0;
+			b += 2;
+			dd <<= 1;
+		}
+		for (xp = 0; xp < 320/32; xp++) {
+			wrapcount -= 4;
+			if (wrapcount == 0) {
+				addr = screen->wrappedaddr;
+			}
+
+			dd = ((DWORD)grphmem[addr+0] << 24) | 
+				 ((DWORD)grphmem[addr+1] << 16) | 
+				 ((DWORD)grphmem[addr+2] << 8) | 
+				 grphmem[addr+3];
+			addr = addr18(screen, addr + 4);
+
+			for (i = 0; i < 32; i++) {
+				b[0] = b[1] = (dd & 0x80000000L) ? fg : 0;
+				b += 2;
+				dd <<= 1;
+			}
+		}
+
+
+
+	}
+	else {
+		// 640 dots
+
+		d0 = grphmem[addr];
+		d1 = grphmem[addr + 0x10000];
+		d2 = grphmem[addr + 0x20000];
+		d3 = grphmem[addr + 0x30000];
+		addr = addr18(screen, addr + 1);
+
+		i = screen->framebuffer->dot & 0x07;
+		d0 <<= i;
+		d1 <<= i;
+		d2 <<= i;
+		d3 <<= i;
+		for (; i < 8; i++) {
+			*b++ = ((d0 & 0x80) >> 7) | 
+				   ((d1 & 0x80) >> 6) | 
+				   ((d2 & 0x80) >> 5) | 
+				   ((d3 & 0x80) >> 4);
+			d0 <<= 1;
+			d1 <<= 1;
+			d2 <<= 1;
+			d3 <<= 1;
+		}
+		for (xp = 0; xp < 640/8; xp++) {
+			wrapcount -= 1;
+			if (wrapcount == 0) {
+				addr = screen->wrappedaddr;
+			}
+
+			d0 = grphmem[addr];
+			d1 = grphmem[addr + 0x10000];
+			d2 = grphmem[addr + 0x20000];
+			d3 = grphmem[addr + 0x30000];
+			addr = addr18(screen, addr + 1);
+
+			for (i = 0; i < 8; i++) {
+				*b++ = ((d0 & 0x80) >> 7) | 
+					   ((d1 & 0x80) >> 6) | 
+					   ((d2 & 0x80) >> 5) | 
+					   ((d3 & 0x80) >> 4);
+				d0 <<= 1;
+				d1 <<= 1;
+				d2 <<= 1;
+				d3 <<= 1;
+			}
+		}
+	}
+
+	endraster_m(screen);
+}
+
+
 static void drawraster(SCREEN screen) {
 
 //	if (!screen->r200lines || (work.screeny & 1) == 0) {
@@ -546,7 +684,8 @@ static void drawraster(SCREEN screen) {
 				b = screen->rasterbuf;
 				for (xp = 0; xp < 640; xp++) *b++ = 0;
 			}
-			else {
+			else if (issingleplane()) {
+				// シングルプレーンモード
 				switch (screen->pixelmode) {
 				case 0:
 					drawraster_s1(screen);
@@ -562,11 +701,35 @@ static void drawraster(SCREEN screen) {
 					break;
 				}
 			}
+			else {
+				// マルチプレーンモード
+				switch (screen->pixelmode) {
+				/*
+				case 0:
+					drawraster_m1(screen);
+					break;
+				*/
+				case 1:
+					drawraster_m4(screen);
+					break;
+				default:
+					{
+						// 何も表示しない
+						UINT16		xp;
+						WORD		*b;
+						b = screen->rasterbuf;
+						for (xp = 0; xp < 640; xp++) *b++ = 0;
+					}
+					break;
+				}
+			}
 		}
 		screen->y++;
 
 //	}
 }
+
+
 		
 void makegrphva_initialize(void) {
 }
@@ -584,15 +747,20 @@ void makegrphva_begin(BOOL *scrn200) {
 	work.screen[1].r320dots = videova.grres & 0x1000;
 //	work.screen[0].r200lines = videova.grmode & 0x0002;
 //	work.screen[1].r200lines = videova.grmode & 0x0002;
-	if (videova.grmode & 0x0800)  {
-		// 2画面モード
-		work.screen[0].addrmask = 0x0001ffffL;
+	if (issingleplane()) {
+		if (videova.grmode & 0x0800)  {
+			// 2画面モード
+			work.screen[0].addrmask = 0x0001ffffL;
+		}
+		else {
+			// 1画面モード
+			work.screen[0].addrmask = 0x0003ffffL;
+		}
+		work.screen[0].addrofs  = 0x00000000L;
 	}
 	else {
-		// 1画面モード
-		work.screen[0].addrmask = 0x0003ffffL;
+		work.screen[0].addrmask = 0x0001ffffL/4;
 	}
-	work.screen[0].addrofs  = 0x00000000L;
 	work.screen[1].addrmask = 0x0001ffffL;
 	work.screen[1].addrofs  = 0x00020000L;
 	work.screen[0].nextframebuffer = 0;
@@ -626,33 +794,10 @@ void makegrphva_raster(void) {
 		// シングルプレーンモード
 		drawraster(&work.screen[0]);
 		drawraster(&work.screen[1]);
-		/*
-		switch (videova.grres & 0x0003) {
-		case 0:
-			break;
-		case 1:
-			drawraster(&work.screen[0], videova.grres & 0x0003);
-			break;
-		case 2:
-			break;
-		case 3:
-			break;
-		}
-		switch ((videova.grres >> 8) & 0x0003) {
-		case 0:
-			break;
-		case 1:
-			drawraster(&work.screen[1], (videova.grres >> 8) & 0x0003);
-			break;
-		case 2:
-			break;
-		case 3:
-			break;
-		}
-		*/
 	}
 	else {
 		// マルチプレーンモード
+		drawraster(&work.screen[0]);
 	}
 	
 	work.screeny++;

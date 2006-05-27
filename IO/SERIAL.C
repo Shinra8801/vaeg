@@ -510,5 +510,12 @@ void rs232c_bind(void) {
 
 	iocore_attachsysoutex(0x0030, 0x0cf1, rs232co30, 2);
 	iocore_attachsysinpex(0x0030, 0x0cf1, rs232ci30, 2);
+
+#if defined(SUPPORT_PC88VA)
+	iocoreva_attachout(0x020, rs232c_o30);
+	iocoreva_attachout(0x021, rs232c_o32);
+	iocoreva_attachinp(0x020, rs232c_i30);
+	iocoreva_attachinp(0x021, rs232c_i32);
+#endif
 }
 

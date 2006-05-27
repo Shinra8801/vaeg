@@ -216,7 +216,9 @@ uint IFCALL Subsystem::In(uint port) {
 		//z80->IRQ(0,0);
 		break;
 	}
-	if (port != 0xfe) TRACEOUT(("subsys: in : %02x -> %02x  [%04x]", port, ret, z80->GetReg()->pc));
+	if (port != 0xfe) {
+		TRACEOUT(("subsys: in : %02x -> %02x  [%04x]", port, ret, z80->GetReg()->pc));
+	}
 	return ret;
 }
 

@@ -199,10 +199,9 @@ static void _gvram_wt(UINT32 address, REG8 value) {
 						patternindex = (gactrlva.m.patternwritepointer >> i) & 1;
 						gactrlva.m.pattern[i][patternindex] = mem;
 					}
-		
-					mask >>= 1;
-					address += 0x10000;
 				}
+				mask >>= 1;
+				address += 0x10000;
 			}
 
 			if (gactrlva.m.advancedaccessmode & 0x04) {

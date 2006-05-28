@@ -19,18 +19,22 @@
 
 static void IOOUTCALL gactrlva_o510(UINT port, REG8 dat) {
 	gactrlva.m.accessmode = dat & 0x01;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o512(UINT port, REG8 dat) {
 	gactrlva.m.accessblock = dat & 0x01;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o514(UINT port, REG8 dat) {
 	gactrlva.m.readplane = dat | 0xf0;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o516(UINT port, REG8 dat) {
 	gactrlva.m.writeplane = dat | 0xf0;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o518(UINT port, REG8 dat) {
@@ -42,6 +46,7 @@ static void IOOUTCALL gactrlva_o518(UINT port, REG8 dat) {
 		}
 	}
 	gactrlva.m.advancedaccessmode = dat & 0xbf;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o520(UINT port, REG8 dat) {
@@ -49,11 +54,13 @@ static void IOOUTCALL gactrlva_o520(UINT port, REG8 dat) {
 
 	i = (port >> 1) & 3;
 	gactrlva.m.cmpdata[i] = dat;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o528(UINT port, REG8 dat) {
 	int i;
 
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 	gactrlva.m.cmpdatacontrol = dat & 0x0f;
 	for (i = 0; i < 4; i++) {
 		gactrlva.m.cmpdata[i] = (dat & 1) ? 0xff : 0;
@@ -65,16 +72,38 @@ static void IOOUTCALL gactrlva_o530(UINT port, REG8 dat) {
 	int i;
 
 	i = (port >> 1) & 3;
-	//SETLOWBYTE(gactrlva.m.pattern[i], dat);
 	gactrlva.m.pattern[i][0] = dat;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
+}
+
+static REG8 IOINPCALL gactrlva_i530(UINT port) {
+	int i;
+	REG8 dat;
+
+	i = (port >> 1) & 3;
+	dat = gactrlva.m.pattern[i][0];
+	TRACEOUT(("gactrlva(in) - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
+
+	return dat;
 }
 
 static void IOOUTCALL gactrlva_o540(UINT port, REG8 dat) {
 	int i;
 
 	i = (port >> 1) & 3;
-	//SETHIGHBYTE(gactrlva.m.pattern[i], dat);
 	gactrlva.m.pattern[i][1] = dat;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
+}
+
+static REG8 IOINPCALL gactrlva_i540(UINT port) {
+	int i;
+	REG8 dat;
+
+	i = (port >> 1) & 3;
+	dat = gactrlva.m.pattern[i][1];
+	TRACEOUT(("gactrlva(in) - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
+
+	return dat;
 }
 
 static void IOOUTCALL gactrlva_o550(UINT port, REG8 dat) {
@@ -83,6 +112,7 @@ static void IOOUTCALL gactrlva_o550(UINT port, REG8 dat) {
 		dat = 0;
 	}
 	gactrlva.m.patternreadpointer = dat & 0x0f | 0xf0;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o552(UINT port, REG8 dat) {
@@ -91,6 +121,7 @@ static void IOOUTCALL gactrlva_o552(UINT port, REG8 dat) {
 		dat = 0;
 	}
 	gactrlva.m.patternwritepointer = dat & 0x0f | 0xf0;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 static void IOOUTCALL gactrlva_o560(UINT port, REG8 dat) {
@@ -98,6 +129,7 @@ static void IOOUTCALL gactrlva_o560(UINT port, REG8 dat) {
 
 	i = (port >> 1) & 3;
 	gactrlva.m.rop[i] = dat;
+	TRACEOUT(("gactrlva - %x %x %.4x %.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 
@@ -153,6 +185,9 @@ void gactrlva_bind(void) {
 		iocoreva_attachout(0x530 + i * 2, gactrlva_o530);
 		iocoreva_attachout(0x540 + i * 2, gactrlva_o540);
 		iocoreva_attachout(0x560 + i * 2, gactrlva_o560);
+
+		iocoreva_attachinp(0x530 + i * 2, gactrlva_i530);
+		iocoreva_attachinp(0x540 + i * 2, gactrlva_i540);
 	}
 	iocoreva_attachout(0x580, gactrlva_o580);
 	for (i = 0; i < 2; i++) {

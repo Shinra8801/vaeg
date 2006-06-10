@@ -887,6 +887,8 @@ void sgp_step(void) {
 	UINT32 now;
 	UINT32 past;
 
+	if (!gactrlva.gmsp) return;
+
 	now = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
 	past = now - sgp.lastclock;
 	sgp.remainclock += past;
@@ -917,6 +919,37 @@ void sgp_step(void) {
 }
 
 // ---- I/O
+
+static REG8 IOINPCALL sgp_i_notimpl(UINT port) {
+	REG8 dat;
+
+	if (port & 1) {
+		// high
+		// 実機では必ずしも安定していない
+		if (port == 0x501 || port == 0x503) {
+			dat = 0xff;
+		}
+		else {
+			dat = (port & 0x02) ? 0xfd : 0xff;
+		}
+	}
+	else {
+		// low
+		// 実機では必ずしも安定していない
+		dat = ((port & 0x0f) == 0x0a) ? 0xfa : 0xfe;
+	}
+
+	TRACEOUT(("SGP: read unknown port %x: value=%x cs:ip=%.4x %.4x", port, dat, CPU_CS, CPU_IP));
+
+	return dat;
+}
+
+static REG8 IOINPCALL sgp_i_notactive(UINT port) {
+	REG8 dat;
+
+	dat = ((port & 0x0f) == 0x0a) ? 0xfa : 0xfe;
+	return dat;
+}
 
 /*
 プログラムカウンタ
@@ -950,6 +983,7 @@ static void IOOUTCALL sgp_o504(UINT port, REG8 dat) {
 }
 
 static REG8 IOINPCALL sgp_i504(UINT port) {
+	if (!gactrlva.gmsp) return sgp_i_notactive(port);
 	return sgp.ctrl;
 }
 
@@ -972,8 +1006,18 @@ static void IOOUTCALL sgp_o506(UINT port, REG8 dat) {
 ステータス読み出し
 */
 static REG8 IOINPCALL sgp_i506(UINT port) {
+	if (!gactrlva.gmsp) return sgp_i_notactive(port);
 //	TRACEOUT(("SGP: read status: %02x", sgp.busy));
 	return sgp.busy;
+}
+
+/*
+???
+*/
+static REG8 IOINPCALL sgp_i508(UINT port) {
+	if (!gactrlva.gmsp) return sgp_i_notactive(port);
+	TRACEOUT(("sgp: read unknown port %x: cs:ip=%.4x:%.4x", port, CPU_CS, CPU_IP));
+	return  1;
 }
 
 // ---- I/F
@@ -986,6 +1030,10 @@ void sgp_reset(void) {
 void sgp_bind(void) {
 	int i;
 
+	for (i = 0x500; i < 0x510; i++) {
+		iocoreva_attachinp(i, sgp_i_notimpl);
+	}
+
 	for (i = 0x500; i < 0x504; i++) {
 		iocoreva_attachout(i, sgp_o500);
 	}
@@ -994,6 +1042,8 @@ void sgp_bind(void) {
 
 	iocoreva_attachout(0x506, sgp_o506);
 	iocoreva_attachinp(0x506, sgp_i506);
+
+	iocoreva_attachinp(0x508, sgp_i508);
 }
 
 #endif

@@ -8,6 +8,7 @@
 #include	"iocore.h"
 #include	"iocoreva.h"
 #include	"memoryva.h"
+#include	"sgp.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -21,6 +22,13 @@ static void IOOUTCALL memctrlva_o152(UINT port, REG8 dat) {
 
 static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
 	memoryva.sysm_bank = dat & 0x0f;
+	if ((dat ^ gactrlva.gmsp) & 0x10) {
+		// シングルプレーン⇔マルチプレーン 切り替え
+		gactrlva_reset();
+		if (dat & 0x10) {
+			sgp_reset();
+		}
+	}
 	gactrlva.gmsp = dat & 0x10;
 	(void)port;
 }

@@ -36,7 +36,7 @@ typedef struct {
 								// bit 5 1..比較読み出しをする
 								// bit 7 1..マルチプレーンモード制御レジスタ リード禁止
 	UINT8	cmpdata[4];			// 0520h, 0522h, 0524h, 0526h 比較データレジスタ
-	UINT8	cmpdatacontrol;		// 0528h 比較データレジスタに設定 bit3-0 1..0ffh設定 0..0設定
+	UINT8	dmy;//cmpdatacontrol;	// 0528h 比較データレジスタに設定 bit3-0 1..0ffh設定 0..0設定
 	UINT8	pattern[4][2];		// [][0] 0530h, 0532h, 0534h, 0536h パターンレジスタ下位
 								// [][1] 0540h, 0542h, 0544h, 0546h パターンレジスタ上位
 	UINT8	patternreadpointer;	// 0550h パターンレジスタリードポインタ bit3-0 1..上位バイトから使用

@@ -77,6 +77,7 @@ void tsp_bind(void);
 void tsp_updateclock(void);
 
 extern	_TSP	tsp;
+extern	BOOL	tsp_dirty;
 
 #ifdef __cplusplus
 }

@@ -201,11 +201,16 @@ void Z80C::Exec()
 	past = now - lastclock;
 	clockcounter->SetRemainclock(clockcounter->GetRemainclock() + past);
 
-	while (clockcounter->GetRemainclock() > 0) {
-		SingleStep();
-		TestIntr();
+	if (waitstate & 2) {
+		CLK(clockcounter->GetRemainclock());
 	}
-	reg.pc = inst;
+	else {
+		while (clockcounter->GetRemainclock() > 0) {
+			SingleStep();
+			TestIntr();
+		}
+		reg.pc = inst;
+	}
 
 	lastclock = now;
 }

@@ -17,6 +17,9 @@
 
 #if defined(SUPPORT_PC88VA)
 
+#define SLEEP_HACK		// メインからのコマンド待ち時にCPUを停止する機能を有効にする 
+
+
 static	_I8255CFG i8255cfg;
 		_SUBSYSTEM subsystem;
 
@@ -100,10 +103,16 @@ private:
 	ClockCounter *clockcounter;
 	Clock *clock;
 
+	uint _ram_rd(uint addr);
 	uint ram_rd(uint addr);
 	uint rom_rd(uint addr);
 	uint nonmem_rd(uint addr);
 	void ram_wt(uint addr, uint data);
+
+#if defined(SLEEP_HACK)
+	bool SleepCheck_VA(uint portc);
+	bool SleepCheck_Sorcerian(uint portc);
+#endif
 };
 
 
@@ -151,8 +160,12 @@ void Subsystem::Exec() {
 	z80->Exec();
 }
 
-uint Subsystem::ram_rd(uint addr) {
+uint Subsystem::_ram_rd(uint addr) {
 	return subsystem.ram[addr-0x4000];
+}
+
+uint Subsystem::ram_rd(uint addr) {
+	return _ram_rd(addr);
 }
 
 void Subsystem::ram_wt(uint addr, uint data) {
@@ -184,6 +197,27 @@ void IFCALL Subsystem::Write8(uint addr, uint data) {
 	}
 }
 
+#if defined(SLEEP_HACK)
+// VA/2 の ROMの処理の場合
+bool Subsystem::SleepCheck_VA(uint portc) {
+	return !(portc & 0x08) && _ram_rd(0x7f67)==0xff && z80->GetReg()->pc == 0x1732;
+	/*
+	  7f67 は サブシステムスリープ時 ffh, アクティブ時 00h
+      アクティブ時は適当な時間をまってFDDモータをOFFする処理が動いているので、
+	  ATN=0の条件だけでZ80を停止してはならない。そのため、条件にスリープ時であること
+	  を追加している。
+      1732 のコードでポートfehからinしている
+	*/
+}
+
+// ソーサリアンの場合
+bool Subsystem::SleepCheck_Sorcerian(uint portc) {
+	return !(portc & 0x08) && z80->GetReg()->pc == 0x700e;
+	/*
+	  700e のコードでポートfehからinしている
+	*/
+}
+#endif
 
 uint IFCALL Subsystem::In(uint port) {
 	uint ret = 0xff;
@@ -207,6 +241,12 @@ uint IFCALL Subsystem::In(uint port) {
 		break;
 	case 0xfe:
 		ret = i8255_inportc(&i8255cfg);
+#if defined(SLEEP_HACK)
+		if (SleepCheck_VA(ret) || SleepCheck_Sorcerian(ret)) {
+			// サブシステムZ80スリープ
+			z80->Wait(true);
+		}
+#endif
 		break;
 
 	// 仮想ポート
@@ -259,6 +299,10 @@ void IFCALL Subsystem::Out(uint port, uint dat) {
 	}
 }
 
+// ----
+
+	Subsystem subsystemobj;
+
 // ---- Main → Subsystem connection
 
 void subsystem_businporta(BYTE dat) {
@@ -267,11 +311,15 @@ void subsystem_businporta(BYTE dat) {
 
 void subsystem_businportc(BYTE dat) {
 	i8255_businportc(&i8255cfg, (BYTE)(dat >> 4));
+#if defined(SLEEP_HACK)
+	if (dat & 0x80) {
+		// ATN = 1
+		subsystemobj.z80->Wait(false);
+	}
+#endif
 }
 
 // ---- C - C++ bridge for Subsystem
-
-	Subsystem subsystemobj;
 
 void subsystem_initialize(void) {
 	subsystemobj.Initialize();	

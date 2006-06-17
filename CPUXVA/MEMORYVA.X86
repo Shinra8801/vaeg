@@ -18,6 +18,7 @@ section .bss
 	global	_rom0mem
 	global	_rom1mem
 
+
 ;TVRAM 256Kbytes
 _textmem	resb	0x40000
 
@@ -120,6 +121,7 @@ section .text
 @tvram_wt:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		[TEXTMEMORY + ebx], dl
+					mov		[_textmem_dirty], dword 1
 					pop		ebx
 					ret
 
@@ -177,6 +179,7 @@ knj2_wt9:			pop		ebx
 @tvramw_wt:			mov		ebx, ecx
 					sub		ebx, CPUADDR_SYSM
 					mov		[TEXTMEMORY + ebx], dx
+					mov		[_textmem_dirty], dword 1
 					pop		ebx
 					ret
 
@@ -510,7 +513,7 @@ _backupmem_wp	db 0				;バックアップメモリ ライトプロテクト
 
 			global	_memoryva
 			global	_dma_access
-
+			global	_textmem_dirty
 _memoryva
 	istruc	memoryva_t
 	iend
@@ -522,6 +525,7 @@ _dma_sysm_bank	equ	_memoryva + memoryva_t.dma_sysm_bank
 _dma_access		equ	_memoryva + memoryva_t.dma_access
 _backupmem_wp	equ	_memoryva + memoryva_t.backupmem_wp
 
+_textmem_dirty	dd	0
 
 section .rdata
 

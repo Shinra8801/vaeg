@@ -201,6 +201,7 @@ static REG8 IOINPCALL gactrlva_i528(UINT port) {
 
 	if (gactrlva.gmsp) return gactrlva_i_notactive(port);
 
+	dat = 0;
 	for (i = 3; i >=0; i--) {
 		dat <<= 1;
 		if (gactrlva.m.cmpdata[i] == 0xff) dat |= 1;

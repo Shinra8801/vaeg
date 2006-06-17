@@ -47,6 +47,7 @@ enum {
 
 
 		_TSP	tsp;
+		BOOL	tsp_dirty;
 
 static BYTE *getsprinfo(int no) {
 	return textmem + tsp.sprtable + no * 8;
@@ -276,6 +277,7 @@ static void IOOUTCALL tsp_o142(UINT port, REG8 dat) {
 	//tsp.datap = tsp.parambuf;
 	tsp.paramindex = 0;
 	tsp.status |= STATUS_BUSY;
+	tsp_dirty = TRUE;
 
 	switch(dat) {
 	case CMD_SYNC:
@@ -341,6 +343,7 @@ static void IOOUTCALL tsp_o146(UINT port, REG8 dat) {
 		if (--tsp.recvdatacnt == 0) execcmd();
 	}
 */
+	tsp_dirty = TRUE;
 	//tsp.paramfunc(dat);
 	switch (tsp.paramfunc) {
 	case PARAMFUNC_GENERIC:

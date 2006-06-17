@@ -30,6 +30,7 @@ ToDo:
 
 //#define	USETABLE					// 返って遅くなってしまうようだ。
 //#define	USETABLE2					// 効果がなさそうだ。
+#define	SLEEP_HACK
 
 enum {
 	TEXTVA_LINEHEIGHTMAX	= 20,
@@ -82,6 +83,10 @@ typedef struct {
 	UINT16	rwchar;		// 分割画面の横幅(文字) = rw / 8 + 2 
 */
 	BOOL	linebitmap_ready;
+#if defined(SLEEP_HACK)
+	BOOL	allzero;	// 全て空白かつアンダーラインなしかつブリンクなしかつBG=0
+	BOOL	sleep;		// 前回allzeroなので表示休止
+#endif
 
 	UINT		frameno;			// 現在参照している分割画面の番号
 	UINT		framelimit;			// 次の分割画面の開始位置(ラスタ)
@@ -229,6 +234,10 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 			b += TEXTVA_CHARWIDTH;
 		}
 		else {
+#if defined(SLEEP_HACK)
+			work.allzero = FALSE;
+#endif
+
 			font = cgromva_font(hccode);
 			fontw = cgromva_width(hccode);
 			fonth = 16;
@@ -381,12 +390,18 @@ void maketextva_begin(BOOL *scrn200) {
 	int i;
 	BYTE *fbinfo;
 
-/*
-	work.rsa = 0;
-	work.vw = 80*2;
-	work.rw = 640;
-	work.rwchar = work.rw / 8 + 2;
-*/
+#if defined(SLEEP_HACK)
+	if (work.allzero && !textmem_dirty && !tsp_dirty) {
+		work.sleep = TRUE;
+	}
+	else {
+		work.sleep = FALSE;
+	}
+	textmem_dirty = FALSE;
+	tsp_dirty = FALSE;
+	work.allzero = TRUE;
+#endif
+
 	work.y = 0;
 	work.screeny = 0;
 
@@ -441,6 +456,13 @@ void maketextva_raster(void) {
 		maketextva_blankraster();
 		return;
 	}
+
+#if defined(SLEEP_HACK)
+	if (work.sleep) {
+		maketextva_blankraster();
+		return;
+	}
+#endif
 
 	if (!tsp.textmg || (work.screeny & 1) == 0) {
 

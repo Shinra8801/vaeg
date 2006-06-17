@@ -26,6 +26,7 @@ extern	BYTE	rom1mem[0x20000];
 //extern	BYTE	dma_sysm_bank;
 
 extern	_MEMORYVA	memoryva;
+extern	BOOL	textmem_dirty;
 
 #ifdef __cplusplus
 }

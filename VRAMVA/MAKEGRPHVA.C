@@ -46,6 +46,17 @@ static	_GRPHVAWORK	work;
 											// 最大4バイト(ex.1bit/pixelなら32dot,
 											// 水平解像度320ならその倍)分
 											// 使用する
+/*
+static	WORD byte2pixel[256][8];			// マルチプレーン
+											// 1バイト→8ピクセル変換テーブル
+*/
+/*
+static	WORD plane2pixel[4][4][4][4][2];	// マルチプレーン
+											// 2bit*4plane→2ピクセル変換テーブル
+*/
+static	BYTE byte2pixel[256][8];			// マルチプレーン
+											// 1バイト→8ピクセル変換テーブル
+
 
 #define addr18(scrn, x) ( (x) & ((scrn)->addrmask) | ((scrn)->addrofs) )
 #define issingleplane() (videova.grmode & 0x0400)
@@ -556,8 +567,13 @@ static void drawraster_m4(SCREEN screen) {
 	BYTE		fg;
 	UINT16		i;
 
+	UINT32		wrappedaddr;
+	UINT32		addrmask;
+	UINT32		addrofs;
+
 	addr = screen->lineaddr;
 	b = screen->rasterbuf;
+	ZeroMemory(b, sizeof(grph0_raster));
 	if (screen->framebuffer->ofx == 0xffff) {
 		// screen 1 (ラップアラウンドなし)
 		wrapcount = 0;
@@ -609,40 +625,188 @@ static void drawraster_m4(SCREEN screen) {
 	}
 	else {
 		// 640 dots
-
-		d0 = grphmem[addr];
-		d1 = grphmem[addr + 0x10000];
-		d2 = grphmem[addr + 0x20000];
-		d3 = grphmem[addr + 0x30000];
-		addr = addr18(screen, addr + 1);
-
 		i = screen->framebuffer->dot & 0x07;
-		d0 <<= i;
-		d1 <<= i;
-		d2 <<= i;
-		d3 <<= i;
-		for (; i < 8; i++) {
-			*b++ = ((d0 & 0x80) >> 7) | 
-				   ((d1 & 0x80) >> 6) | 
-				   ((d2 & 0x80) >> 5) | 
-				   ((d3 & 0x80) >> 4);
-			d0 <<= 1;
-			d1 <<= 1;
-			d2 <<= 1;
-			d3 <<= 1;
-		}
-		for (xp = 0; xp < 640/8; xp++) {
-			wrapcount -= 1;
-			if (wrapcount == 0) {
-				addr = screen->wrappedaddr;
-			}
-
+		if (i > 0) {
 			d0 = grphmem[addr];
 			d1 = grphmem[addr + 0x10000];
 			d2 = grphmem[addr + 0x20000];
 			d3 = grphmem[addr + 0x30000];
 			addr = addr18(screen, addr + 1);
 
+			d0 <<= i;
+			d1 <<= i;
+			d2 <<= i;
+			d3 <<= i;
+			for (; i < 8; i++) {
+				*b++ = ((d0 & 0x80) >> 7) | 
+					   ((d1 & 0x80) >> 6) | 
+					   ((d2 & 0x80) >> 5) | 
+					   ((d3 & 0x80) >> 4);
+				d0 <<= 1;
+				d1 <<= 1;
+				d2 <<= 1;
+				d3 <<= 1;
+			}
+			wrapcount--;
+		}
+#if 1
+		wrappedaddr = screen->wrappedaddr;
+		addrmask = screen->addrmask;
+		addrofs  = screen->addrofs;
+		__asm {
+			mov		ecx, 640/8
+			movzx	esi, wrapcount
+			mov		edi, addr
+
+loop_0:		or		esi, esi
+			jnz		loop_1
+
+			; if wrapcount == 0
+			mov		edi, wrappedaddr;
+loop_1:
+			dec		esi
+
+			movzx	ebx, grphmem[edi + 0x30000]
+			mov		eax, dword ptr byte2pixel[ebx*8]
+			mov		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x20000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x10000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x00000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+
+			mov		ebx, b
+
+			mov		[ebx+0], al
+			mov		[ebx+2], ah
+			shr		eax, 16
+			mov		[ebx+4], al
+			mov		[ebx+6], ah
+			mov		[ebx+8], dl
+			mov		[ebx+10], dh
+			shr		edx, 16
+			mov		[ebx+12], dl
+			mov		[ebx+14], dh
+			add		ebx, 8*2
+
+			mov		b, ebx
+
+			;addr = addr18(screen, addr + 1);
+			inc		edi
+			and		edi, addrmask
+			or		edi, addrofs
+
+			dec		cx
+			jnz		loop_0
+		}
+#else
+		for (xp = 0; xp < 640/8; xp++) {
+			//wrapcount -= 1;
+			if (wrapcount-- == 0) {
+				addr = screen->wrappedaddr;
+			}
+
+			/*
+			d0 = grphmem[addr];
+			d1 = grphmem[addr + 0x10000];
+			d2 = grphmem[addr + 0x20000];
+			d3 = grphmem[addr + 0x30000];
+			addr = addr18(screen, addr + 1);
+			*/
+			
+			__asm {
+				mov		edi, addr
+				movzx	ebx, grphmem[edi + 0x30000]
+				mov		eax, dword ptr byte2pixel[ebx*8]
+				mov		edx, dword ptr byte2pixel[ebx*8+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x20000]
+				or		eax, dword ptr byte2pixel[ebx*8]
+				or		edx, dword ptr byte2pixel[ebx*8+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x10000]
+				or		eax, dword ptr byte2pixel[ebx*8]
+				or		edx, dword ptr byte2pixel[ebx*8+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x00000]
+				or		eax, dword ptr byte2pixel[ebx*8]
+				or		edx, dword ptr byte2pixel[ebx*8+4]
+				mov		ebx, b
+				mov		[ebx+0], al
+				;mov		[ebx+1], byte ptr 0
+				mov		[ebx+2], ah
+				;mov		[ebx+3], byte ptr 0
+				shr		eax, 16
+				mov		[ebx+4], al
+				;mov		[ebx+5], byte ptr 0
+				mov		[ebx+6], ah
+				;mov		[ebx+7], byte ptr 0
+				mov		[ebx+8], dl
+				;mov		[ebx+9], byte ptr 0
+				mov		[ebx+10], dh
+				;mov		[ebx+11], byte ptr 0
+				shr		edx, 16
+				mov		[ebx+12], dl
+				;mov		[ebx+13], byte ptr 0
+				mov		[ebx+14], dh
+				;mov		[ebx+15], byte ptr 0
+			}
+			
+			/*
+			__asm {
+				mov		edi, addr
+				movzx	ebx, grphmem[edi + 0x30000]
+				shl		ebx, 3
+				mov		eax, dword ptr byte2pixel[ebx]
+				mov		edx, dword ptr byte2pixel[ebx+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x20000]
+				shl		ebx, 3
+				or		eax, dword ptr byte2pixel[ebx]
+				or		edx, dword ptr byte2pixel[ebx+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x10000]
+				shl		ebx, 3
+				or		eax, dword ptr byte2pixel[ebx]
+				or		edx, dword ptr byte2pixel[ebx+4]
+				shl		eax, 1
+				shl		edx, 1
+				movzx	ebx, grphmem[edi + 0x00000]
+				shl		ebx, 3
+				or		eax, dword ptr byte2pixel[ebx]
+				or		edx, dword ptr byte2pixel[ebx+4]
+				mov		ebx, b
+				mov		[ebx+0], al
+				mov		[ebx+2], ah
+				shr		eax, 16
+				mov		[ebx+4], al
+				mov		[ebx+6], ah
+				mov		[ebx+8], dl
+				mov		[ebx+10], dh
+				shr		edx, 16
+				mov		[ebx+12], dl
+				mov		[ebx+14], dh
+			}
+			*/
+			addr = addr18(screen, addr + 1);
+			b += 8;
+
+/*
 			for (i = 0; i < 8; i++) {
 				*b++ = ((d0 & 0x80) >> 7) | 
 					   ((d1 & 0x80) >> 6) | 
@@ -653,7 +817,55 @@ static void drawraster_m4(SCREEN screen) {
 				d2 <<= 1;
 				d3 <<= 1;
 			}
+*/
+/*
+			{
+				DWORD p;
+
+				p = *((DWORD *)&byte2pixel[d0][0]);
+				p |= *((DWORD *)&byte2pixel[d1][0]) << 1;
+				p |= *((DWORD *)&byte2pixel[d2][0]) << 2;
+				p |= *((DWORD *)&byte2pixel[d3][0]) << 3;
+				*((DWORD *)b) = p;
+				b += 2;
+
+				p = *((DWORD *)&byte2pixel[d0][2]);
+				p |= *((DWORD *)&byte2pixel[d1][2]) << 1;
+				p |= *((DWORD *)&byte2pixel[d2][2]) << 2;
+				p |= *((DWORD *)&byte2pixel[d3][2]) << 3;
+				*((DWORD *)b) = p;
+				b += 2;
+
+				p = *((DWORD *)&byte2pixel[d0][4]);
+				p |= *((DWORD *)&byte2pixel[d1][4]) << 1;
+				p |= *((DWORD *)&byte2pixel[d2][4]) << 2;
+				p |= *((DWORD *)&byte2pixel[d3][4]) << 3;
+				*((DWORD *)b) = p;
+				b += 2;
+
+				p = *((DWORD *)&byte2pixel[d0][6]);
+				p |= *((DWORD *)&byte2pixel[d1][6]) << 1;
+				p |= *((DWORD *)&byte2pixel[d2][6]) << 2;
+				p |= *((DWORD *)&byte2pixel[d3][6]) << 3;
+				*((DWORD *)b) = p;
+				b += 2;
+			}
+*/
+/*
+			{
+				for (i = 6; i < 8 ; i-=2) {
+					*((DWORD *)&b[i]) = 
+						*((DWORD *)&plane2pixel[d0&3][d1&3][d2&3][d3&3][0]);
+					d0 >>= 2;
+					d1 >>= 2;
+					d2 >>= 2;
+					d3 >>= 2;
+				}
+				b += 8;
+			}
+*/
 		}
+#endif
 	}
 
 	endraster_m(screen);
@@ -732,6 +944,58 @@ static void drawraster(SCREEN screen) {
 
 		
 void makegrphva_initialize(void) {
+/*
+	// マルチプレーン 1バイト→8ピクセル 変換テーブル
+	{
+		int d;
+		int i;
+
+		for (d = 0; d < 256; d++) {
+			int dat = d;
+			for (i = 7; i >= 0; i--) {
+				byte2pixel[d][i] = dat & 1;
+				dat >>= 1;
+			}
+		}
+	}
+*/
+/*
+	// マルチプレーン 2bit*4plane→2ピクセル変換テーブル
+	{
+		int p0,p1,p2,p3;
+		for (p0 = 0; p0 < 4; p0++) {
+			for (p1 = 0; p1 < 4; p1++) {
+				for (p2 = 0; p2 < 4; p2++) {
+					for (p3 = 0; p3 < 4; p3++) {
+						plane2pixel[p0][p1][p2][p3][1] = 
+							(p0 & 1) | 
+							((p1 & 1) << 1) |
+							((p2 & 1) << 2) |
+							((p3 & 1) << 3);
+						plane2pixel[p0][p1][p2][p3][0] = 
+							((p0 & 2) >> 1) | 
+							((p1 & 2)     ) |
+							((p2 & 2) << 1) |
+							((p3 & 2) << 2);
+					}
+				}
+			}
+		}
+	}
+*/
+	// マルチプレーン 1バイト→8ピクセル 変換テーブル
+	{
+		int d;
+		int i;
+
+		for (d = 0; d < 256; d++) {
+			int dat = d;
+			for (i = 7; i >= 0; i--) {
+				byte2pixel[d][i] = dat & 1;
+				dat >>= 1;
+			}
+		}
+	}
 }
 
 void makegrphva_begin(BOOL *scrn200) {

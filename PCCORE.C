@@ -620,6 +620,7 @@ static void drawscreenva(void) {
 	int y;
 	BOOL text200;
 	BOOL grph200;
+	UINT16 lines;
 
 	tsp_updateclock();
 
@@ -627,11 +628,12 @@ static void drawscreenva(void) {
 		return;
 	}
 
+	lines = tsp.screenlines;
+	if (tsp.hsync15khz) lines *= 2;
+	if (lines > SURFACE_HEIGHT) lines = SURFACE_HEIGHT;
+
 	if (tsp.flag & TSP_F_LINESCHANGED) {
 		/* dispsync_renewalvertical() */
-		UINT16 lines = tsp.screenlines;
-		if (tsp.hsync15khz) lines *= 2;
-		if (lines > SURFACE_HEIGHT) lines = SURFACE_HEIGHT;
 		scrnmng_setheight(0, lines);
 		tsp.flag &= ~TSP_F_LINESCHANGED;
 	}
@@ -649,7 +651,7 @@ static void drawscreenva(void) {
 		case 0x40:	// ノンインターレースモード1
 			// TODO: 未実装
 		case 0x80:	// インターレースモード0
-			for (y = 0; y < SURFACE_HEIGHT;) {
+			for (y = 0; y < lines /*SURFACE_HEIGHT*/;) {
 				// 偶数ライン
 				maketextva_raster();
 				makesprva_raster();
@@ -668,7 +670,7 @@ static void drawscreenva(void) {
 			}
 			break;
 		case 0xc0:	// インターレースモード1
-			for (y = 0; y < SURFACE_HEIGHT;) {
+			for (y = 0; y < lines /*SURFACE_HEIGHT*/;) {
 				// 偶数ライン
 				maketextva_raster();
 				makesprva_raster();
@@ -699,7 +701,7 @@ static void drawscreenva(void) {
 		// 24KHz
 		switch(videova.grmode & 0x00c0) {
 		case 0x00:	// ノンインターレースモード0
-			for (y = 0; y < SURFACE_HEIGHT;) {
+			for (y = 0; y < lines/*SURFACE_HEIGHT*/;) {
 				// 偶数ライン
 				maketextva_raster();
 				makesprva_raster();
@@ -720,7 +722,7 @@ static void drawscreenva(void) {
 			}
 			break;
 		case 0x40:	// ノンインターレースモード1
-			for (y = 0; y < SURFACE_HEIGHT;) {
+			for (y = 0; y < lines/*SURFACE_HEIGHT*/;) {
 				// 偶数ライン
 				maketextva_raster();
 				makesprva_raster();
@@ -743,7 +745,7 @@ static void drawscreenva(void) {
 		case 0x80:	// インターレースモード0
 		case 0xc0:	// インターレースモード1
 			// 禁止
-			for (y = 0; y < SURFACE_HEIGHT;) {
+			for (y = 0; y < lines /*SURFACE_HEIGHT*/;) {
 				maketextva_blankraster();
 				makesprva_blankraster();
 				makegrphva_blankraster();

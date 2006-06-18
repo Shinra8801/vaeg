@@ -97,9 +97,11 @@ typedef struct {
 	BYTE			fddaccesscolor[2];
 	BYTE			hddaccesscolor;
 #endif
+/*
 #if defined(SUPPORT_PC88VA)
 	BYTE			modeled[3];
 #endif
+*/
 	BYTE			_padding;
 	int				winflg;
 	int				wingx;
@@ -510,15 +512,15 @@ static LRESULT CALLBACK twsub(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		}
 #if defined(SUPPORT_PC88VA)
 		else if (idc == IDC_TOOLV1MODE) {
-			modedraw(hWnd, toolwin.modeled[0]);
+			modedraw(hWnd, np2tool.modeled[0]);
 			return(FALSE);
 		}
 		else if (idc == IDC_TOOLV2MODE) {
-			modedraw(hWnd, toolwin.modeled[1]);
+			modedraw(hWnd, np2tool.modeled[1]);
 			return(FALSE);
 		}
 		else if (idc == IDC_TOOLV3MODE) {
-			modedraw(hWnd, toolwin.modeled[2]);
+			modedraw(hWnd, np2tool.modeled[2]);
 			return(FALSE);
 		}
 #endif
@@ -1354,9 +1356,11 @@ void toolwin_create(void) {
 	HBITMAP	hbmp;
 	BITMAP	bmp;
 	HWND	hWnd;
+/*
 #if defined(VAEG_EXT)
 	int		i;
 #endif
+*/
 	if (toolwin.hwnd) {
 		return;
 	}
@@ -1381,6 +1385,7 @@ void toolwin_create(void) {
 	ShowWindow(hWnd, SW_SHOWNOACTIVATE);
 	SetForegroundWindow(hWndMain);
 
+/*
 #if defined(VAEG_EXT)
 	// コマンドラインに指定したディスクイメージがtool windowに
 	// 反映されるようにする。
@@ -1388,7 +1393,8 @@ void toolwin_create(void) {
 		toolwin_setfdd(i, diskdrv_fname[i]); 
 	}
 #endif
-	
+*/
+
 	return;
 
 twope_err2:
@@ -1535,8 +1541,8 @@ void toolwin_modeled(BYTE num, BYTE sw) {
 
 	if (num < 3) {
 		if (sw) sw = 0xff;
-		if (toolwin.modeled[num] != sw) {
-			toolwin.modeled[num] = sw;
+		if (np2tool.modeled[num] != sw) {
+			np2tool.modeled[num] = sw;
 
 			InvalidateRect(toolwin.sub[idc[num]], NULL, TRUE);
 		}

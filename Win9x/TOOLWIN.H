@@ -19,6 +19,10 @@ typedef struct {
 	TOOLFDD	fdd[FDDLIST_DRV];
 	char	skin[MAX_PATH];
 	char	skinmru[SKINMRU_MAX][MAX_PATH];
+#if defined(SUPPORT_PC88VA)
+	BYTE	modeled[3];
+	BYTE	_dummy;
+#endif
 } NP2TOOL;
 
 

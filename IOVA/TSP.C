@@ -367,6 +367,9 @@ void tsp_reset(void) {
 	ZeroMemory(&tsp, sizeof(tsp));
 	//tsp.paramfunc = paramfunc_nop;
 	tsp.paramfunc = PARAMFUNC_NOP;
+	tsp_dirty = TRUE;
+						/* リセット時は tsp_dirty=TRUEとすることにより、
+						   maketextva.cのsleepを解除 */
 }
 
 void tsp_bind(void) {

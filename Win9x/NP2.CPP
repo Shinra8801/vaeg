@@ -1724,6 +1724,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 		if (np2arg.disk[i]) {
 			milstr_ncpy(diskdrv_fname[i], np2arg.disk[i], MAX_PATH);
 			diskdrv_delay[i] = 1;
+#if defined(VAEG_FIX)
+			toolwin_setfdd(i, diskdrv_fname[i]);
+#endif
 		}
 	}
 

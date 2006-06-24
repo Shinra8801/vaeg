@@ -168,7 +168,9 @@ static REG8 IOINPCALL sysp_i1cb(UINT port) {
 	ret = 0x08;			// bit3 ( ~CRTÉÇÅ[Éh) ÇÕ 1 (24KHz)
 /*
 	ret = ((~np2cfg.dipsw[0]) & 1) << 3;
+*/
 	ret |= rs232c_stat();
+/*
 	ret |= uPD4990.cdat;
 	(void)port;
 */

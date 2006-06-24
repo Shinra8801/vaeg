@@ -558,13 +558,13 @@ static void drawraster_s16(SCREEN screen) {
 
 // マルチプレーン4bit/pixel
 static void drawraster_m4(SCREEN screen) {
-	UINT16		xp;
+//	UINT16		xp;
 	UINT16		wrapcount;
 	UINT32		addr;
 	WORD		*b;
-	DWORD		dd;
+//	DWORD		dd;
 	BYTE		d0, d1, d2, d3;
-	BYTE		fg;
+//	BYTE		fg;
 	UINT16		i;
 
 	UINT32		wrappedaddr;
@@ -583,10 +583,106 @@ static void drawraster_m4(SCREEN screen) {
 	}
 
 	// フォアグラウンドカラーのパレット番号
-	fg = (videova.pagemsk & 0x0f00) >> 8;
+	//fg = (videova.pagemsk & 0x0f00) >> 8;
 
 
 	if (screen->r320dots) {
+		i = screen->framebuffer->dot & 0x07;
+		if (i > 0) {
+			d0 = grphmem[addr];
+			d1 = grphmem[addr + 0x10000];
+			d2 = grphmem[addr + 0x20000];
+			d3 = grphmem[addr + 0x30000];
+			addr = addr18(screen, addr + 1);
+
+			d0 <<= i;
+			d1 <<= i;
+			d2 <<= i;
+			d3 <<= i;
+			for (; i < 8; i++) {
+				b[0] = b[1] = ((d0 & 0x80) >> 7) | 
+					          ((d1 & 0x80) >> 6) | 
+					          ((d2 & 0x80) >> 5) | 
+					          ((d3 & 0x80) >> 4);
+				d0 <<= 1;
+				d1 <<= 1;
+				d2 <<= 1;
+				d3 <<= 1;
+				b += 2;
+			}
+			wrapcount--;
+		}
+
+		wrappedaddr = screen->wrappedaddr;
+		addrmask = screen->addrmask;
+		addrofs  = screen->addrofs;
+		__asm {
+			mov		ecx, 320/8
+			movzx	esi, wrapcount
+			mov		edi, addr
+
+loop3_0:	or		esi, esi
+			jnz		loop3_1
+
+			; if wrapcount == 0
+			mov		edi, wrappedaddr;
+loop3_1:
+			dec		esi
+
+			movzx	ebx, grphmem[edi + 0x30000]
+			mov		eax, dword ptr byte2pixel[ebx*8]
+			mov		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x20000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x10000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+			shl		eax, 1
+			shl		edx, 1
+			movzx	ebx, grphmem[edi + 0x00000]
+			or		eax, dword ptr byte2pixel[ebx*8]
+			or		edx, dword ptr byte2pixel[ebx*8+4]
+
+			mov		ebx, b
+
+			mov		[ebx+0], al
+			mov		[ebx+2], al
+			mov		[ebx+4], ah
+			mov		[ebx+6], ah
+			shr		eax, 16
+			mov		[ebx+8], al
+			mov		[ebx+10], al
+			mov		[ebx+12], ah
+			mov		[ebx+14], ah
+			mov		[ebx+16], dl
+			mov		[ebx+18], dl
+			mov		[ebx+20], dh
+			mov		[ebx+22], dh
+			shr		edx, 16
+			mov		[ebx+24], dl
+			mov		[ebx+26], dl
+			mov		[ebx+28], dh
+			mov		[ebx+30], dh
+			add		ebx, 8*2*2
+
+			mov		b, ebx
+
+			;addr = addr18(screen, addr + 1);
+			inc		edi
+			and		edi, addrmask
+			or		edi, addrofs
+
+			dec		cx
+			jnz		loop3_0
+		}
+
+	
+/*
 		// 320 dots
 		dd = ((DWORD)grphmem[addr+0] << 24) | 
 			 ((DWORD)grphmem[addr+1] << 16) | 
@@ -619,7 +715,7 @@ static void drawraster_m4(SCREEN screen) {
 				dd <<= 1;
 			}
 		}
-
+*/
 
 
 	}

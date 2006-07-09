@@ -14,6 +14,10 @@ enum {
 
 	VIDEOVA_PALETTE_SCREENS = 4,				// パレット制御画面に指定可能な画面数
 	VIDEOVA_RGB_SCREENS		= 2,				// 直接色指定画面に指定可能な画面数
+
+	VIDEOVA_15_98KHZ		= 0,
+	VIDEOVA_15_73KHZ		= 1,
+	VIDEOVA_24_8KHZ			= 2,
 };
 
 typedef struct {
@@ -50,8 +54,15 @@ typedef struct {
 	BYTE	dmy2;
 	WORD	palette[VIDEOVA_PALETTES];
 
+	BYTE	crtmode;		// dip sw1の値(リセット時に読み取り) 1..24KHz, 0..15KHz
+	BYTE	dmy3;
+
+	BYTE	dmy4[64];
+
 	UINT16	blinkcnt;		// 1サイクルごとにインクリメントされるカウンタ
 	_FRAMEBUFFER	framebuffer[VIDEOVA_FRAMEBUFFERS];
+
+	BYTE	dmy5[128];
 } _VIDEOVA, *VIDEOVA;
 
 
@@ -64,6 +75,8 @@ extern	_VIDEOVA videova;
 
 void videova_reset(void);
 void videova_bind(void);
+
+int  videova_hsyncmode(void);
 
 #ifdef __cplusplus
 }

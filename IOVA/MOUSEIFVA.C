@@ -24,7 +24,7 @@ enum {
 };
 
 
-	_MOUSEIFVACFG	mouseifvacfg = {MOUSEIFVA_MOUSE};
+	_MOUSEIFVACFG	mouseifvacfg = {MOUSEIFVA_JOYPAD};
 
 	_MOUSEIFVA		mouseifva;
 

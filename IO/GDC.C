@@ -1140,8 +1140,13 @@ void gdc_reset(void) {
 }
 
 void gdc_bind(void) {
-
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va == PCMODEL_NOTVA) {
+		gdc_updateclock();
+	}
+#else
 	gdc_updateclock();
+#endif
 #if defined(SUPPORT_PC9821)
 	iocore_attachout(0x09a0, gdc_o9a0);
 	iocore_attachinp(0x09a0, gdc_i9a0);

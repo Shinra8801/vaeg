@@ -239,7 +239,7 @@ static void IOOUTCALL videova_o137(UINT port, REG8 dat) {
 
 static void IOOUTCALL videova_o148(UINT port, REG8 dat) {
 	videova.txtmode = dat | 1;
-	TRACEOUT(("videova_o148 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+	//TRACEOUT(("videova_o148 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
 }
 
 //   パレット
@@ -548,6 +548,8 @@ void videova_reset(void) {
 
 	videova.xpar_txtspr = 0x0001;
 
+	videova.crtmode = sysportvacfg.dipsw & 1;
+
 	// ToDo: パレットの初期化
 }
 
@@ -676,6 +678,35 @@ void videova_bind(void) {
 		iocoreva_attachout(PORT_PALETTE + i+1, videova_o_palette_h);
 	}
 
+}
+
+
+int videova_hsyncmode(void) {
+	int ret;
+
+	if (videova.crtmode) {
+		// 24KHzディスプレイ
+		if (videova.grmode & 0x0080) {
+			// インターレースモード
+			ret = VIDEOVA_15_73KHZ;
+		}
+		else {
+			// ノンインターレースモード
+			ret = VIDEOVA_24_8KHZ;
+		}
+	}
+	else {
+		// 15KHzディスプレイ
+		if (videova.grmode & 0x0080) {
+			// インターレースモード
+			ret = VIDEOVA_15_73KHZ;
+		}
+		else {
+			// ノンインターレースモード
+			ret = VIDEOVA_15_98KHZ;
+		}
+	}
+	return ret;
 }
 
 #endif

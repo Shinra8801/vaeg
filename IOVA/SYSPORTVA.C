@@ -13,7 +13,9 @@
 #include	"beep.h"
 #include	"sysmng.h"
 
-	_SYSPORTVA	sysportva;
+	_SYSPORTVACFG	sysportvacfg = {0xcd};
+
+	_SYSPORTVA		sysportva;
 
 
 static void modeled_oneventset() {
@@ -90,9 +92,11 @@ static REG8 IOINPCALL sysp_i040(UINT port) {
 
 	ret =
 		0xc0 |							// 常に1
-		(tsp.vsync & 0x20) |			// VSYNC
+		//(tsp.vsync & 0x20) |			// VSYNC
+		(tsp.sysp4vsync & 0x20) |		// VSYNC
 		((uPD4990.cdat & 0x01) << 4) |	// CDI(カレンダ時計)
-										// bit1(CRTモード)は0(24KHz)
+		((videova_hsyncmode() == VIDEOVA_24_8KHZ) ? 0 : 0x02) |
+										// CRTモード
 		0x01;							// PBSY
 
 	return ret;
@@ -165,7 +169,7 @@ static REG8 IOINPCALL sysp_i1cb(UINT port) {
 
 	REG8	ret;
 
-	ret = 0x08;			// bit3 ( ~CRTモード) は 1 (24KHz)
+	ret = (videova_hsyncmode() == VIDEOVA_24_8KHZ) ? 0x08 : 0;	// bit3 ~CRTモード
 /*
 	ret = ((~np2cfg.dipsw[0]) & 1) << 3;
 */

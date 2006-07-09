@@ -622,17 +622,21 @@ static void drawscreenva(void) {
 	BOOL grph200;
 	UINT16 lines;
 
-	tsp_updateclock();
+//	if (videova.grmode & 0x1000) {
+//		// SYNCEN (水平同期信号出力)
+		tsp_updateclock();
+//	}
 
 	if (!drawframe) {
 		return;
 	}
 
 	lines = tsp.screenlines;
-	if (tsp.hsync15khz) lines *= 2;
+	if (videova_hsyncmode() != VIDEOVA_24_8KHZ) lines *= 2;
 	if (lines > SURFACE_HEIGHT) lines = SURFACE_HEIGHT;
 
-	if (tsp.flag & TSP_F_LINESCHANGED) {
+	if ((tsp.flag & TSP_F_LINESCHANGED) && (videova.grmode & 0x1000)) {
+		// TSPの表示ライン数に変更あり、かつ、SYNCEN(水平同期信号出力)
 		/* dispsync_renewalvertical() */
 		scrnmng_setheight(0, lines);
 		tsp.flag &= ~TSP_F_LINESCHANGED;
@@ -643,13 +647,27 @@ static void drawscreenva(void) {
 	makegrphva_begin(&grph200);
 	scrndrawva_compose_begin();
 
-	if (tsp.hsync15khz) {
+	if (videova_hsyncmode() != VIDEOVA_24_8KHZ) {
 		// 15KHz
 		switch(videova.grmode & 0x00c0) {
 		case 0x00:	// ノンインターレースモード0
-			// TODO: 未実装
 		case 0x40:	// ノンインターレースモード1
-			// TODO: 未実装
+			for (y = 0; y < lines/*SURFACE_HEIGHT*/;) {
+				// 偶数ライン
+				maketextva_raster();
+				makesprva_raster();
+				makegrphva_raster();
+				scrndrawva_compose_raster();
+				y++;
+				// 奇数ライン
+				maketextva_blankraster();
+				makesprva_blankraster();
+				makegrphva_blankraster();
+				scrndrawva_compose_raster();
+				y++;
+			}
+			break;
+		
 		case 0x80:	// インターレースモード0
 			for (y = 0; y < lines /*SURFACE_HEIGHT*/;) {
 				// 偶数ライン
@@ -769,20 +787,22 @@ static void drawscreenva(void) {
 
 // 表示期間の開始
 void screendispva(NEVENTITEM item) {
-
+/*
 	PICITEM		pi;
-
+*/
 //	gdc_work(GDCWORK_SLAVE);
 	tsp.vsync = 0;
 	screendispflag = 0;
 	if (!np2cfg.DISPSYNC) {
 		drawscreenva();
 	}
+/*
 	pi = &pic.pi[0];
 	if (pi->irr & PIC_CRTV) {
 		pi->irr &= ~PIC_CRTV;
 //		gdc.vsyncint = 1;
 	}
+*/
 }
 
 // VSYNC期間の開始
@@ -792,7 +812,9 @@ void screenvsyncva(NEVENTITEM item) {
 //	MEMWAIT_VRAM = np2cfg.wait[3];
 //	MEMWAIT_GRCG = np2cfg.wait[5];
 //	gdc_work(GDCWORK_MASTER);
-	tsp.vsync = 0x20;
+
+//	tsp.vsync = 0x20;
+	tsp.vsync = 0x40;
 
 	videova.blinkcnt++;
 	if (--tsp.blinkcnt == 0) {
@@ -806,10 +828,13 @@ void screenvsyncva(NEVENTITEM item) {
 	}
 	nevent_set(NEVENT_FLAMES, tsp.vsyncclock, screendispva, NEVENT_RELATIVE);
 #else
+/*
 	// 割り込みは6クロック遅れて発生させる。
 	// (割り込みより前に IN AL,40hでVSYNC(bit5)=1が検出される場合がある
 	// 「最終平気UPO」ハング対策)
 	nevent_set(NEVENT_FLAMES, 6, screenvsyncva2, NEVENT_RELATIVE);
+*/
+	nevent_set(NEVENT_FLAMES, tsp.vsyncclock, screendispva, NEVENT_RELATIVE);
 #endif
 	// drawscreenで pccore.vsyncclockが変更される可能性があります
 	if (np2cfg.DISPSYNC) {
@@ -818,13 +843,41 @@ void screenvsyncva(NEVENTITEM item) {
 }
 
 #if 1
+/*
 void screenvsyncva2(NEVENTITEM item) {
 
 	pic_setirq(2);
 	nevent_set(NEVENT_FLAMES, tsp.vsyncclock - 6, screendispva, NEVENT_RELATIVE);
 
 }
+*/
 #endif
+
+void sysp4vsyncint(NEVENTITEM item) {
+	pic_setirq(2);
+}
+
+void sysp4vsyncstart(NEVENTITEM item) {
+	tsp.sysp4vsync = 0x20;
+
+	// 割り込みは6クロック遅れて発生させる。
+	// (割り込みより前に IN AL,40hでVSYNC(bit5)=1が検出される場合がある
+	// 「最終平気UPO」ハング対策)
+	nevent_set(NEVENT_FLAMES2, 6, sysp4vsyncint, NEVENT_RELATIVE);
+}
+
+void sysp4vsyncend(NEVENTITEM item) {
+	PICITEM		pi;
+
+	tsp.sysp4vsync = 0;
+
+	pi = &pic.pi[0];
+	if (pi->irr & PIC_CRTV) {
+		pi->irr &= ~PIC_CRTV;
+	}
+
+	nevent_set(NEVENT_FLAMES2, tsp.sysp4dispclock, sysp4vsyncstart, NEVENT_RELATIVE);
+}
 
 #endif
 
@@ -989,6 +1042,7 @@ void pccore_exec(BOOL draw) {
 	}
 	else {
 		nevent_set(NEVENT_FLAMES, tsp.dispclock, screenvsyncva, NEVENT_RELATIVE);
+		nevent_set(NEVENT_FLAMES2, tsp.sysp4vsyncextension, sysp4vsyncend, NEVENT_RELATIVE);
 	}
 #else
 	nevent_set(NEVENT_FLAMES, gdc.dispclock, screenvsync, NEVENT_RELATIVE);

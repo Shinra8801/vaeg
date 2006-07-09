@@ -28,7 +28,7 @@ typedef struct {
 	UINT8	syncparam[14];		// SYNCコマンドパラメータ
 	UINT16	screenlines;		// 画面ライン数(SYNCコマンドで指定されたもの)
 	BOOL	textmg;				// テキスト縦2倍拡大
-	BOOL	hsync15khz;			// true.15KHz, false.24KHz(SYNCコマンドで指定されたもの)
+//	BOOL	hsync15khz;			// true.15KHz, false.24KHz(SYNCコマンドで指定されたもの)
 
 	UINT16	flag;				// TSP_F_***
 
@@ -44,8 +44,14 @@ typedef struct {
 	UINT32	vsyncclock;			// 垂直同期信号(VSYNC)の出力時間(CPUクロック数)
 	UINT32	rasterclock;		// 1ラスタ表示の時間(CPUクロック数)
 
-	UINT8	vsync;				// bit5: 1.VSYNC期間
+	UINT32	sysp4vsyncextension;// TSP VSYNC終了後 システムポート4 VSYNCが1であり
+								// 続ける期間(CPUクロック数)
+	UINT32	sysp4dispclock;		// システムポート4 VSYNC の表示期間(CPUクロック数)
 
+	UINT8	vsync;				// bit5: 1.VSYNC期間
+	UINT8	sysp4vsync;			// bit5: 1.システムポート4 VSYNC期間
+
+	BYTE	dmy1[64];
 	
 								// paramfunc_generic 用
 
@@ -63,6 +69,7 @@ typedef struct {
 								// paramfunc_sprdef 用
 	BYTE	sprdef_offset;
 
+	BYTE	dmy2[128];
 } _TSP, *TSP;
 
 

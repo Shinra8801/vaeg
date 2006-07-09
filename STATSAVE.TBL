@@ -54,7 +54,10 @@ static const PROCTBL evtproc[] = {
 #if defined(SUPPORT_PC88VA)
 			{PROCID('e','s','0','V'), screendispva},
 			{PROCID('e','s','1','V'), screenvsyncva},
-			{PROCID('e','s','2','V'), screenvsyncva2},
+//			{PROCID('e','s','2','V'), screenvsyncva2},
+			{PROCID('e','s','v','s'), sysp4vsyncstart},
+			{PROCID('e','s','v','e'), sysp4vsyncend},
+			{PROCID('e','s','v','i'), sysp4vsyncint},
 #endif
 #if defined(VAEG_EXT)
 			{PROCID('e','f','t','m'), fdc_timer},
@@ -95,6 +98,9 @@ static const ENUMTBL evtnum[] = {
 #endif
 #if defined(VAEG_FIX)
 			{PROCID('f','s','t','w'), NEVENT_FDCSTATE},
+#endif
+#if defined(SUPPORT_PC88VA)
+			{PROCID('f','l','m','2'), NEVENT_FLAMES2},
 #endif
 };
 

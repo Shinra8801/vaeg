@@ -240,7 +240,7 @@ static void makeline(BYTE *v, UINT16 rwchar) {
 
 			font = cgromva_font(hccode);
 			fontw = cgromva_width(hccode);
-			fonth = 16;
+			fonth = (videova.txtmode & 0x04) ? 8 : 16;
 
 			for (r = 0; r < work.lineheight; r++) {
 				fontdata = *font;
@@ -436,7 +436,9 @@ void maketextva_begin(BOOL *scrn200) {
 
 	selectframe(0);
 
-	*scrn200 = tsp.hsync15khz && ((tsp.syncparam[0] & 0xc0) != 0x40);
+	//*scrn200 = tsp.hsync15khz && ((tsp.syncparam[0] & 0xc0) != 0x40);
+	*scrn200 = (videova_hsyncmode() != VIDEOVA_24_8KHZ) && 
+		       ((tsp.syncparam[0] & 0xc0) != 0x40);
 }
 
 void maketextva_blankraster(void) {

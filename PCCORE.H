@@ -186,7 +186,10 @@ void screenvsync(NEVENTITEM item);
 #if defined(SUPPORT_PC88VA)
 void screendispva(NEVENTITEM item);
 void screenvsyncva(NEVENTITEM item);
-void screenvsyncva2(NEVENTITEM item);
+//void screenvsyncva2(NEVENTITEM item);
+void sysp4vsyncint(NEVENTITEM item);
+void sysp4vsyncstart(NEVENTITEM item);
+void sysp4vsyncend(NEVENTITEM item);
 #endif
 
 void pccore_cfgupdate(void);

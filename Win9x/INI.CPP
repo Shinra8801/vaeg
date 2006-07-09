@@ -11,8 +11,11 @@
 #include	"pccore.h"
 
 #include	"bmsio.h"
+#if defined(SUPPORT_PC88VA)
 #include	"mouseifva.h"
 #include	"subsystemmx.h"
+#include	"sysportva.h"
+#endif
 
 static BOOL inigetbmp(const BYTE *ptr, UINT pos) {
 
@@ -476,6 +479,7 @@ static const INITBL iniitem[] = {
 #if defined(SUPPORT_PC88VA)
 	{"Mouse_VA", INITYPE_UINT8,		&mouseifvacfg.device,	0},
 	{"Sub_Mock", INITYPE_BOOL,		&subsystemmxcfg.mockup,	0},
+	{"DipSw_VA", INITYPE_HEX8,		&sysportvacfg.dipsw,	0},
 #endif
 
 	// OSàÀë∂ÅH

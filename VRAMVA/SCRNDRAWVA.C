@@ -400,8 +400,9 @@ void scrndrawva_compose_raster(void) {
 
 	bp = work.bp;
 	for (x = 0; x < SURFACE_WIDTH; x++) {
-		if (videova.grmode & 0x2000) {
+		if ((videova.grmode & 0x3000) == 0x3000) {
 			// XVSP = 1 (ビデオ信号出力モード)
+			// SYNCEN = 1 (水平同期信号出力モード)
 
 			if (work.y < videova.msktop * 2 || work.y > videova.mskbot * 2 + 1 ||
 				x < videova.mskleft || x > videova.mskrit) {

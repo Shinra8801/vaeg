@@ -26,6 +26,7 @@ enum {
 
 	// ステータス
 	STATUS_BUSY	= 0x04,
+	STATUS_VB	= 0x40,
 
 	// paramfunc
 	PARAMFUNC_NOP			= 0,
@@ -77,22 +78,25 @@ SYNC
 static void exec_sync(void) {
 	int i;
 	UINT16 newlines;
-	BOOL newhsync15khz;
+	//BOOL newhsync15khz;
 
 	for (i = 0; i < 14; i++) tsp.syncparam[i] = tsp.parambuf[i];
 	tsp.textmg = (tsp.syncparam[0] & 0xc0) == 0x80;
-	newlines = tsp.syncparam[0x0a] | ((tsp.syncparam[0x0b] & 0xc0) << 2);
-	newhsync15khz = tsp.syncparam[0x02] == 0x1c;
-	if (newlines != tsp.screenlines || newhsync15khz != tsp.hsync15khz) {
+	newlines = tsp.syncparam[0x0a] | ((tsp.syncparam[0x0b] & 0x40) << 2);
+	//newhsync15khz = tsp.syncparam[0x02] == 0x1c;
+	if (newlines != tsp.screenlines /*|| newhsync15khz != tsp.hsync15khz*/) {
 		tsp.screenlines = newlines;
-		tsp.hsync15khz = newhsync15khz;
+		//tsp.hsync15khz = newhsync15khz;
 		tsp.flag |= TSP_F_LINESCHANGED;
 	}
 	
-	TRACEOUT(("tsp: sync: textmg=0x%.2x, screenlines=%d, hsync=%s"
+//	TRACEOUT(("tsp: sync: textmg=0x%.2x, screenlines=%d, hsync=%s"
+//		, tsp.textmg
+//		, tsp.screenlines
+//		, (tsp.hsync15khz) ? "15KHz" : "24KHz"));
+	TRACEOUT(("tsp: sync: textmg=0x%.2x, screenlines=%d"
 		, tsp.textmg
-		, tsp.screenlines
-		, (tsp.hsync15khz) ? "15KHz" : "24KHz"));
+		, tsp.screenlines));
 
 	tsp.status &= ~STATUS_BUSY;
 }
@@ -257,7 +261,10 @@ static void paramfunc_generic(REG8 dat) {
 ステータス読み出し
 */
 static REG8 IOINPCALL tsp_i142(UINT port) {
-	return tsp.status;
+	REG8 dat;
+
+	dat = tsp.status | (tsp.vsync) ? STATUS_VB : 0;
+	return dat;
 }
 
 /*
@@ -373,6 +380,9 @@ void tsp_reset(void) {
 }
 
 void tsp_bind(void) {
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		tsp_updateclock();
+	}
 	/*
 	iocoreva_attachout(0x152, memctrlva_o152);
 	iocoreva_attachout(0x153, memctrlva_o153);
@@ -388,6 +398,7 @@ void tsp_bind(void) {
 // ---- 
 
 void tsp_updateclock(void) {
+#if 0
 	/*
 	TSPの仕様はわからないので、代わりに、
 	np2のGDCの処理と同じ計算を実施する。
@@ -418,7 +429,106 @@ void tsp_updateclock(void) {
 	tsp.dispclock = tsp.rasterclock * lf;
 	tsp.vsyncclock = cnt - tsp.dispclock;
 	timing_setrate(y, hclock);
+#else
+	UINT lbl, lbr, had, rbr, rbl, hs, tbl, tbr, vad, bbr, bbl, vs;
+	UINT w;
+	UINT h;
+	UINT cnt;
+	UINT32 hclock;
+	UINT32 clock;			// 1秒あたり表示ドット数
+	UINT sysp4displines;	// システムポート4 VSYNC: 表示期間ライン数
+	UINT sysp4vsyncexlines;	// システムポート4 VSYNC: TSPのVSYNC終了時点から
+							// 1である期間のライン数
+	int hsyncmode;
+	//UINT vaddefault, haddefault;
 
+	lbl = tsp.syncparam[2] & 0x3f;	// 左ブランク
+	lbr = tsp.syncparam[3] & 0x3f;	// 左ボーダー
+	had = tsp.syncparam[4];			// 水平表示領域
+	rbr = tsp.syncparam[5] & 0x3f;	// 右ボーダー
+	rbl = tsp.syncparam[6] & 0x3f;	// 右ブランク
+	hs  = tsp.syncparam[7] & 0x3f;	// 水平同期期間
+	tbl = tsp.syncparam[8] & 0x3f;	// 上ブランク
+	tbr = tsp.syncparam[9] & 0x3f;	// 上ボーダー
+	vad = tsp.syncparam[10] + ((tsp.syncparam[11] & 0x40) << 2);
+									// 垂直表示領域
+	bbr = tsp.syncparam[11] & 0x3f;	// 下ボーダー
+	bbl = tsp.syncparam[12] & 0x3f;	// 下ブランク
+	vs  = tsp.syncparam[13] & 0x3f;	// 垂直同期期間
+
+
+	if (vad == 0 && had == 0) {
+		// 初期化未
+		// SYNCパラメタが設定されていない場合でもtsp.dispclock/vsynclockが
+		// そこそこの値に設定されるようにする。
+		// 24KHz, 400ラインのデータを与えることにする。
+		lbl = 0x10; lbr = 0;
+		had = 0x9f;
+		rbl = 0x10; rbr = 0;
+		hs = 0x0f;
+		tbl = 0x19; tbr = 0;
+		vad = 0x190;
+		bbl = 0x07; bbr = 0;
+		vs = 8;
+		hsyncmode = VIDEOVA_24_8KHZ;
+	}
+	else {
+		hsyncmode = videova_hsyncmode();
+	}
+
+	switch(hsyncmode) {
+	case VIDEOVA_24_8KHZ:
+		clock = 20854022;
+		sysp4displines = 402;
+		sysp4vsyncexlines = 25;
+		//vaddefault = 0x190;
+		break;
+	case VIDEOVA_15_73KHZ:
+		//clock = 14219920;			// 15.73KHz
+		clock = 14252364;			// 実機測定値に近くなるように補正:15.766KHz
+		sysp4displines = 202;
+		sysp4vsyncexlines = 36;
+		//vaddefault = 0xc8;
+		break;
+	case VIDEOVA_15_98KHZ:
+		clock = 14189837;
+		sysp4displines = 202;
+		sysp4vsyncexlines = 37;
+		//vaddefault = 0xc8;
+		break;
+	}
+
+	if (vs < 4) vs = 4;
+	if (vad < 4) vad = 4;
+	had |= 1;
+	if (hs < 4) hs = 4;
+	if (lbl < 3) lbl = 3;
+
+	w = (lbl+1 + lbr + had+1 + rbr + rbl+1 + hs+1) * 4;
+									// 1ラインあたり総ドット数
+									// μPD72022データシートの解説と異なり、
+									// lbr, rbrには1が加算されないように
+									// 実機では見える
+	h = tbl + tbr + vad + bbr + bbl + vs;
+									// 1画面あたり総ライン数
+
+	hclock = clock / w;				// 1秒あたり表示ライン数
+	cnt = (pccore.baseclock * h) / hclock;
+									// 1画面あたり時間(ベースクロック数)
+	cnt *= pccore.multiple;			// 1画面あたり時間(CPUクロック数)
+	tsp.rasterclock = cnt / h;
+	//tsp.dispclock = tsp.rasterclock * (tbl + tbr + vad);
+	//tsp.vsyncclock = cnt - tsp.dispclock;
+	tsp.vsyncclock = cnt * (bbr + bbl + vs) / h;
+	tsp.dispclock = cnt - tsp.vsyncclock;
+	timing_setrate(h, hclock);
+
+//	tsp.sysp4vsyncextension = tsp.rasterclock * sysp4vsyncexlines;
+//	tsp.sysp4dispclock = tsp.rasterclock * sysp4displines;
+	tsp.sysp4vsyncextension = cnt * sysp4vsyncexlines / h;
+	tsp.sysp4dispclock = cnt * sysp4displines / h;
+
+#endif
 
 }
 

@@ -1,6 +1,9 @@
 
 enum {
+#if defined(VAEG_FIX)
+#else
 	NEVENT_MAXEVENTS	= 32,
+#endif
 	NEVENT_MAXCLOCK		= 0x400000,
 
 	NEVENT_FLAMES		= 0,
@@ -38,6 +41,13 @@ enum {
 #endif
 #if defined(VAEG_FIX)
 	NEVENT_FDCSTATE		= 31,
+#endif
+
+#if defined(SUPPORT_PC88VA)
+	NEVENT_FLAMES2		= 47,
+#endif
+#if defined(VAEG_FIX)
+	NEVENT_MAXEVENTS,
 #endif
 
 	NEVENT_ENABLE		= 0x0001,

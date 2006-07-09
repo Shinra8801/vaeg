@@ -49,7 +49,16 @@ BYTE *cgromva_font(UINT16 hccode) {
 	if (jis2 == 0 && lr == 0) {
 		// ANK (lr == 1の場合はANKとして扱わない)
 		base = fontmem;
-		font = 0x40000 + ((hccode & 0xff) << 4);
+		if (videova.txtmode & 0x04) {
+			// 8ドット
+			font = 0x41000 + ((hccode & 0xff) << 3);
+					/* テクマニに従えば 0x42000 + ((hccode & 0xff) << 4) となるが、
+					   間違っているっぽい */
+		}
+		else {
+			// 16ドット
+			font = 0x40000 + ((hccode & 0xff) << 4);
+		}
 	}
 	else {
 		if (jis1 < 0x28) {
@@ -178,11 +187,19 @@ static void IOOUTCALL cgromva_o14d(UINT port, REG8 dat) {
 static REG8 IOINPCALL cgromva_i14e(UINT port) {
 	BYTE *font;
 	UINT16 hccode;
+	int row;
 
 	hccode = curhccode();
 	font = cgromva_font(hccode);
 
-	font += cgromva_width(hccode) * (cgromva.cgrow & 0x0f);
+	if (hccode < 0x100 && videova.txtmode & 0x04) {
+		// ANK 8ドット
+		row = cgromva.cgrow & 0x07;
+	}
+	else {
+		row = cgromva.cgrow & 0x0f;
+	}
+	font += cgromva_width(hccode) * row;
 
 	return *font;
 

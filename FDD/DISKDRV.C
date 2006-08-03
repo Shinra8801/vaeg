@@ -8,6 +8,9 @@
 #include	"diskdrv.h"
 #include	"fddfile.h"
 
+#if defined(SUPPORT_OPRECORD)
+#include	"oprecord.h"
+#endif
 
 #define	DISK_DELAY	20			// (0.4sec)
 
@@ -65,6 +68,9 @@ void diskdrv_setfdd(REG8 drv, const char *fname, int readonly) {
 			file_cpyname(diskdrv_fname[drv], fname, sizeof(diskdrv_fname[0]));
 		}
 		sysmng_update(SYS_UPDATEFDD);
+#if defined(SUPPORT_OPRECORD)
+		oprecord_record_fdd((UINT8)drv, fname, (UINT8)readonly);
+#endif
 	}
 }
 

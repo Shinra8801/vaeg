@@ -8,6 +8,7 @@
 #include	"iocore.h"
 #include	"joymng.h"
 #include	"keystat.h"
+#include	"oprecord.h"
 
 #include	"iocoreva.h"
 
@@ -121,6 +122,10 @@ static void joypad_indata(UINT8 *data, UINT8 *button) {
 	UINT32	clock;
 	SINT32	diff;
 
+#if defined(SUPPORT_OPRECORD)
+	if (!oprecord_play_joypad(0, data, button)) return;
+#endif
+
 	clock = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
 	diff = clock - lastc;
 
@@ -150,6 +155,10 @@ static void joypad_indata(UINT8 *data, UINT8 *button) {
 
 	*data = ret & 0x0f;
 	*button = (ret >> 4) & 0x03;
+
+#if defined(SUPPORT_OPRECORD)
+	oprecord_record_joypad(0, *data, *button);
+#endif
 }
 
 

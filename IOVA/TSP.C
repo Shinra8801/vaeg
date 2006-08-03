@@ -512,6 +512,15 @@ void tsp_updateclock(void) {
 	h = tbl + tbr + vad + bbr + bbl + vs;
 									// 1画面あたり総ライン数
 
+	if (sysp4displines + sysp4vsyncexlines >= h) {
+		// 初代VAは起動時に24KHz時でも15.98KHz200ライン用のSYNC設定をする。
+		// この場合、sysp4displinesが全ライン数をこえてしまいポート40hの
+		// VSYNCが常に0となってしまう。これを回避するために以下の処理を
+		// 実行する。
+		sysp4displines = h - sysp4vsyncexlines - 4;
+	}
+
+
 	hclock = clock / w;				// 1秒あたり表示ライン数
 	cnt = (pccore.baseclock * h) / hclock;
 									// 1画面あたり時間(ベースクロック数)

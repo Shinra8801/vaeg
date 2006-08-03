@@ -43,6 +43,12 @@ typedef struct {
 
 	UINT32	clsaddr;	// CLS アドレス
 	UINT32	clscount;	// CLS 残りワード数
+
+	UINT16	lineslopedenominator;	// LINE 傾きの分母
+	UINT16	lineslopenumerator;		// LINE 傾きの分子
+	UINT32	lineslopecount;			// LINE 描画1ドットに付き分子を加算するカウンタ
+
+	UINT8	dummy2[64];
 } _SGP, *SGP;
 
 enum {
@@ -56,6 +62,9 @@ enum {
 	SGP_BLTMODE_HD	= 0x0400,
 	SGP_BLTMODE_TP	= 0x0300,
 	SGP_BLTMODE_OP	= 0x000f,
+
+	SGP_BLTMODE_LINE_VD	= 0x0400,
+	SGP_BLTMODE_LINE_HD	= 0x0800,
 };
 
 #ifdef __cplusplus

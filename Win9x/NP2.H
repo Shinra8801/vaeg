@@ -65,6 +65,9 @@ typedef struct {
 	BYTE	useromeo;
 	BYTE	thickframe;
 	BYTE	xrollkey;
+#if defined(SUPPORT_OPRECORD)
+	BYTE	oprecord;
+#endif
 } NP2OSCFG;
 
 
@@ -105,6 +108,13 @@ enum {
 
 	IDM_FLAGSAVE		= 20100,
 	IDM_FLAGLOAD		= 20150,
+
+#if defined(SUPPORT_OPRECORD)
+	IDM_OPRECORDSTOP	= 20200,
+	IDM_OPRECORDREPEAT	= 20201,
+	IDM_OPRECORDREC		= 20210,
+	IDM_OPRECORDPLAY	= 20250,
+#endif
 
 	WM_NP2CMD			= (WM_USER + 200),
 	WM_SSTP				= (WM_USER + 201)

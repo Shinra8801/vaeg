@@ -527,6 +527,9 @@ static const INITBL iniitem[] = {
 	{"force400", INIRO_BOOL,		&np2oscfg.force400,		0},
 	{"e_resume", INITYPE_BOOL,		&np2oscfg.resume,		0},
 	{"STATSAVE", INIRO_BOOL,		&np2oscfg.statsave,		0},
+#if defined(SUPPORT_OPRECORD)
+	{"OPRECORD", INIRO_BOOL,		&np2oscfg.oprecord,		0},
+#endif
 	{"nousemmx", INITYPE_BOOL,		&np2oscfg.disablemmx,	0},		// ver0.36
 	{"windtype", INITYPE_UINT8,		&np2oscfg.wintype,		0},
 	{"toolwind", INITYPE_BOOL,		&np2oscfg.toolwin,		0},		// ver0.38

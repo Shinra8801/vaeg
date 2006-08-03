@@ -61,6 +61,20 @@ static void about_init(HWND hWnd) {
 	POINT	pt;
 	RECT	parent;
 
+#if defined(VAEG_EXT)
+	{
+		HBITMAP	hbmp;
+		char	path[MAX_PATH];
+
+		getbiospath(path, "vaeg.bmp", sizeof(path));
+		hbmp = (HBITMAP)LoadImage(hInst, path, IMAGE_BITMAP,
+														0, 0, LR_LOADFROMFILE);
+		if (hbmp != NULL) {
+			SendDlgItemMessage(hWnd, IDC_NP2ICON, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbmp);
+		}
+	}
+#endif
+
 #if defined(SUPPORT_PC88VA)
 	milstr_ncpy(work, str_vaegtitle, sizeof(work));
 	milstr_ncat(work, VAEGREL_CORE, sizeof(work));

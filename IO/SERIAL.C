@@ -5,6 +5,10 @@
 #include	"iocore.h"
 #include	"keystat.h"
 
+#if defined(SUPPORT_OPRECORD)
+#include	"oprecord.h"
+#endif
+
 #if defined(SUPPORT_PC88VA)
 /*
   ToDo: 
@@ -306,6 +310,10 @@ void keyboard_ctrl(REG8 data) {
 }
 
 void keyboard_send(REG8 data) {
+
+#if defined(SUPPORT_OPRECORD)
+	oprecord_record_key(data);
+#endif
 
 #if defined(SUPPORT_PC88VA)
 	data = convertmodeldependent(data);

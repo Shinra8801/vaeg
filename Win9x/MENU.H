@@ -41,3 +41,7 @@ void xmenu_setsstp(BYTE value);
 #if defined(SUPPORT_PC88VA)
 void xmenu_setmousedevice(UINT8 value);
 #endif
+
+#if defined(SUPPORT_OPRECORD)
+void xmenu_setrepeat(int value);
+#endif

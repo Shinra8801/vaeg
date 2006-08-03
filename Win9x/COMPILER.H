@@ -120,6 +120,7 @@ typedef signed __int64		SINT64;
 #define SUPPORT_PC88VA
 #define SUPPORT_V30ORIGINAL
 #define SUPPORT_V30EXT
+#define SUPPORT_OPRECORD	5
 
 #define VAEG_FIX			// 98x1共用処理に修正を適用する
 #define VAEG_EXT			// 98x1共用処理に拡張を適用する

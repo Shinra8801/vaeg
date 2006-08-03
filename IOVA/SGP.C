@@ -22,6 +22,8 @@ enum {
 	FUNC_EXEC_BITBLT,
 	FUNC_EXEC_BITBLT_HD,
 	FUNC_EXEC_CLS,
+	FUNC_EXEC_LINE_X,
+	FUNC_EXEC_LINE_Y,
 };
 
 		_SGP	sgp;
@@ -259,7 +261,7 @@ static REG16 sgp_memoryread_w(UINT32 address) {
 							//		sgp_stepでメモリ転送が大量に生じ、CPU_REMCLOCKが大きく
 							//      現象し、イベントの発生が遅れる可能性がある。
 							//      4という値には根拠なし。
-	return rd16[(address >> 16) & 0x3f](address);
+	return rd16[(address >> 16) & 0x3f](address & 0x3fffffL);
 }
 
 /*
@@ -268,7 +270,7 @@ static REG16 sgp_memoryread_w(UINT32 address) {
 */
 static void sgp_memorywrite_w(UINT32 address, REG16 value) {
 	CPU_REMCLOCK -= 4;		// ToDo: sgp_remoryread_wを参照
-	wt16[(address >> 16) & 0x3f](address, value);
+	wt16[(address >> 16) & 0x3f](address & 0x3fffffL, value);
 }
 
 // ---- 
@@ -321,14 +323,10 @@ static void write_word(SGP_BLOCK block) {
 }
 */
 
-static void write_dest(void) {
-	UINT16 dat;
+static UINT16 logicalop(UINT16 dat, UINT16 dest, UINT16 *_mask) {
 	UINT16 mask;
-	UINT16 dest;
 
-	dat = SWAPWORD(sgp.newval);
-	mask = SWAPWORD(sgp.newvalmask);
-	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+	mask = *_mask;
 
 	switch (sgp.bltmode & SGP_BLTMODE_OP) {
 	case 0:		// 0
@@ -380,6 +378,43 @@ static void write_dest(void) {
 		dat = 0xffff;
 		break;
 	}
+
+	*_mask = mask;
+	return dat;
+}
+
+
+/*
+dat をピクセルデータ列として、ピクセル値が0の部分を0、非0の部分を1にしたマスクを
+返す
+*/
+static UINT16 zeromask(UINT16 dat, int scrnmode) {
+	UINT16 mask;
+	int BPP = bpp[scrnmode];
+	UINT16 pixmask  = ~(0xffff >> BPP); // 4bppなら0xf000
+	UINT16 maskelem = ~(0xffff << BPP); // 4bppなら0x000f
+	int i;
+
+	for (i = 0; i < dotcountmax[scrnmode]; i++) {
+		mask <<= BPP;
+		if (dat & pixmask) mask |= maskelem;
+		dat <<= BPP;
+	}
+
+	return mask;
+}
+
+
+static void write_dest(void) {
+	UINT16 dat;
+	UINT16 mask;
+	UINT16 dest;
+
+	dat = SWAPWORD(sgp.newval);
+	mask = SWAPWORD(sgp.newvalmask);
+	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+
+	dat = logicalop(dat, dest, &mask);
 
 	dat = dat & mask | (dest & ~mask);
 
@@ -583,9 +618,60 @@ static void cmd_patblt(void) {
 
 
 static void cmd_line(void) {
-	TRACEOUT(("SGP: cmd: line (not implemented)"));
-	sgp.pc += 14;
-	//ToDo
+
+	sgp.bltmode = sgp_memoryread_w(sgp.pc);
+	sgp.pc += 2;
+	fetch_block(sgp.pc, &sgp.dest);
+
+	TRACEOUT(("SGP: cmd: line: %04x, dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.bltmode, sgp.dest.dot, sgp.dest.scrnmode, sgp.dest.width, sgp.dest.height, sgp.dest.fbw, sgp.dest.address));
+	
+	sgp.pc += 12;
+	sgp.remainclock -= 106 * 2;	// ToDo 要測定
+
+	/*if (sgp.dest.width == 0 && sgp.dest.height == 0) {
+		// 実機の場合、メモリ破壊を起こすことから、
+		// width=height=0x10000 として動作していると想像される。
+	}
+	else*/ if (sgp.dest.width < sgp.dest.height) {
+		// 縦長
+		sgp.func = FUNC_EXEC_LINE_Y;
+		sgp.dest.ycount = sgp.dest.height;
+		sgp.lineslopedenominator = sgp.dest.height - 1;
+		sgp.lineslopenumerator   = 
+			(sgp.dest.width == 0) ? 0 : sgp.dest.width - 1;
+		sgp.lineslopecount = sgp.lineslopedenominator / 2;
+		sgp.dest.dotcount = sgp.dest.dot;
+		sgp.dest.nextaddress = sgp.dest.address;
+	}
+	else {
+		// 正方形または横長
+//		UINT16 dest;
+
+		sgp.func = FUNC_EXEC_LINE_X;
+		sgp.dest.xcount = sgp.dest.width;
+		sgp.lineslopedenominator = sgp.dest.width - 1;
+		sgp.lineslopenumerator   = 
+			(sgp.dest.height == 0) ? 0 : sgp.dest.height - 1;
+		sgp.lineslopecount = 
+			(sgp.lineslopedenominator == 0) ? 0 : (sgp.lineslopedenominator - 1) / 2;
+				// -1 する明確な根拠はないが、こうしないと、
+				// 幅7高さ6の場合の描画点の位置が実機と一致しない。
+		if (sgp.bltmode & SGP_BLTMODE_LINE_HD) {
+			// 負方向
+			sgp.dest.dotcount = sgp.dest.dot + 1;
+		}
+		else {
+			// 正方向
+			sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode] - sgp.dest.dot;
+		}
+		sgp.dest.nextaddress = sgp.dest.address;
+		
+		sgp.newval = 0;
+		sgp.newvalmask = 0;
+//		dest = sgp_memoryread_w(sgp.dest.nextaddress);
+//		sgp.dest.buf = SWAPWORD(dest);
+//		sgp.dest.buf <<= sgp.dest.dot * bpp[sgp.dest.scrnmode];
+	}
 }
 
 static void cmd_cls(void) {
@@ -843,6 +929,237 @@ static void exec_cls(void) {
 	sgp.remainclock -= 3 * 2;
 }
 
+/*
+static void write_line_word(void) {
+	UINT16 dat;
+	UINT16 dest;
+	UINT16 datmask;
+
+	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+	datmask = sgp.newvalmask;
+	dat = logicalop(sgp.newval, dest, &datmask);
+
+	dat = (dest & ~datmask) | (dat & datmask);
+	dat = SWAPWORD(dat);
+	sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+}
+*/
+
+/*
+X方向に1ドットずつ進めながらラインを描画する
+*/
+static void exec_line_x(void) {
+	int xdir, ydir;
+	int shift;
+//	BOOL written = FALSE;
+	UINT16 dat;
+	UINT16 dest;
+	UINT16 datmask;
+	int DOTCOUNTMAX = dotcountmax[sgp.dest.scrnmode];
+	int BPP = bpp[sgp.dest.scrnmode];
+//	UINT16 PIXMASK = ~(0xffff << BPP);			// 4bppなら 0x000f
+	UINT16 PIXMASK;
+
+	xdir = (sgp.bltmode & SGP_BLTMODE_LINE_HD) ? -1 : 1;
+	ydir = (sgp.bltmode & SGP_BLTMODE_LINE_VD) ? -1 : 1;
+
+	// 現在位置にドットを描画
+	dat = SWAPWORD(sgp.color);
+//	dat >>= (sgp.dest.dotcount - 1) * BPP;
+//	dat &= PIXMASK;
+//	dest = sgp.dest.buf >> (16 - BPP);
+
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0000:		// ソースをそのまま転送
+	default:
+		datmask = 0xffff;
+		break;
+	case 0x0100:		// ソースが0の部分は転送しない
+//		datmask = dat ? 0xffff : 0;
+		datmask = zeromask(dat, sgp.dest.scrnmode);
+		break;
+//	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+//	case 0x0300:		// 禁止 → 0x0200と同じ
+//		datmask = dest ? 0 : 0xffff;
+//		break;
+	}
+
+	if (xdir > 0) {
+		PIXMASK = ~(0xffff << BPP);			// 4bppなら 0x000f
+		shift = (sgp.dest.dotcount - 1) * BPP;
+		sgp.newval = (sgp.newval << BPP) | ((dat >> shift) & PIXMASK);
+		sgp.newvalmask = (sgp.newvalmask << BPP) | ((datmask >> shift) & PIXMASK);
+//		sgp.dest.buf <<= BPP;
+	}
+	else {
+		PIXMASK = ~(0xffff >> BPP);			// 4bppなら 0xf000
+		shift = (sgp.dest.dotcount - 1) * BPP;
+		sgp.newval = (sgp.newval >> BPP) | ((dat << shift) & PIXMASK);
+		sgp.newvalmask = (sgp.newvalmask >> BPP) | ((datmask << shift) & PIXMASK);
+	}
+
+	// 次の位置を求める
+
+	// x++
+	sgp.dest.dotcount--;
+	// y方向
+	sgp.lineslopecount += sgp.lineslopenumerator;
+	// カウンタ更新
+	sgp.dest.xcount--;
+
+	if (sgp.dest.dotcount == 0 || 
+		sgp.lineslopecount >= sgp.lineslopedenominator ||
+		sgp.dest.xcount == 0) {
+
+		// 書き込む
+		shift = sgp.dest.dotcount * BPP;
+		if (xdir > 0) {
+			sgp.newval <<= shift;
+			sgp.newvalmask <<= shift;
+		}
+		else {
+			sgp.newval >>= shift;
+			sgp.newvalmask >>= shift;
+		}
+		dest = sgp_memoryread_w(sgp.dest.nextaddress);
+		dest = SWAPWORD(dest);
+		datmask = sgp.newvalmask;
+		switch (sgp.bltmode & SGP_BLTMODE_TP) {
+		case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+		case 0x0300:		// 禁止 → 0x0200と同じ
+			datmask &= ~zeromask(dest, sgp.dest.scrnmode);
+			break;
+		}
+		dat = logicalop(sgp.newval, dest, &datmask);
+
+		dat = (dest & ~datmask) | (dat & datmask);
+		dat = SWAPWORD(dat);
+		sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+
+		if (sgp.dest.xcount > 0) {
+			if (sgp.dest.dotcount == 0) {
+				// アドレスを2進める
+				if (xdir > 0) {
+					sgp.dest.nextaddress += 2;
+				}
+				else {
+					sgp.dest.nextaddress -= 2;
+				}
+				sgp.dest.dotcount = DOTCOUNTMAX;
+			}
+			if (sgp.lineslopecount >= sgp.lineslopedenominator) {
+				sgp.lineslopecount -= sgp.lineslopedenominator;
+				// y = y + ydir
+				if (ydir > 0) {
+					sgp.dest.nextaddress += sgp.dest.fbw;
+				}
+				else {
+					sgp.dest.nextaddress -= sgp.dest.fbw;
+				}
+			}
+
+//			dest = sgp_memoryread_w(sgp.dest.nextaddress);
+//			sgp.dest.buf = SWAPWORD(dat);
+//			sgp.dest.buf <<= (DOTCOUNTMAX - sgp.dest.dotcount) * BPP;
+			sgp.newval = 0;
+			sgp.newvalmask = 0;
+		}
+	}
+
+	// 終了判定
+	if (sgp.dest.xcount == 0) {
+		sgp.func = FUNC_FETCH_COMMAND;
+	}
+
+	// 時間消費
+	sgp.remainclock -= 3 * 2;		// ToDo 要測定
+
+}
+
+
+
+
+/*
+Y方向に1ドットずつ進めながらラインを描画する
+*/
+static void exec_line_y(void) {
+	int ydir, xdir;
+	int DOTCOUNTMAX = dotcountmax[sgp.dest.scrnmode];
+	UINT16 dest;
+	UINT16 dat;
+	UINT16 datmask;
+	int BPP = bpp[sgp.dest.scrnmode];
+	UINT16 pixmask;
+
+	ydir = (sgp.bltmode & SGP_BLTMODE_LINE_VD) ? -1 : 1;
+	xdir = (sgp.bltmode & SGP_BLTMODE_LINE_HD) ? -1 : 1;
+
+	// 現在位置にドットを描画
+	dat = SWAPWORD(sgp.color);
+	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+	dest = SWAPWORD(dest);
+
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0000:		// ソースをそのまま転送
+		datmask = 0xffff;
+		break;
+	case 0x0100:		// ソースが0の部分は転送しない
+//		datmask = (dat & pixmask) ? 0xffff : 0;
+		datmask = zeromask(dat, sgp.dest.scrnmode);
+		break;
+	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+	case 0x0300:		// 禁止 → 0x0200と同じ
+//		datmask = (dest & pixmask) ? 0 : 0xffff;
+		datmask = ~zeromask(dest, sgp.dest.scrnmode);
+		break;
+	}
+
+	pixmask = ~(0xffff >> BPP);
+	pixmask >>= sgp.dest.dotcount * BPP;
+	datmask &= pixmask;
+	dat = logicalop(dat, dest, &datmask);
+
+	dat = (dest & ~datmask) | (dat & datmask);
+
+	dat = SWAPWORD(dat);
+	sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+
+	// 次の位置を求める
+	
+	// y = y + ydir
+	if (ydir > 0) {
+		sgp.dest.nextaddress += sgp.dest.fbw;
+	}
+	else {
+		sgp.dest.nextaddress -= sgp.dest.fbw;
+	}
+	
+	sgp.lineslopecount += sgp.lineslopenumerator;
+	if (sgp.lineslopecount >= sgp.lineslopedenominator) {
+		// x = x + xdir
+		sgp.dest.dotcount += xdir;
+		if (sgp.dest.dotcount < 0) {
+			sgp.dest.nextaddress -= 2;
+			sgp.dest.dotcount += DOTCOUNTMAX;
+		}
+		else if (sgp.dest.dotcount >= DOTCOUNTMAX) {
+			sgp.dest.nextaddress += 2;
+			sgp.dest.dotcount -= DOTCOUNTMAX;
+		}
+		
+		sgp.lineslopecount -= sgp.lineslopedenominator;
+	}
+
+	// カウンタの更新、終了判定
+	sgp.dest.ycount--;
+	if (sgp.dest.ycount == 0) {
+		sgp.func = FUNC_FETCH_COMMAND;
+	}
+
+	// 時間消費
+	sgp.remainclock -= 3 * 2;		// ToDo 要測定
+}
+
 
 
 // ---- 
@@ -908,6 +1225,12 @@ void sgp_step(void) {
 			break;
 		case FUNC_EXEC_CLS:
 			exec_cls();
+			break;
+		case FUNC_EXEC_LINE_X:
+			exec_line_x();
+			break;
+		case FUNC_EXEC_LINE_Y:
+			exec_line_y();
 			break;
 		case FUNC_FETCH_COMMAND:
 		default:

@@ -10,6 +10,9 @@
 #include	"mouseifva.h"
 #endif
 
+#if defined(SUPPORT_OPRECORD)
+#include	"oprecord.h"
+#endif
 
 #define	MFCHECK(a) ((a)?MF_CHECKED:MF_UNCHECKED)
 
@@ -265,6 +268,40 @@ static void addstatsavemenu(HMENU hMenu, UINT pos) {
 }
 #endif
 
+#if defined(SUPPORT_OPRECORD)
+static const char xmenu_oprec[] = "&Replay";
+static const char xmenu_oprecrec[] = "Rec %u";
+static const char xmenu_oprecplay[] = "Play %u";
+
+static void addoprecordmenu(HMENU hMenu, UINT pos) {
+
+	HMENU	hSubMenu;
+	UINT	i;
+	char	buf[16];
+
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDSTOP, "Stop");
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDREPEAT, "Repeat");
+	AppendMenu(hSubMenu, MF_MENUBARBREAK, 0, NULL);
+	for (i=0; i<SUPPORT_OPRECORD; i++) {
+		SPRINTF(buf, xmenu_oprecrec, i);
+		AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDREC + i, buf);
+	}
+	AppendMenu(hSubMenu, MF_MENUBARBREAK, 0, NULL);
+	for (i=0; i<SUPPORT_OPRECORD; i++) {
+		SPRINTF(buf, xmenu_oprecplay, i);
+		AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDPLAY + i, buf);
+	}
+	InsertMenu(hMenu, pos, MF_BYPOSITION | MF_POPUP,
+											(UINT32)hSubMenu, xmenu_oprec);
+}
+
+void xmenu_setrepeat(int value) {
+	oprecord.repeat = value;
+	CheckMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORDREPEAT, MFCHECK(value));
+}
+#endif
+
 void xmenu_initialize(void) {
 
 	HMENU	hMenu;
@@ -300,6 +337,11 @@ void xmenu_initialize(void) {
 #if defined(SUPPORT_STATSAVE)
 	if (np2oscfg.statsave) {
 		addstatsavemenu(hMenu, 1);
+#if defined(SUPPORT_OPRECORD)
+		if (np2oscfg.oprecord) {
+			addoprecordmenu(hMenu, 2);
+		}
+#endif
 	}
 #endif
 }

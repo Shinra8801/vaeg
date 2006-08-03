@@ -50,6 +50,10 @@
 #include	"debugctrl.h"
 #endif
 
+#if defined(SUPPORT_OPRECORD)
+#include	"oprecord.h"
+#endif
+
 #if defined(SUPPORT_PC88VA)
 #include	"bkupmemva.h"
 #include	"mouseifva.h"
@@ -955,6 +959,17 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			}
 			break;
 
+#if defined(SUPPORT_OPRECORD)
+		case IDM_OPRECORDSTOP:
+			oprecord_stop_play();
+			oprecord_stop_record();
+			break;
+
+		case IDM_OPRECORDREPEAT:
+			xmenu_setrepeat(oprecord.repeat ? FALSE : TRUE);
+			break;
+#endif
+
 		default:
 #if defined(SUPPORT_STATSAVE)
 			if ((cmd >= IDM_FLAGSAVE) &&
@@ -968,6 +983,37 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 				char ext[4];
 				SPRINTF(ext, np2flagext, cmd - IDM_FLAGLOAD);
 				flagload(ext, "Status Load", TRUE);
+			}
+#endif
+#if defined(SUPPORT_OPRECORD)
+			if ((cmd >= IDM_OPRECORDREC) &&
+				(cmd < (IDM_OPRECORDREC + SUPPORT_OPRECORD))) {
+				char ext[4];
+				char path[MAX_PATH];
+				SPRINTF(ext, np2flagext, cmd - IDM_OPRECORDREC + 10);
+				flagsave(ext);
+
+				SPRINTF(ext, "O%02d", cmd - IDM_OPRECORDREC + 10);
+				file_cpyname(path, modulefile, sizeof(path));
+				file_cutext(path);
+				file_catname(path, str_dot, sizeof(path));
+				file_catname(path, ext, sizeof(path));
+				oprecord_start_record(path);
+			}
+			if ((cmd >= IDM_OPRECORDPLAY) &&
+				(cmd < (IDM_OPRECORDPLAY + SUPPORT_OPRECORD))) {
+				char ext[4];
+				char path[MAX_PATH];
+				SPRINTF(ext, np2flagext, cmd - IDM_OPRECORDPLAY + 10);
+				flagload(ext, "Status Load", TRUE);
+
+				SPRINTF(ext, "O%02d", cmd - IDM_OPRECORDPLAY + 10);
+				file_cpyname(path, modulefile, sizeof(path));
+				file_cutext(path);
+				file_catname(path, str_dot, sizeof(path));
+				file_catname(path, ext, sizeof(path));
+				oprecord_start_play(path);
+				oprecord.playno = cmd - IDM_OPRECORDPLAY;
 			}
 #endif
 			break;
@@ -1147,7 +1193,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 				GetClientRect(hWnd, &rect);
 				width = rect.right - rect.left;
 				height = rect.bottom - rect.top;
+#if defined(VAEG_EXT)
+				{
+					char	path[MAX_PATH];
+
+					getbiospath(path, "vaeg.bmp", sizeof(path));
+					hbmp = (HBITMAP)LoadImage(hinst, path, IMAGE_BITMAP,
+														0, 0, LR_LOADFROMFILE);
+					if (hbmp == NULL) {
+						hbmp = LoadBitmap(hinst, "NP2BMP");
+					}
+				}
+#else
 				hbmp = LoadBitmap(hinst, "NP2BMP");
+#endif
 				GetObject(hbmp, sizeof(BITMAP), &bmp);
 				hbrush = (HBRUSH)SelectObject(hdc,
 												GetStockObject(BLACK_BRUSH));
@@ -1431,6 +1490,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return(0L);
 }
 
+#if defined(SUPPORT_OPRECORD)
+static void setfdd(UINT8 drv, const char *filename, UINT8 readonly) {
+	diskdrv_setfdd(drv, filename, readonly);
+	toolwin_setfdd(drv, filename);
+}
+
+static void restartplay(void) {
+	SendMessage(hWndMain, WM_COMMAND, IDM_OPRECORDPLAY + oprecord.playno, 0);
+}
+#endif
+
 #if defined(VAEG_EXT)
 static void debugwait(void) {
 	MSG			msg;
@@ -1506,6 +1576,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	mdbgwin_readini();
 #if defined(VAEG_EXT)
 	debugctrl_readini();
+#endif
+#if defined(SUPPORT_OPRECORD)
+	oprecord_set_setfdd(setfdd);
+	oprecord_set_restartplay(restartplay);
 #endif
 #if defined(SUPPORT_PC88VA)
 	bkupmemva_load();
@@ -1741,6 +1815,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 
 	while(1) {
 		if (!np2stopemulate) {
+#if defined(SUPPORT_OPRECORD)
+			oprecord_play_update();
+#endif
 			if (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE)) {
 				if (!GetMessage(&msg, NULL, 0, 0)) {
 					break;

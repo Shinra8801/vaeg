@@ -779,6 +779,10 @@ SOURCE=.\DIALOG\D_BMP.CPP
 # End Source File
 # Begin Source File
 
+SOURCE=.\DIALOG\D_BMS.CPP
+# End Source File
+# Begin Source File
+
 SOURCE=.\DIALOG\D_CLND.CPP
 # End Source File
 # Begin Source File
@@ -1585,10 +1589,6 @@ SOURCE=..\CALENDAR.C
 # End Source File
 # Begin Source File
 
-SOURCE=.\DIALOG\D_BMS.CPP
-# End Source File
-# Begin Source File
-
 SOURCE=..\DEBUGSUB.C
 # End Source File
 # Begin Source File
@@ -1598,6 +1598,10 @@ SOURCE=..\KEYSTAT.C
 # Begin Source File
 
 SOURCE=..\NEVENT.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\OPRECORD.C
 # End Source File
 # Begin Source File
 

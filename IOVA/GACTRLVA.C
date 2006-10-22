@@ -140,7 +140,7 @@ static REG8 IOINPCALL gactrlva_i516(UINT port) {
 
 static void IOOUTCALL gactrlva_o518(UINT port, REG8 dat) {
 	if (gactrlva.m.advancedaccessmode ^ dat & 0x04) {
-		if (!dat & 0x04) {
+		if (!(dat & 0x04)) {
 			//パターンレジスタを8bitに変更
 			gactrlva.m.patternreadpointer  = 0xf0;
 			gactrlva.m.patternwritepointer = 0xf0;
@@ -257,7 +257,7 @@ static REG8 IOINPCALL gactrlva_i540(UINT port) {
 }
 
 static void IOOUTCALL gactrlva_o550(UINT port, REG8 dat) {
-	if (!gactrlva.m.advancedaccessmode & 0x04) {
+	if (!(gactrlva.m.advancedaccessmode & 0x04)) {
 		// パターンレジスタ 8bit
 		dat = 0;
 	}
@@ -278,7 +278,7 @@ static REG8 IOINPCALL gactrlva_i550(UINT port) {
 }
 
 static void IOOUTCALL gactrlva_o552(UINT port, REG8 dat) {
-	if (!gactrlva.m.advancedaccessmode & 0x04) {
+	if (!(gactrlva.m.advancedaccessmode & 0x04)) {
 		// パターンレジスタ 8bit
 		dat = 0;
 	}

@@ -981,6 +981,7 @@ BEGIN
         MENUITEM "&Sound Register",             IDM_VIEWMODESND
         MENUITEM "&Bank Register (88VA)",       IDM_VIEWMODEVABANK
         MENUITEM "&Video (88VA)",               IDM_VIEWMODEVIDEOVA
+        MENUITEM "&Graph Access Control (88VA)", IDM_VIEWMODEGACTRLVA
         MENUITEM "Subsystem R&egister (88VA)",  IDM_VIEWMODESUBREG
         MENUITEM "Subs&ystem Memory Dump (88VA)", IDM_VIEWMODESUBMEM
         MENUITEM "Subsystem U&nassemble (88VA)", IDM_VIEWMODESUBASM

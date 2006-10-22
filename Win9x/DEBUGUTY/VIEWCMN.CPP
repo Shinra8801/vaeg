@@ -23,6 +23,7 @@
 #include	"memoryva.h"
 #include	"viewvabank.h"
 #include	"viewvideova.h"
+#include	"viewgactrlva.h"
 #include	"viewsubmem.h"
 #include	"viewsubreg.h"
 #include	"viewsubasm.h"
@@ -156,6 +157,10 @@ void viewcmn_setmode(NP2VIEW_T *dst, NP2VIEW_T *src, BYTE type) {
 			viewvideova_init(dst, src);
 			break;
 
+		case VIEWMODE_GACTRLVA:
+			viewgactrlva_init(dst, src);
+			break;
+
 		case VIEWMODE_SUBMEM:
 			viewsubmem_init(dst, src);
 			break;
@@ -200,6 +205,9 @@ LRESULT CALLBACK viewcmn_dispat(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 			case VIEWMODE_VIDEOVA:
 				return(viewvideova_proc(dbg, hwnd, msg, wp, lp));
+
+			case VIEWMODE_GACTRLVA:
+				return(viewgactrlva_proc(dbg, hwnd, msg, wp, lp));
 
 			case VIEWMODE_SUBMEM:
 				return(viewsubmem_proc(dbg, hwnd, msg, wp, lp));

@@ -402,6 +402,7 @@
 #define IDM_VIEWMODESUBMEM              40128
 #define IDM_VIEWMODESUBREG              40129
 #define IDM_VIEWMODESUBASM              40130
+#define IDM_VIEWMODEGACTRLVA            40131
 
 // Next default values for new objects
 // 
@@ -409,7 +410,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
-#define _APS_NEXT_COMMAND_VALUE         40131
+#define _APS_NEXT_COMMAND_VALUE         40132
 #define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

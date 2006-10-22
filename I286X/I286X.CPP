@@ -67,7 +67,7 @@ void i286x_deinitialize(void) {
 }
 
 static void i286x_initreg(void) {
-
+									// V30はV30PATCH.CPPに別途用意
 	I286_CS = 0xf000;
 	CS_BASE = 0xf0000;
 	I286_IP = 0xfff0;
@@ -75,11 +75,25 @@ static void i286x_initreg(void) {
 	i286x_resetprefetch();
 }
 
+#if defined(VAEG_FIX)
 void i286x_reset(void) {
+	UINT8 cputype = CPU_TYPE;
 
+	ZeroMemory(&i286core.s, sizeof(i286core.s));
+	CPU_TYPE = cputype;
+	if (cputype == CPUTYPE_V30) {
+		v30x_initreg();
+	}
+	else {
+		i286x_initreg();
+	}
+}
+#else
+void i286x_reset(void) {
 	ZeroMemory(&i286core.s, sizeof(i286core.s));
 	i286x_initreg();
 }
+#endif
 
 void i286x_shut(void) {
 
@@ -2890,8 +2904,13 @@ I286 _popf(void) {								// 9D: popf
 				add		I286_SP, 2
 				and		ax, 0fffh
 				mov		I286_FLAG, ax
+#if defined(VAEG_FIX)
+				and		ah, 1
+				cmp		ah, 1
+#else
 				and		ah, 3
 				cmp		ah, 3
+#endif
 				sete	I286_TRAP
 
 				je		irqcheck				// fast_intr
@@ -3847,7 +3866,7 @@ I286 _into(void) {								// CE: into
 }
 
 I286 _iret(void) {								// CF: iret
-
+												//		V30用はV30PATCH.CPPに別途作成(Shinra)
 		__asm {
 				I286CLOCK(31)
 				mov		edi, SS_BASE
@@ -3869,8 +3888,13 @@ I286 _iret(void) {								// CF: iret
 				mov		I286_SP, bx
 				and		ah, 0fh
 				mov		I286_FLAG, ax
+#if defined(VAEG_FIX)
+				and		ah, 1
+				cmp		ah, 1
+#else
 				and		ah, 3
 				cmp		ah, 3
+#endif
 				sete	I286_TRAP
 				RESET_XPREFETCH
 
@@ -4466,7 +4490,11 @@ I286 _cli(void) {								// FA: cli
 				GET_NEXTPRE1
 				I286CLOCK(2)
 				and		I286_FLAG, not I_FLAG
+#if defined(VAEG_FIX)
+				// シングルステップ割り込みは割り込み許可フラグの影響を受けない
+#else
 				mov		I286_TRAP, 0
+#endif
 				ret
 		}
 }
@@ -4482,8 +4510,12 @@ I286 _sti(void) {								// FB: sti
 				movzx	ebp, bl
 				bts		I286_FLAG, 9
 				jne		jmp_nextop
+#if defined(VAEG_FIX)
+				// シングルステップ割り込みは割り込み許可フラグの影響を受けない
+#else
 				test	I286_FLAG, T_FLAG
 				setne	I286_TRAP
+#endif
 
 				jne		nextopandexit			// fast_intr
 				mov		al, pic.pi[0 * (type _PICITEM)].imr

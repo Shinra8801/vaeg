@@ -106,6 +106,10 @@ LRESULT CALLBACK ViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 					viewer_segmode(hWnd, VIEWMODE_VIDEOVA);
 					break;
 
+				case IDM_VIEWMODEGACTRLVA:
+					viewer_segmode(hWnd, VIEWMODE_GACTRLVA);
+					break;
+
 				case IDM_VIEWMODESUBMEM:
 					viewer_segmode(hWnd, VIEWMODE_SUBMEM);
 					break;

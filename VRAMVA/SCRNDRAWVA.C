@@ -273,7 +273,7 @@ void scrndrawva_compose_raster(void) {
 			case VIDEOVA_GRAPHICSCREEN0:
 				if (videova.grmode & 0x8000) {
 					// GDEN0 = 1 (グラフィック表示イネーブル)
-					scrn->raster = grph0_raster;
+					scrn->raster = (grph0_noraster) ? NULL : grph0_raster;
 					scrn->pixelmode = videova.grres & 0x0003;
 					xparhigh = videova.xpar_g0;
 					if (palmode == 3 && scrn->pixelmode >= 2) {
@@ -291,7 +291,7 @@ void scrndrawva_compose_raster(void) {
 			case VIDEOVA_GRAPHICSCREEN1:
 				if (videova.grmode & 0x8000) {
 					// GDEN0 = 1 (グラフィック表示イネーブル)
-					scrn->raster = grph1_raster;
+					scrn->raster = (grph1_noraster) ? NULL : grph1_raster;
 					scrn->pixelmode = (videova.grres >> 8) & 0x0003;
 					xparhigh = videova.xpar_g1;
 					if (palmode == 3 && scrn->pixelmode >= 2) {
@@ -355,11 +355,11 @@ void scrndrawva_compose_raster(void) {
 				// GDEN0 = 1 (グラフィック表示イネーブル)
 				switch (type) {
 				case VIDEOVA_GRAPHICSCREEN0:
-					scrn->raster = grph0_raster;
+					scrn->raster = (grph0_noraster) ? NULL : grph0_raster;
 					scrn->pixelmode = videova.grres & 0x0003;
 					break;
 				case VIDEOVA_GRAPHICSCREEN1:
-					scrn->raster = grph1_raster;
+					scrn->raster = (grph1_noraster) ? NULL : grph1_raster;
 					scrn->pixelmode = (videova.grres >> 8) & 0x0003;
 					break;
 				}

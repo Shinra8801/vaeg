@@ -259,10 +259,19 @@ I286 v30_popf(void) {							// 9D: popf
 				add		ecx, SS_BASE
 				call	i286_memoryread_w
 				add		I286_SP, 2
+#if defined(VAEG_FIX)
+				or		ax, 0f002h
+#else
 				or		ah, 0f0h
+#endif
 				mov		I286_FLAG, ax
+#if defined(VAEG_FIX)
+				and		ah, 1
+				cmp		ah, 1
+#else
 				and		ah, 3
 				cmp		ah, 3
+#endif
 				sete	I286_TRAP
 				I286IRQCHECKTERM
 		}
@@ -688,6 +697,60 @@ I286 v30shift_ea16_data8(void) {				// C1: shift EA16, DATA8
 				jmp		sftext16v30_table[edi]
 	}
 }
+
+
+#if defined(VAEG_FIX)
+I286 v30_iret(void) {								// CF: iret
+
+		__asm {
+				I286CLOCK(31)
+				mov		edi, SS_BASE
+				movzx	ebx, I286_SP
+				lea		ecx, [edi + ebx]
+				add		bx, 2
+				call	i286_memoryread_w
+				mov		si, ax
+				lea		ecx, [edi + ebx]
+				add		bx, 2
+				call	i286_memoryread_w
+				mov		I286_CS, ax
+				and		eax, 0000ffffh
+				shl		eax, 4					// make segreg
+				mov		CS_BASE, eax
+				lea		ecx, [edi + ebx]
+				add		bx, 2
+				call	i286_memoryread_w
+				mov		I286_SP, bx
+				and		ah, 0fh
+				or		ax, 0f002h				// V30と286の唯一の差分
+				mov		I286_FLAG, ax
+
+				and		ah, 1
+				cmp		ah, 1
+				//and		ah, 3
+				//cmp		ah, 3
+
+				sete	I286_TRAP
+				RESET_XPREFETCH
+
+				cmp		I286_TRAP, 0			// fast_intr
+				jne		irqcheck
+				test	I286_FLAG, I_FLAG
+				je		nextop
+				mov		al, pic.pi[0 * (type _PICITEM)].imr
+				mov		ah, pic.pi[1 * (type _PICITEM)].imr
+				not		ax
+				test	al, pic.pi[0 * (type _PICITEM)].irr
+				jne		irqcheck
+				test	ah, pic.pi[1 * (type _PICITEM)].irr
+				jne		irqcheck
+nextop:			ret
+
+irqcheck:		I286IRQCHECKTERM
+		}
+}
+#endif
+
 
 I286 v30shift_ea8_cl(void) {					// D2: shift EA8, cl
 
@@ -1849,7 +1912,11 @@ static const V30PATCH v30patch_op[] = {
 			{0x36, v30segprefix_ss},		// 36:	ss:
 			{0x3e, v30segprefix_ds},		// 3E:	ds:
 			{0x54, v30push_sp},				// 54:	push	sp
+#if !defined(VAEG_FIX)
+			/* V30/μPD9002ではPOP SPはスタックの値をSPに代入して終わり。(2を加算しない)
+			   以下の実装は誤り */
 			{0x5c, v30pop_sp},				// 5C:	pop		sp
+#endif
 			{0x63, v30_reserved},			// 63:	reserved
 #if defined(SUPPORT_V30ORIGINAL)
 			{0x64, v30_reserved_0x0f},		// 64:	repnc
@@ -1865,6 +1932,9 @@ static const V30PATCH v30patch_op[] = {
 			{0x9d, v30_popf},				// 9D:	popf
 			{0xc0, v30shift_ea8_data8},		// C0:	shift	EA8, DATA8
 			{0xc1, v30shift_ea16_data8},	// C1:	shift	EA16, DATA8
+#if defined(VAEG_FIX)
+			{0xcf, v30_iret},				// CF:	iret
+#endif
 			{0xd2, v30shift_ea8_cl},		// D2:	shift EA8, cl
 			{0xd3, v30shift_ea16_cl},		// D3:	shift EA16, cl
 			{0xd4, v30_aam},				// D4:	AAM
@@ -1937,7 +2007,11 @@ static const V30PATCH v30patch_repe[] = {
 			{0x36, v30repe_segprefix_ss},	// 36:	repe ss:
 			{0x3e, v30repe_segprefix_ds},	// 3E:	repe ds:
 			{0x54, v30push_sp},				// 54:	push	sp
+#if !defined(VAEG_FIX)
+			/* V30/μPD9002ではPOP SPはスタックの値をSPに代入して終わり。(2を加算しない)
+			   以下の実装は誤り */
 			{0x5c, v30pop_sp},				// 5C:	pop		sp
+#endif
 			{0x63, v30_reserved},			// 63:	reserved
 			{0x64, v30_reserved},			// 64:	reserved
 			{0x65, v30_reserved},			// 65:	reserved
@@ -1948,6 +2022,9 @@ static const V30PATCH v30patch_repe[] = {
 			{0x9d, v30_popf},				// 9D:	popf
 			{0xc0, v30shift_ea8_data8},		// C0:	shift	EA8, DATA8
 			{0xc1, v30shift_ea16_data8},	// C1:	shift	EA16, DATA8
+#if defined(VAEG_FIX)
+			{0xcf, v30_iret},				// CF:	iret
+#endif
 			{0xd2, v30shift_ea8_cl},		// D2:	shift EA8, cl
 			{0xd3, v30shift_ea16_cl},		// D3:	shift EA16, cl
 			{0xd4, v30_aam},				// D4:	AAM
@@ -2016,7 +2093,11 @@ static const V30PATCH v30patch_repne[] = {
 			{0x36, v30repne_segprefix_ss},	// 36:	repne ss:
 			{0x3e, v30repne_segprefix_ds},	// 3E:	repne ds:
 			{0x54, v30push_sp},				// 54:	push	sp
+#if !defined(VAEG_FIX)
+			/* V30/μPD9002ではPOP SPはスタックの値をSPに代入して終わり。(2を加算しない)
+			   以下の実装は誤り */
 			{0x5c, v30pop_sp},				// 5C:	pop		sp
+#endif
 			{0x63, v30_reserved},			// 63:	reserved
 			{0x64, v30_reserved},			// 64:	reserved
 			{0x65, v30_reserved},			// 65:	reserved
@@ -2027,6 +2108,9 @@ static const V30PATCH v30patch_repne[] = {
 			{0x9d, v30_popf},				// 9D:	popf
 			{0xc0, v30shift_ea8_data8},		// C0:	shift	EA8, DATA8
 			{0xc1, v30shift_ea16_data8},	// C1:	shift	EA16, DATA8
+#if defined(VAEG_FIX)
+			{0xcf, v30_iret},				// CF:	iret
+#endif
 			{0xd2, v30shift_ea8_cl},		// D2:	shift EA8, cl
 			{0xd3, v30shift_ea16_cl},		// D3:	shift EA16, cl
 			{0xd4, v30_aam},				// D4:	AAM
@@ -2172,7 +2256,19 @@ void v30xinit(void) {
 #endif
 }
 
+#if defined(VAEG_FIX)
+void v30x_initreg(void) {
+	I286_CS = 0xf000;
+	CS_BASE = 0xf0000;
+	I286_IP = 0xfff0;
+	I286_FLAG = 0xf002;				// 286との唯一の差異
+	i286core.s.adrsmask = 0xfffff;
+	i286x_resetprefetch();
+}
+#endif
+
 LABEL void v30x(void) {
+	/* ToDo: シングルステップ割り込みの挙動が多分正しくない。 Shinra */
 
 	__asm {
 				pushad
@@ -2235,6 +2331,36 @@ v30notrap:		mov		dword ptr (i286core.s.prefetchque), ebx
 	}
 }
 
+#if defined(VAEG_FIX)
+				/* シングルステップ割り込みの動作を修正 */
+LABEL void v30x_step(void) {
+
+	__asm {
+				pushad
+				mov		ebx, dword ptr (i286core.s.prefetchque)
+				movzx	esi, I286_IP
+
+				movzx	eax, bl
+				cmp		I286_TRAP, 0
+				jne		short v30_trapping
+
+				call	v30op[eax*4]
+nexts:
+				mov		dword ptr (i286core.s.prefetchque), ebx
+				mov		I286_IP, si
+
+				call	dmap_i286
+				popad
+				ret
+
+v30_trapping:
+				call	v30op[eax*4]
+				mov		ecx, 1
+				call	i286x_localint
+				jmp		nexts
+		}
+}
+#else
 LABEL void v30x_step(void) {
 
 	__asm {
@@ -2258,4 +2384,4 @@ nexts:
 				ret
 		}
 }
-
+#endif

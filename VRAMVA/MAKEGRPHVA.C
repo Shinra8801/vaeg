@@ -18,6 +18,7 @@ typedef struct {
 	int		pixelmode;				// 0..1bit, 1..4bit, 2..8bit, 3..16bit
 									// bit3 0..パレット 1..直接色指定
 	WORD	*rasterbuf;
+	BOOL	*noraster;
 	UINT32	addrmask;
 	UINT32	addrofs;
 
@@ -46,6 +47,12 @@ static	_GRPHVAWORK	work;
 											// 最大4バイト(ex.1bit/pixelなら32dot,
 											// 水平解像度320ならその倍)分
 											// 使用する
+		BOOL grph0_noraster;
+		BOOL grph1_noraster;
+											// 割り当てられた分割画面がない場合、
+											// グラフィック画面非表示の場合、
+											// true
+
 /*
 static	WORD byte2pixel[256][8];			// マルチプレーン
 											// 1バイト→8ピクセル変換テーブル
@@ -984,13 +991,17 @@ static void drawraster(SCREEN screen) {
 			} while (!(screen->framebuffer == NULL || screen->framebuffer->dsh > 0 ));
 		}
 
-		if (screen->rasterbuf) {
+		//if (screen->rasterbuf) {
+			*screen->noraster = FALSE;
 			if (screen->framebuffer == NULL) {
 				// 何も表示しない
+				/*
 				UINT16		xp;
 				WORD		*b;
 				b = screen->rasterbuf;
 				for (xp = 0; xp < 640; xp++) *b++ = 0;
+				*/
+				*screen->noraster = TRUE;
 			}
 			else if (issingleplane()) {
 				// シングルプレーンモード
@@ -1022,7 +1033,7 @@ static void drawraster(SCREEN screen) {
 					break;
 				default:
 					{
-						// 何も表示しない
+						// 何も表示しない (透明ではなく、0を出力)
 						UINT16		xp;
 						WORD		*b;
 						b = screen->rasterbuf;
@@ -1031,7 +1042,7 @@ static void drawraster(SCREEN screen) {
 					break;
 				}
 			}
-		}
+		//}
 		screen->y++;
 
 //	}
@@ -1102,6 +1113,8 @@ void makegrphva_begin(BOOL *scrn200) {
 	work.screen[1].pixelmode = (videova.grres >> 8) & 0x0003;
 	work.screen[0].rasterbuf = grph0_raster;
 	work.screen[1].rasterbuf = grph1_raster;
+	work.screen[0].noraster  = &grph0_noraster;
+	work.screen[1].noraster  = &grph1_noraster;
 
 	work.screen[0].r320dots = videova.grres & 0x0010;
 	work.screen[1].r320dots = videova.grres & 0x1000;
@@ -1135,12 +1148,15 @@ void makegrphva_begin(BOOL *scrn200) {
 
 void makegrphva_blankraster(void) {
 	int i;
-	UINT16 xp;
+//	UINT16 xp;
 
 	for (i = 0; i < GRPHVA_SCREENS; i++) {
+		/*
 		for (xp = 0; xp < SURFACE_WIDTH; xp++) {
 			work.screen[i].rasterbuf[xp] = 0;
 		}
+		*/
+		*work.screen[i].noraster = TRUE;
 	}
 }
 

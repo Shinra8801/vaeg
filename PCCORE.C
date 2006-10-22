@@ -362,8 +362,12 @@ void pccore_reset(void) {
 #endif
 	nevent_allreset();
 
+#if defined(VAEG_FIX)
+	//Œã‚ë‚ÉˆÚ“®
+#else
 	CPU_RESET();
 	CPU_SETEXTSIZE((UINT32)pccore.extmem);
+#endif
 
 	CPU_TYPE = 0;
 	if (np2cfg.dipsw[2] & 0x80) {
@@ -374,7 +378,12 @@ void pccore_reset(void) {
 		CPU_TYPE = CPUTYPE_V30;
 	}
 #endif
-	
+
+#if defined(VAEG_FIX)
+	CPU_RESET();
+	CPU_SETEXTSIZE((UINT32)pccore.extmem);
+#endif
+
 	if (pccore.model & PCMODEL_EPSON) {			// RAM ctrl
 		CPU_RAM_D000 = 0xffff;
 	}
@@ -956,6 +965,15 @@ void pccore_debugint(UINT32 no) {
 		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
 		no, CPU_CS, CPU_IP,  memoryva.rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
 	}
+	/*
+	if (no == 0x8b && CPU_AH == 0x17) {
+		int i;
+		TRACEOUT(("Music BIOS (17h): CH=%x, DL=%x, ES:BP=%.4x:%.4x",CPU_CH, CPU_DL, CPU_ES, CPU_BP));
+		for (i = 0; i < CPU_DL; i++) {
+			TRACEOUT(("  %.2x",mem[(CPU_ES << 4) + CPU_BP + i]));
+		}
+	}
+	*/
 }
 
 //@@@@@@
@@ -996,7 +1014,7 @@ void iptrace_out(void) {
 		eip = treip[s & (IPTRACE - 1)];
 #if defined(SUPPORT_PC88VA)
 //		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x)\r\n", (eip >> 16), eip & 0xffff, bank);
-		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x) dx=%.4x\r\n", (eip >> 16), eip & 0xffff, bank, tredata1[s & (IPTRACE - 1)]);
+		SPRINTF(buf, "%.4x:%.4x (rom0=%.2x) ES=%.4x\r\n", (eip >> 16), eip & 0xffff, bank, tredata1[s & (IPTRACE - 1)]);
 #else
 		SPRINTF(buf, "%.4x:%.4x\r\n", (eip >> 16), eip & 0xffff);
 #endif
@@ -1084,7 +1102,7 @@ void pccore_exec(BOOL draw) {
 			treip[trpos & (IPTRACE - 1)] = (CPU_CS << 16) + CPU_IP;
 #if defined(SUPPORT_PC88VA)
 			trerom0bank[trpos & (IPTRACE - 1)] = memoryva.rom0_bank;
-			tredata1[trpos & (IPTRACE - 1)] =CPU_DX;
+			tredata1[trpos & (IPTRACE - 1)] =CPU_ES;
 #endif
 			trpos++;
 #endif

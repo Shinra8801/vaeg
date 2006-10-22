@@ -240,6 +240,10 @@ static void IOOUTCALL videova_o137(UINT port, REG8 dat) {
 static void IOOUTCALL videova_o148(UINT port, REG8 dat) {
 	videova.txtmode = dat | 1;
 	//TRACEOUT(("videova_o148 - %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+	if ((dat & 1) == 0) {
+		// TVRAM 256Kモード
+		TRACEOUT(("videova_o148: WARNING: TVRAM 256K mode is not supported."));
+	}
 }
 
 //   パレット

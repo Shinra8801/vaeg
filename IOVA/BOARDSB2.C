@@ -15,8 +15,42 @@
 
 #if defined(SUPPORT_PC88VA)
 
-static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
-//static unsigned int wait = 0;			// 
+	_BOARDSB2	boardsb2;
+
+//static unsigned int wait = 160;		// = 20μs ToDo: ウェイト入れすぎ ? 
+////static unsigned int wait = 0;			// 
+
+// ---- wait
+
+static void startwait_addrwrite(void) {
+	if (boardsb2.waitenabled) {
+		boardsb2.lastaccess = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+		boardsb2.wait = boardsb2.addrwritewait;
+	}
+}
+
+static void startwait_datawrite(void) {
+	if (boardsb2.waitenabled) {
+		boardsb2.lastaccess = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+		boardsb2.wait = boardsb2.datawritewait;
+	}
+}
+
+static void checkandwait(void) {
+	UINT32 current;
+	UINT32 past;
+
+	if (boardsb2.wait) {
+		current = CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK;
+		past = current - boardsb2.lastaccess;
+		if (past < boardsb2.wait) {
+			// ウェイトする
+			CPU_REMCLOCK -= boardsb2.wait - past;
+		}
+		boardsb2.wait = 0;
+	}
+
+}
 
 
 // ---- I/O
@@ -27,6 +61,9 @@ static void IOOUTCALL sb2_o044(UINT port, REG8 dat) {
 
 	opn.opnreg = dat;
 	//TRACEOUT(("sb2: o044 <- %02x %.4x:%.4x", dat, CPU_CS, CPU_IP));
+
+	checkandwait();
+	startwait_addrwrite();
 }
 
 static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
@@ -66,7 +103,9 @@ static void IOOUTCALL sb2_o045(UINT port, REG8 dat) {
 	}
 	(void)port;
 
-	CPU_REMCLOCK -= wait;
+//	CPU_REMCLOCK -= wait;
+	checkandwait();
+	startwait_datawrite();
 }
 
 static void IOOUTCALL sb2_o046(UINT port, REG8 dat) {
@@ -75,6 +114,9 @@ static void IOOUTCALL sb2_o046(UINT port, REG8 dat) {
 
 	opn.extreg = dat;
 	(void)port;
+
+	checkandwait();
+	startwait_addrwrite();
 }
 
 static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
@@ -90,12 +132,15 @@ static void IOOUTCALL sb2_o047(UINT port, REG8 dat) {
 	}
 	(void)port;
 
-	CPU_REMCLOCK -= wait;
+//	CPU_REMCLOCK -= wait;
+	checkandwait();
+	startwait_datawrite();
 }
 
 static REG8 IOINPCALL sb2_i044(UINT port) {
 
 	(void)port;
+	checkandwait();
 	return((fmtimer.status & 3) | adpcm_status(&adpcm));
 }
 
@@ -119,6 +164,7 @@ static REG8 IOINPCALL sb2_i045(UINT port) {
 		dat = opn.reg[opn.opnreg];
 	}
 	//TRACEOUT(("sb2: i045 (%02x) -> %02x %.4x:%.4x", opn.opnreg, dat, CPU_CS, CPU_IP));
+	checkandwait();
 	return(dat);
 }
 
@@ -128,7 +174,20 @@ static REG8 IOINPCALL sb2_i047(UINT port) {
 		return(adpcm_readsample(&adpcm));
 	}
 	(void)port;
+	checkandwait();
 	return(opn.reg[opn.opnreg]);
+}
+
+
+static void IOOUTCALL sb2_o19c(UINT port, REG8 dat) {
+	// ウェイト有効
+	boardsb2.waitenabled = TRUE;
+}
+
+static void IOOUTCALL sb2_o19e(UINT port, REG8 dat) {
+	// ウェイト無効
+	boardsb2.waitenabled = FALSE;
+	boardsb2.wait = 0;
 }
 
 
@@ -137,6 +196,13 @@ static REG8 IOINPCALL sb2_i047(UINT port) {
 
 
 void boardsb2_reset(void) {
+
+	ZeroMemory(&boardsb2, sizeof(boardsb2));
+	boardsb2.waitenabled = TRUE;
+	boardsb2.addrwritewait = pccore.realclock * 17/4000000;
+								/* 17/4000000 = 4.25μ */
+	boardsb2.datawritewait = pccore.realclock * 83/4000000;
+								/* 83/4000000 = 20.75μ */
 
 	psggen_setreg(&psg1, 0x07, 0);			
 											/* 88VA固有
@@ -168,6 +234,9 @@ void boardsb2_bind(void) {
 	iocoreva_attachout(0x045, sb2_o045);
 	iocoreva_attachout(0x046, sb2_o046);
 	iocoreva_attachout(0x047, sb2_o047);
+
+	iocoreva_attachout(0x19c, sb2_o19c);
+	iocoreva_attachout(0x19e, sb2_o19e);
 }
 
 

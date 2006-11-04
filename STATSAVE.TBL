@@ -1,7 +1,7 @@
 
 #if defined(SUPPORT_PC88VA)
 
-#define		NP2STATUS_VERSION		0x060422
+#define		NP2STATUS_VERSION		0x061024
 
 static const NP2FHDR np2flagdef = {
 						"VA-EG",
@@ -209,6 +209,7 @@ static const SFENTRY np2tbl[] = {
 	{"SUBSYSIF",	0,	STATFLAG_BIN,	&subsystemif,	sizeof(subsystemif)},
 	{"SUBSYS",		0,	STATFLAG_BIN,	&subsystem,		sizeof(subsystem)},
 	{"SUBCPU",		0,	STATFLAG_SUBCPU,NULL,			0},
+	{"BOARDSB2",	0,	STATFLAG_BIN,	&boardsb2,		sizeof(boardsb2)},
 #endif
 	{"TERMINATE",	0,	STATFLAG_TERM,	NULL,			0}};
 

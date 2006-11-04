@@ -130,6 +130,14 @@ typedef struct {
 								// ドライブの番号
 	UINT8	headpcn[4];			// ヘッドがどのシリンダにあるか
 	UINT8	headncn[4];			// ヘッドの移動先のシリンダ
+
+								// ヘッドのセクタ位置管理
+	UINT32	roundtime;			// ディスクが1回転する時間(100clock)
+	//UINT16	tracklen;			// 1トラックバイト数
+	//UINT16	seclen;				// 1セクタ(ID等含む)バイト数
+	UINT32	sectime;			// 1セクタ(ID等含む)を読む時間(100clock)
+	UINT16	headlastsec;		// ヘッドのセクタ位置
+	UINT8	headreachsec;		// ヘッドは目的のセクタを見つけた
 #endif
 #if defined(SUPPORT_PC88VA)
 	UINT8	fddifmode;			// 1B0h FDDインタフェースモード

@@ -52,6 +52,71 @@ static void stop_executionphase(void);
 
 #if defined(VAEG_EXT)
 // ----------------------------------------------------------------------
+// head location management
+
+// ヘッドがあるセクタの番号を返す
+// プリアンブル・ポストアンブル上にある場合は0
+static int headsector(void) {
+	UINT32 now;
+	UINT32 locclock;
+	UINT32 locbyte;
+	int locsec;
+
+	/*
+	     トラック
+        +-----+-----+--- ... ---+-----+---------+
+	  セクタ1    2                 n    ポストアンブル+プリアンブル
+	*/
+
+	now = getnow()/100;
+	locclock = now % fdc.roundtime;
+	//locbyte = fdc.tracklen * locclock / fdc.roundtime;
+	//locsec = locbyte / fdc.seclen;
+	locsec = locclock / fdc.sectime;
+	if (locsec >= fdc.eot) {
+		// プリアンブル・ポストアンブル
+		locsec = 0;
+	}
+	else {
+		// セクタ上
+		locsec++;
+	}
+
+	return locsec;
+}
+
+// fdc.R のセクタまでヘッドが到達したか
+static BOOL reachsector(void) {
+	int headsec = headsector();
+	if (fdc.headlastsec != headsec) {
+		TRACEOUT(("fdc: now head is on sector %d",headsec));
+		fdc.headlastsec = headsec;
+
+		if (headsec == fdc.R) {
+			TRACEOUT(("fdc: found sector %d",headsec));
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+static void update_headsector(void) {
+	if (fdc.head == FDD_HEAD_STABLE || fdc.head == FDD_HEAD_IDLE) {
+		if (!fdc.headreachsec) {
+			if (reachsector()) fdc.headreachsec = TRUE;
+		}
+	}
+}
+
+static void reset_headsector(void) {
+	fdc.headreachsec = FALSE;
+	fdc.headlastsec = headsector();
+	TRACEOUT(("fdc: reset_headsector: on %d",fdc.headlastsec));
+}
+
+
+// ----------------------------------------------------------------------
 // head status management
 
 // TODO: FDC_ReadDataなどで、エラー検出時でも、hltの時間を待って
@@ -76,6 +141,8 @@ static void update_head(void) {
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_STABLE;
 			fdc.headlastclock += d;
+
+			fdc.headlastsec = headsector();
 		}
 		break;
 	case FDD_HEAD_IDLE:
@@ -219,6 +286,7 @@ void fdc_stepwait(NEVENTITEM item) {
 		fdc_stepwaitset();
 	}
 }
+
 
 #endif
 
@@ -681,6 +749,7 @@ static void FDC_WriteData(void) {						// cmd: 05
 				}
 #if defined(VAEG_EXT)
 				activate_head();
+				reset_headsector();
 #endif
 			}
 			break;
@@ -816,6 +885,7 @@ static void FDC_ReadData(void) {						// cmd: 06
 				fdc.bufcnt = 0;
 #if defined(VAEG_EXT)
 				activate_head();
+				reset_headsector();
 #endif
 			}
 			break;
@@ -956,7 +1026,9 @@ static void FDC_ReadID(void) {							// cmd: 0a
 	switch(fdc.event) {
 		case FDCEVENT_CMDRECV:
 #if defined(VAEG_EXT)
+					// ToDo: 他と同じようにstart_executionphaseに対応しなくていいの？
 			activate_head();
+			fdc.headreachsec = TRUE;
 #endif
 			fdc.mf = fdc.cmd & 0x40;
 			get_hdus();
@@ -1001,6 +1073,7 @@ static void FDC_WriteID(void) {							// cmd: 0d
 				}
 #if defined(VAEG_EXT)
 				activate_head();
+				reset_headsector();
 #endif
 
 #else
@@ -1208,19 +1281,47 @@ static void resetrqm(void) {
 
 // エクスキュージョンフェーズに入ったらこれを呼ぶ				
 static void start_executionphase(void) {
-	int rpm;
+	int rpm = 360;
 	int tracklen;
+	int seclen;
+	int sectors;
+	int gap0,sync,iam=4,gap1,idam=4,chrn=4,crc=2,gap2,ddam=4,data,gap3,gap4;
 
 	switch(CTRL_FDMEDIA[fdc.us]) {
 	// TODO: 2DD/2Dの場合
 	default: // 2HD
-		rpm = 360;
-		tracklen = LENGTH_PRIAMP + 1024 * 8;	// DOSのフォーマットで代表させる
+		gap0 = 80;
+		sync = 12;
+		gap1 = 50;
+		gap2 = 22;
+		data = 1024;	// DOS(メディアID FEh)のフォーマットで代表させる
+		gap3 = 116;		// 同上
+		gap4 = 654;		// 同上
+		sectors = 8;	// 同上
+		seclen = sync + idam + chrn + crc + gap2 + sync + ddam + data + crc + gap3;
+		tracklen = gap0 + sync + iam + gap1 + seclen * sectors + gap4;
 		break;
 	}
-	fdc.rqminterval = pccore.realclock * 60 / (tracklen * rpm);
+//	fdc.rqminterval = pccore.realclock * 60 / (tracklen * rpm);
+	fdc.rqminterval = pccore.realclock * 60 / rpm / tracklen * seclen / data;
+						// 1トラックのデータを読み込む時間 = 
+						// プリアンブル・ポストアンブルを除いた部分を読み込むのに要する時間
+						// となるように設定する。
+
+						// pccore.realclock * 60 / rpm = 1回転時間(clock)
+						// 1回転時間 * seclen / tracklen = 1セクタリード時間(clock)
+						// 1セクタリード時間 / data = 実データ1バイトあたりのリード時間
+	
 	fdc.rqmlastclock = getnow();
 	resetrqm();
+
+#if defined(VAEG_EXT)
+	fdc.roundtime = pccore.realclock * 6 / rpm / 10; // realclock * 60 / rpm / 100
+	//fdc.tracklen = tracklen;
+	//fdc.seclen = seclen;
+	fdc.sectime = fdc.rqminterval * data / 100;
+	//fdc.headlastsec = headsector();
+#endif
 }
 
 
@@ -1238,7 +1339,7 @@ static void update_executionphase_read(void){
 	if (!fdc.rqm && d >= fdc.rqminterval) {
 
 #if defined(VAEG_EXT)
-		if (fdc.head == FDD_HEAD_STABLE) {
+		if (fdc.head == FDD_HEAD_STABLE && fdc.headreachsec) {
 #endif
 			switch(fdc.event) {
 			case FDCEVENT_FIRSTSTARTBUFSEND2:
@@ -1506,6 +1607,7 @@ static void start_statewatch(void);
 void fdc_statewatch(NEVENTITEM item) {
 #if defined(VAEG_EXT)
 	update_head();
+	update_headsector();
 #endif
 	update_executionphase();
 	
@@ -1895,6 +1997,7 @@ void fdc_reset(void) {
 	fdc.chgreg = 3;
 #if defined(VAEG_EXT)
 	fdc.headlastactive = -1;
+	fdc.headreachsec = TRUE;
 #endif
 #if defined(SUPPORT_PC88VA)
 	if (pccore.model_va == PCMODEL_NOTVA) {

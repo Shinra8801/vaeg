@@ -47,6 +47,7 @@
 #include	"mouseifva.h"
 #include	"subsystemif.h"
 #include	"subsystem.h"
+#include	"boardsb2.h"
 #endif
 
 #if defined(MACOS)

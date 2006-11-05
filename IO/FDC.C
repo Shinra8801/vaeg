@@ -29,7 +29,18 @@ enum {
 	FDD_HEAD_LOADING	= 1,
 	FDD_HEAD_STABLE		= 2,
 	FDD_HEAD_IDLE		= 3,
+
+	FDD_HEADREACH_IDLE		  = 0,		// ヘッドがロードされていない
+	FDD_HEADREACH_WAITINGLOAD = 1,		// ヘッドがロード完了するのを待っている
+	FDD_HEADREACH_REACHING    = 2,		// ヘッドがロードされており、セクタに到達するのを待っている
+	FDD_HEADREACH_REACHED     = 3,		// ヘッドがロードされており、目的のセクタに到達した
 #endif
+
+#if defined(SUPPORT_PC88VA)
+	FDD_48TPI			= 0,
+	FDD_96TPI			= 1,
+#endif
+
 };
 
 static const UINT8 FDCCMD_TABLE[32] = {
@@ -54,65 +65,106 @@ static void stop_executionphase(void);
 // ----------------------------------------------------------------------
 // head location management
 
-// ヘッドがあるセクタの番号を返す
-// プリアンブル・ポストアンブル上にある場合は0
-static int headsector(void) {
-	UINT32 now;
-	UINT32 locclock;
-	UINT32 locbyte;
-	int locsec;
+/*
+	直前のディスクアクセスがR==eot (これをそのトラックの最終セクタとみなす)で、
+	次のFDCコマンドによるアクセス要求が、
+	1. 同じシリンダのセクタ1の場合、
+	   直前のディスクアクセス終了から
+	   ポストアンプル+プリアンプル分の時間を待つ
+	2. 次のシリンダのセクタ1の場合、
+	   直前のディスクアクセス終了からポストアンプル+プリアンプル+1トラック分の時間を待つ
+	3. その他のシリンダのセクタ1の場合、
+	   直前のディスクアクセス終了から
+	   ポストアンプル+プリアンプル+半トラック分の時間を待つ
+	4. セクタ1以外の場合
+	   半トラック分の時間を待つ	   
 
-	/*
-	     トラック
-        +-----+-----+--- ... ---+-----+---------+
-	  セクタ1    2                 n    ポストアンブル+プリアンブル
-	*/
+	直前のディスクアクセスから次のFDCコマンドによるアクセス要求までの間に
+	ヘッドがunloadされた場合は、常に上記4の扱いにする。
 
-	now = getnow()/100;
-	locclock = now % fdc.roundtime;
-	//locbyte = fdc.tracklen * locclock / fdc.roundtime;
-	//locsec = locbyte / fdc.seclen;
-	locsec = locclock / fdc.sectime;
-	if (locsec >= fdc.eot) {
-		// プリアンブル・ポストアンブル
-		locsec = 0;
+	マルチトラックアクセス(1回のコマンドで最終セクタから次のトラックの先頭セクタをまたがって
+	アクセス)は考慮しない。VAのFDD BIOSはこの機能を使っていないから。
+*/
+
+static void reached_sector(void) {
+	fdc.reachlastus = fdc.us;
+	fdc.reachlastC = fdc.C;
+	fdc.reachlastR = fdc.R;
+	fdc.reachlastN = fdc.N;
+	fdc.reachlasteot = fdc.eot;
+	fdc.reachlastclock = getnow();
+}
+
+
+static void update_headreach(void) {
+
+	switch(fdc.reach) {
+	case FDD_HEADREACH_REACHING:
+		{
+			UINT32 now;
+			now = getnow();
+			if (now - fdc.reachlastclock >= fdc.reachtime) {
+				fdc.reach = FDD_HEADREACH_REACHED;
+			}
+		}
+		break;
+	case FDD_HEADREACH_WAITINGLOAD:
+		if (fdc.head == FDD_HEAD_STABLE) {
+			fdc.reach = FDD_HEADREACH_REACHING;
+			fdc.reachlastclock = getnow();
+		}
+		break;
+	}
+}
+
+static void want_sector(void) {
+	if (fdc.reach == FDD_HEADREACH_REACHED &&
+		fdc.us == fdc.reachlastus && 
+		fdc.R == 1 && 
+		fdc.reachlastR == fdc.reachlasteot) {
+		// 前回からの連続アクセスで、
+		// 前回と同じドライブで、
+		// 前回はトラックの最後のセクタで(EOT==Rなら最後のセクタと仮定)、
+		// 次にアクセスするのは最初のセクタで(セクタ1がトラック先頭と仮定)
+		// ある場合。
+		int datalen;
+		if (fdc.reachlastN < 8) {
+			datalen = 128 << fdc.reachlastN;
+		}
+		else {
+			datalen = 128 << 8;
+		}
+		fdc.reachtime = fdc.rqminterval * datalen;
+		if (fdc.C == fdc.reachlastC) {
+			// 前回と同じシリンダ
+			// プリアンプル、ポストアンプル分待つ
+			fdc.reachtime += fdc.amptime;
+		}
+		else if (fdc.C == fdc.reachlastC + 1) {
+			// 前回の次のシリンダ
+			// 1トラック待つ
+			fdc.reachtime += fdc.amptime + fdc.roundtime;
+		}
+		else {
+			// 半トラック待つ
+			fdc.reachtime += fdc.roundtime / 2;
+		}
+		fdc.reach = FDD_HEADREACH_REACHING;
 	}
 	else {
-		// セクタ上
-		locsec++;
-	}
-
-	return locsec;
-}
-
-// fdc.R のセクタまでヘッドが到達したか
-static BOOL reachsector(void) {
-	int headsec = headsector();
-	if (fdc.headlastsec != headsec) {
-		TRACEOUT(("fdc: now head is on sector %d",headsec));
-		fdc.headlastsec = headsec;
-
-		if (headsec == fdc.R) {
-			TRACEOUT(("fdc: found sector %d",headsec));
-			return TRUE;
+		// 無条件に半トラック待つ
+		if (fdc.head == FDD_HEAD_STABLE) {
+			// ヘッドロードが完了している
+			fdc.reachlastclock = getnow();
+			fdc.reach = FDD_HEADREACH_REACHING;
 		}
-	}
-
-	return FALSE;
-}
-
-static void update_headsector(void) {
-	if (fdc.head == FDD_HEAD_STABLE || fdc.head == FDD_HEAD_IDLE) {
-		if (!fdc.headreachsec) {
-			if (reachsector()) fdc.headreachsec = TRUE;
+		else {
+			// ヘッドロードが完了していない
+			fdc.reach = FDD_HEADREACH_WAITINGLOAD;
 		}
+		// 現在から、または、ヘッド完了から半トラック待つ
+		fdc.reachtime = fdc.roundtime / 2;
 	}
-}
-
-static void reset_headsector(void) {
-	fdc.headreachsec = FALSE;
-	fdc.headlastsec = headsector();
-	TRACEOUT(("fdc: reset_headsector: on %d",fdc.headlastsec));
 }
 
 
@@ -141,8 +193,6 @@ static void update_head(void) {
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_STABLE;
 			fdc.headlastclock += d;
-
-			fdc.headlastsec = headsector();
 		}
 		break;
 	case FDD_HEAD_IDLE:
@@ -150,6 +200,8 @@ static void update_head(void) {
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_UNLOADED;
 			fdc.headlastclock += d;
+
+			fdc.reach = FDD_HEADREACH_IDLE;
 		}
 		break;
 	}
@@ -195,6 +247,8 @@ static void deactivate_head(void) {
 		case FDD_HEAD_LOADING:
 			fdc.head = FDD_HEAD_UNLOADED;
 			fdc.headlastclock = now;
+
+			fdc.reach = FDD_HEADREACH_IDLE;
 			break;
 
 		}
@@ -203,6 +257,8 @@ static void deactivate_head(void) {
 		fdc.headlastactive = fdc.us;
 		fdc.head = FDD_HEAD_UNLOADED;
 		fdc.headlastclock = now;
+
+		fdc.reach = FDD_HEADREACH_IDLE;
 	}
 }
 
@@ -711,6 +767,7 @@ static BOOL writesector(void) {
 #if defined(VAEG_FIX)
 	fdc.event = FDCEVENT_STARTBUFRECV;
 	fdc.bufp = 0;				// TCの処理でチェックするので必要
+/*
 	if (fdc.R == fdc.eot) {
 		// トラックの最後のセクタを書き終わった
 		fdc.priampcnt = LENGTH_PRIAMP;
@@ -718,6 +775,7 @@ static BOOL writesector(void) {
 	else {
 		fdc.priampcnt = 0;
 	}
+*/
 #else
 	fdc.event = FDCEVENT_BUFRECV;
 	fdc.bufcnt = 128 << fdc.N;
@@ -749,7 +807,6 @@ static void FDC_WriteData(void) {						// cmd: 05
 				}
 #if defined(VAEG_EXT)
 				activate_head();
-				reset_headsector();
 #endif
 			}
 			break;
@@ -846,6 +903,11 @@ static void readsector(void) {
 
 	fdc.event = FDCEVENT_BUFSEND2;
 	fdc.bufp = 0;
+
+#if defined(VAEG_EXT)
+	reached_sector();
+#endif
+
 #if defined(VAEG_FIX)
 #else
 #if 1															// ver0.27 ??
@@ -858,7 +920,7 @@ static void readsector(void) {
 #endif
 	fdc_dmaready(1);
 	dmac_check();
-#endif
+#endif	// defined(VAEG_FIX)
 }
 
 static void FDC_ReadData(void) {						// cmd: 06
@@ -885,7 +947,7 @@ static void FDC_ReadData(void) {						// cmd: 06
 				fdc.bufcnt = 0;
 #if defined(VAEG_EXT)
 				activate_head();
-				reset_headsector();
+				want_sector();
 #endif
 			}
 			break;
@@ -1028,7 +1090,6 @@ static void FDC_ReadID(void) {							// cmd: 0a
 #if defined(VAEG_EXT)
 					// ToDo: 他と同じようにstart_executionphaseに対応しなくていいの？
 			activate_head();
-			fdc.headreachsec = TRUE;
 #endif
 			fdc.mf = fdc.cmd & 0x40;
 			get_hdus();
@@ -1073,7 +1134,6 @@ static void FDC_WriteID(void) {							// cmd: 0d
 				}
 #if defined(VAEG_EXT)
 				activate_head();
-				reset_headsector();
 #endif
 
 #else
@@ -1176,7 +1236,16 @@ static void FDC_Seek(void) {							// cmd: 0f
 				fdc_interrupt();
 			}
 			else {
+#if defined(SUPPORT_PC88VA)
+				if (fdc.trackdensity[fdc.us] == FDD_48TPI) {
+					start_seek(fdc.us, fdc.cmds[1] * 2);
+				}
+				else {
+					start_seek(fdc.us, fdc.cmds[1]);
+				}
+#else
 				start_seek(fdc.us, fdc.cmds[1]);
+#endif
 			}
 			break;
 #else
@@ -1288,8 +1357,22 @@ static void start_executionphase(void) {
 	int gap0,sync,iam=4,gap1,idam=4,chrn=4,crc=2,gap2,ddam=4,data,gap3,gap4;
 
 	switch(CTRL_FDMEDIA[fdc.us]) {
-	// TODO: 2DD/2Dの場合
-	default: // 2HD
+	// TODO: 2HD 1.44Mの場合→VAでは不要なので考えないことにする。
+	case DISKTYPE_2DD:		// 2D/2DD
+		gap0 = 80;
+		sync = 12;
+		gap1 = 50;
+		gap2 = 22;
+		data = 512;		// DOS(メディアID F9h, 2DD 720K)のフォーマットで代表させる
+		gap3 = 84;		// 同上
+		gap4 = 182;		// 同上
+		sectors = 9;	// 同上
+						// 備考
+						// 2DD 640K(512byte*8sector), 2D 320K(256byte*16sector)をこの設定で
+						// アクセスすると、実機より短時間でアクセスが終了する。
+		break;
+	case DISKTYPE_2HD:		// 2HD
+	default:
 		gap0 = 80;
 		sync = 12;
 		gap1 = 50;
@@ -1298,12 +1381,12 @@ static void start_executionphase(void) {
 		gap3 = 116;		// 同上
 		gap4 = 654;		// 同上
 		sectors = 8;	// 同上
-		seclen = sync + idam + chrn + crc + gap2 + sync + ddam + data + crc + gap3;
-		tracklen = gap0 + sync + iam + gap1 + seclen * sectors + gap4;
 		break;
 	}
+	seclen = sync + idam + chrn + crc + gap2 + sync + ddam + data + crc + gap3;
+	tracklen = gap0 + sync + iam + gap1 + seclen * sectors + gap4;
 //	fdc.rqminterval = pccore.realclock * 60 / (tracklen * rpm);
-	fdc.rqminterval = pccore.realclock * 60 / rpm / tracklen * seclen / data;
+	fdc.rqminterval = (SINT32)((UINT64)pccore.realclock * 60 / rpm / tracklen * seclen / data);
 						// 1トラックのデータを読み込む時間 = 
 						// プリアンブル・ポストアンブルを除いた部分を読み込むのに要する時間
 						// となるように設定する。
@@ -1316,11 +1399,8 @@ static void start_executionphase(void) {
 	resetrqm();
 
 #if defined(VAEG_EXT)
-	fdc.roundtime = pccore.realclock * 6 / rpm / 10; // realclock * 60 / rpm / 100
-	//fdc.tracklen = tracklen;
-	//fdc.seclen = seclen;
-	fdc.sectime = fdc.rqminterval * data / 100;
-	//fdc.headlastsec = headsector();
+	fdc.roundtime = (UINT32)((UINT64)pccore.realclock * 60 / rpm);
+	fdc.amptime = fdc.roundtime - fdc.rqminterval * sectors * data;
 #endif
 }
 
@@ -1339,7 +1419,7 @@ static void update_executionphase_read(void){
 	if (!fdc.rqm && d >= fdc.rqminterval) {
 
 #if defined(VAEG_EXT)
-		if (fdc.head == FDD_HEAD_STABLE && fdc.headreachsec) {
+		if (fdc.head == FDD_HEAD_STABLE && fdc.reach == FDD_HEADREACH_REACHED) {
 #endif
 			switch(fdc.event) {
 			case FDCEVENT_FIRSTSTARTBUFSEND2:
@@ -1347,14 +1427,18 @@ static void update_executionphase_read(void){
 				FDC_Ope[fdc.cmd & 0x1f]();
 				break;
 			case FDCEVENT_STARTBUFSEND2:
+/*
 				if (fdc.priampcnt) {
 					fdc.priampcnt--;
 					fdc.rqmlastclock += fdc.rqminterval;
 				}
 				else {
+*/
 					fdc.event = FDCEVENT_NEXTDATA;
 					FDC_Ope[fdc.cmd & 0x1f]();
+/*
 				}
+*/
 				break;
 			case FDCEVENT_BUFSEND2:
 				setrqm();
@@ -1386,13 +1470,17 @@ static void update_executionphase_write(void){
 				FDC_Ope[fdc.cmd & 0x1f]();
 				break;
 			case FDCEVENT_STARTBUFRECV:
+/*
 				if (fdc.priampcnt) {
 					fdc.priampcnt--;
 					fdc.rqmlastclock += fdc.rqminterval;
 				}
 				else {
+*/
 					FDC_Ope[fdc.cmd & 0x1f]();
+/*
 				}
+*/
 				break;
 			case FDCEVENT_BUFRECV:
 				setrqm();
@@ -1553,6 +1641,7 @@ REG8 DMACCALL fdc_dataread(void) {
 					fdc.bufcnt--;
 					if (!fdc.bufcnt) {
 						fdc.event = FDCEVENT_STARTBUFSEND2;
+/*
 						if (fdc.R == fdc.eot) {
 							// トラックの最後のセクタを読み終わった
 							fdc.priampcnt = LENGTH_PRIAMP;
@@ -1560,6 +1649,7 @@ REG8 DMACCALL fdc_dataread(void) {
 						else {
 							fdc.priampcnt = 0;
 						}
+*/
 					}
 				}
 				break;
@@ -1607,7 +1697,7 @@ static void start_statewatch(void);
 void fdc_statewatch(NEVENTITEM item) {
 #if defined(VAEG_EXT)
 	update_head();
-	update_headsector();
+	update_headreach();
 #endif
 	update_executionphase();
 	
@@ -1845,12 +1935,21 @@ static void IOOUTCALL fdcva_o_dskctl(UINT port, REG8 dat) {
 */
 	int i;
 
+	TRACEOUT(("fdcva: %.4x %.2x", port, dat));
 	for (i = 0; i < 2; i++) {
 		if (dat & (1 << i)) {
 			CTRL_FDMEDIA[i] = DISKTYPE_2HD;
 		}
 		else {
 			CTRL_FDMEDIA[i] = DISKTYPE_2DD;
+		}
+	}
+	for (i = 0; i < 2; i++) {
+		if (dat & (4 << i)) {
+			fdc.trackdensity[i] = FDD_96TPI;
+		}
+		else {
+			fdc.trackdensity[i] = FDD_48TPI;
 		}
 	}
 	(void)port;
@@ -1991,13 +2090,14 @@ void fdc_reset(void) {
 	dmac_attach(DMADEV_2DD, FDC_DMACH2DD);
 #if defined(SUPPORT_PC88VA)
 	CTRL_FDMEDIA[0] = CTRL_FDMEDIA[1] = CTRL_FDMEDIA[2] = CTRL_FDMEDIA[3] = DISKTYPE_2HD;
+	fdc.trackdensity[0] = fdc.trackdensity[1] = fdc.trackdensity[2] = fdc.trackdensity[3] = FDD_96TPI; 
 #else
 	CTRL_FDMEDIA = DISKTYPE_2HD;
 #endif
 	fdc.chgreg = 3;
 #if defined(VAEG_EXT)
 	fdc.headlastactive = -1;
-	fdc.headreachsec = TRUE;
+	fdc.reach = FDD_HEADREACH_IDLE;
 #endif
 #if defined(SUPPORT_PC88VA)
 	if (pccore.model_va == PCMODEL_NOTVA) {

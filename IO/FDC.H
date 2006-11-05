@@ -76,10 +76,11 @@ typedef struct {
 	UINT8	support144;
 #if defined(SUPPORT_PC88VA)
 	UINT8	ctrlfd[4];
+	UINT8	trackdensity[4];		// FDD_48TPI or FDD_96TPI
 #else
 	UINT8	ctrlfd;
-#endif
 	UINT8	padding;
+#endif
 
 	UINT8	us, hd;
 	UINT8	mt, mf, sk;
@@ -119,8 +120,9 @@ typedef struct {
 	UINT8	rqm;
 	SINT32	rqmlastclock;
 	SINT32	rqminterval;
-	int		priampcnt;
+//	int		priampcnt;
 #endif
+	UINT8	reserved[128];
 #if defined(VAEG_EXT)
 	UINT8	motor[4];
 	SINT32	headlastclock;
@@ -132,12 +134,17 @@ typedef struct {
 	UINT8	headncn[4];			// ヘッドの移動先のシリンダ
 
 								// ヘッドのセクタ位置管理
-	UINT32	roundtime;			// ディスクが1回転する時間(100clock)
-	//UINT16	tracklen;			// 1トラックバイト数
-	//UINT16	seclen;				// 1セクタ(ID等含む)バイト数
-	UINT32	sectime;			// 1セクタ(ID等含む)を読む時間(100clock)
-	UINT16	headlastsec;		// ヘッドのセクタ位置
-	UINT8	headreachsec;		// ヘッドは目的のセクタを見つけた
+	UINT8	reachlastus;
+	UINT8	reachlastC;
+	UINT8	reachlastR;
+	UINT8	reachlastN;
+	UINT8	reachlasteot;
+	UINT8	reach;				// FDD_HEADREACH_*
+	UINT32	reachlastclock;
+	UINT32	reachtime;
+
+	UINT32	roundtime;			// ディスクが1回転する時間
+	UINT32	amptime;			// プリアンプル、ポストアンプルのアクセス時間
 #endif
 #if defined(SUPPORT_PC88VA)
 	UINT8	fddifmode;			// 1B0h FDDインタフェースモード

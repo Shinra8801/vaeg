@@ -124,6 +124,8 @@ typedef struct {
 #endif
 	UINT8	reserved[128];
 #if defined(VAEG_EXT)
+	UINT32	clock;				// “®ìü”g”(Hz)
+
 	UINT8	motor[4];
 	SINT32	headlastclock;
 	UINT8	head;				// ƒwƒbƒh‚Ìó‘Ô

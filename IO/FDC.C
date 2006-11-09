@@ -19,6 +19,9 @@ enum {
 	FDC_DMACH2DD	= 3,
 
 #if defined(VAEG_EXT)
+	CLOCK80				= 7987200,		// 8MHz
+	CLOCK48				= 4792320,		// 4.8MHz
+
 	FDD_MOTORDELAY	= 505,	// FDDのモーターをONしてからreadyになるまでの時間(msec)
 
 	FDD_MOTOR_STOPPED	= 0,
@@ -174,29 +177,22 @@ static void want_sector(void) {
 // TODO: FDC_ReadDataなどで、エラー検出時でも、hltの時間を待って
 //       結果を返すようにする。
 
-static int msectoclock(int msec) {
-	return pccore.realclock * msec / 1000;
-}
-						
 static void update_head(void) {
 	SINT32 now;
 	SINT32 d;
 
 	now = getnow();
 
-	// TODO: 供給クロックが4MHzの場合と8MHzの場合とで、hlt/srt/hutの
-	//		 あらわす時間が異なるかもしれないので、それに対応。
-
 	switch (fdc.head) {
 	case FDD_HEAD_LOADING:
-		d = msectoclock(fdc.hlt * 2);
+		d = (SINT32)((UINT64)pccore.realclock * 16000 * fdc.hlt / fdc.clock);
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_STABLE;
 			fdc.headlastclock += d;
 		}
 		break;
 	case FDD_HEAD_IDLE:
-		d = msectoclock(fdc.hut * 16);
+		d = (SINT32)((UINT64)pccore.realclock * 128000L * fdc.hut / fdc.clock);
 		if (now - fdc.headlastclock > d) {
 			fdc.head = FDD_HEAD_UNLOADED;
 			fdc.headlastclock += d;
@@ -266,13 +262,13 @@ static void deactivate_head(void) {
 // seek management
 
 static void fdc_stepwaitset(void) {
-	int ms;
+	UINT32 srttime;
 
-	// TODO: 供給クロックが4MHzの場合と8MHzの場合とで、hlt/srt/hutの
-	//		 あらわす時間が異なるかもしれないので、それに対応。
-	ms = 16 - fdc.srt;
+	// SRTをFDCクロック数で表すと 8000 * (16 - fdc.srt);
+	// それをCPUクロック数で表すと、8000 * (16 - fdc.srt) * (pccore.realclock/fdc.clock);
+	srttime = (UINT32)((UINT64)pccore.realclock * 8000 * (16 - fdc.srt) / fdc.clock);
 
-	nevent_setbyms(NEVENT_FDCSTEPWAIT, ms, fdc_stepwait, NEVENT_ABSOLUTE);
+	nevent_set(NEVENT_FDCSTEPWAIT, srttime, fdc_stepwait, NEVENT_ABSOLUTE);
 }
 
 static void succeed_seek(int us) {
@@ -1901,9 +1897,15 @@ static void IOOUTCALL fdc_obe(UINT port, REG8 dat) {
 	fdc.chgreg = dat;
 	if (fdc.chgreg & 2) {
 		for (i = 0; i < 4; i++) CTRL_FDMEDIA[i] = DISKTYPE_2HD;
+#if defined(VAEG_FIX)
+		fdc.clock = CLOCK80;
+#endif
 	}
 	else {
 		for (i = 0; i < 4; i++) CTRL_FDMEDIA[i] = DISKTYPE_2DD;
+#if defined(VAEG_FIX)
+		fdc.clock = CLOCK48;
+#endif
 	}
 #else
 	fdc.chgreg = dat;
@@ -1931,7 +1933,7 @@ static void IOOUTCALL fdcva_o_dskctl(UINT port, REG8 dat) {
 	ドライブのモードにあわせて CTRL_FDMEDIA を切り替える必要があるが、
 	98は2ドライブ共通なのに対し、VAは独立に指定できるため、
 	困った。→対応済み
-	また、2Dの扱いは・・・？
+	また、2Dの扱いは・・・？→対応済み
 */
 	int i;
 
@@ -1952,6 +1954,16 @@ static void IOOUTCALL fdcva_o_dskctl(UINT port, REG8 dat) {
 			fdc.trackdensity[i] = FDD_48TPI;
 		}
 	}
+#if defined(VAEG_FIX)
+	if (dat & 0x20) {
+		// 8MHz
+		fdc.clock = CLOCK80;
+	}
+	else {
+		// 4.8MHz
+		fdc.clock = CLOCK48;
+	}
+#endif
 	(void)port;
 }
 
@@ -2098,6 +2110,7 @@ void fdc_reset(void) {
 #if defined(VAEG_EXT)
 	fdc.headlastactive = -1;
 	fdc.reach = FDD_HEADREACH_IDLE;
+	fdc.clock = CLOCK48;
 #endif
 #if defined(SUPPORT_PC88VA)
 	if (pccore.model_va == PCMODEL_NOTVA) {

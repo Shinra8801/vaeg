@@ -9,6 +9,14 @@
 #include	"iocore.h"
 #include	"fddfile.h"
 
+#if defined(VAEG_FIX)
+#include	"sysmng.h"
+#endif
+
+#if defined(VAEG_EXT)
+#include	"soundmng.h"
+#endif
+
 #if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
 #include	"subsystem.h"
@@ -321,6 +329,11 @@ void fdc_stepwait(NEVENTITEM item) {
 
 	for (us = 0; us < 4; us++) {
 		if (fdc.headncn[us] != fdc.headpcn[us]) {
+			if (np2cfg.MOTOR) {
+				// ƒV[ƒN‰¹
+				soundmng_pcmstop(SOUND_PCMSEEK1);
+				soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
+			}
 			if (fdc.headncn[us] < fdc.headpcn[us]) {
 				fdc.headpcn[us]--;
 			}
@@ -692,6 +705,9 @@ static void FDC_SenseDeviceStatus(void) {				// cmd: 04
 			fdc.buf[0] = (fdc.hd << 2) | fdc.us;
 			fdc.stat[fdc.us] = (fdc.hd << 2) | fdc.us;
 			if (fdc.equip & (1 << fdc.us)) {
+#if defined(VAEG_EXT)
+				sysmng_fddaccess(fdc.us, CTRL_FDMEDIA[fdc.us] == DISKTYPE_2HD);
+#endif
 #if defined(SUPPORT_PC88VA)
 				if (pccore.model_va == PCMODEL_NOTVA) {
 					fdc.buf[0] |= 0x08;
@@ -746,6 +762,10 @@ static void start_writesector(void) {
 	fdc.bufcnt = 128 << fdc.N;
 	fdc.bufp = 0;
 	ZeroMemory(fdc.buf, fdc.bufcnt);
+
+#if defined(VAEG_EXT)
+	reached_sector();
+#endif
 }
 #endif
 
@@ -803,6 +823,7 @@ static void FDC_WriteData(void) {						// cmd: 05
 				}
 #if defined(VAEG_EXT)
 				activate_head();
+				want_sector();
 #endif
 			}
 			break;
@@ -1130,9 +1151,10 @@ static void FDC_WriteID(void) {							// cmd: 0d
 				}
 #if defined(VAEG_EXT)
 				activate_head();
+				fdc.reach = FDD_HEADREACH_REACHED;
 #endif
 
-#else
+#else // defined(VAEG_FIX)
 				
 //				TRACE_("FDC_WriteID FDCEVENT_BUFRECV", 0);
 				fdc.event = FDCEVENT_BUFRECV;
@@ -1152,7 +1174,7 @@ static void FDC_WriteID(void) {							// cmd: 0d
 				activate_head();
 #endif
 
-#endif
+#endif // defined(VAEG_FIX)
 			}
 			break;
 
@@ -1459,7 +1481,7 @@ static void update_executionphase_write(void){
 	d = now - fdc.rqmlastclock;
 	if (!fdc.rqm && d >= fdc.rqminterval) {
 #if defined(VAEG_EXT)
-		if (fdc.head == FDD_HEAD_STABLE) {
+		if (fdc.head == FDD_HEAD_STABLE && fdc.reach == FDD_HEADREACH_REACHED) {
 #endif
 			switch(fdc.event) {
 			case FDCEVENT_FIRSTSTARTBUFRECV:
@@ -2101,8 +2123,22 @@ void fdc_reset(void) {
 	dmac_attach(DMADEV_2HD, FDC_DMACH2HD);
 	dmac_attach(DMADEV_2DD, FDC_DMACH2DD);
 #if defined(SUPPORT_PC88VA)
-	CTRL_FDMEDIA[0] = CTRL_FDMEDIA[1] = CTRL_FDMEDIA[2] = CTRL_FDMEDIA[3] = DISKTYPE_2HD;
-	fdc.trackdensity[0] = fdc.trackdensity[1] = fdc.trackdensity[2] = fdc.trackdensity[3] = FDD_96TPI; 
+	{
+		UINT8 trackdensity;
+		UINT8 ctrlfd;
+		if (pccore.model_va == PCMODEL_NOTVA) {
+			// 98
+			ctrlfd = DISKTYPE_2HD;
+			trackdensity = FDD_96TPI; 
+		}
+		else {
+			// VA
+			ctrlfd = DISKTYPE_2DD;
+			trackdensity = FDD_48TPI; 
+		}
+		CTRL_FDMEDIA[0] = CTRL_FDMEDIA[1] = CTRL_FDMEDIA[2] = CTRL_FDMEDIA[3] = ctrlfd;
+		fdc.trackdensity[0] = fdc.trackdensity[1] = fdc.trackdensity[2] = fdc.trackdensity[3] = trackdensity;
+	}
 #else
 	CTRL_FDMEDIA = DISKTYPE_2HD;
 #endif

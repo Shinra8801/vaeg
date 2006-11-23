@@ -1509,7 +1509,8 @@ FDDアクセスランプのON
 void toolwin_fddaccess(BYTE drv, int mediatype) {
 
 	if (drv < 2) {
-		setdiskacc(drv, 20, (mediatype) ? 2 : 0);
+//		setdiskacc(drv, 20, (mediatype) ? 2 : 0);
+		setdiskacc(drv, 13, (mediatype) ? 2 : 0);
 	}
 }
 #else

@@ -64,6 +64,11 @@ static const UINT8 FDCCMD_TABLE[32] = {
 
 #if defined(VAEG_FIX) || defined(VAEG_EXT)
 #define getnow() 	(CPU_CLOCK + CPU_BASECLOCK - CPU_REMCLOCK)
+
+		// neventから呼び出されるコールバックルーチンで、
+		// イベント発生時刻を知るにはgetnow_oneventを使う。
+		// getnowはCPUの時刻なので、getnow_oneventより進んでいる。
+#define getnow_onevent()	(CPU_CLOCK)
 #endif
 
 #if defined(VAEG_FIX)
@@ -1432,7 +1437,7 @@ static void update_executionphase_read(void){
 	SINT32 now;
 	SINT32 d;
 
-	now = getnow();
+	now = getnow_onevent();
 	d = now - fdc.rqmlastclock;
 	if (!fdc.rqm && d >= fdc.rqminterval) {
 
@@ -1458,9 +1463,9 @@ static void update_executionphase_read(void){
 				}
 */
 				break;
-			case FDCEVENT_BUFSEND2:
+			}
+			if (fdc.event == FDCEVENT_BUFSEND2) {
 				setrqm();
-				break;
 			}
 #if defined(VAEG_EXT)
 		}
@@ -1477,7 +1482,7 @@ static void update_executionphase_write(void){
 	SINT32 now;
 	SINT32 d;
 
-	now = getnow();
+	now = getnow_onevent();
 	d = now - fdc.rqmlastclock;
 	if (!fdc.rqm && d >= fdc.rqminterval) {
 #if defined(VAEG_EXT)
@@ -1500,9 +1505,9 @@ static void update_executionphase_write(void){
 				}
 */
 				break;
-			case FDCEVENT_BUFRECV:
+			}
+			if (fdc.event == FDCEVENT_BUFRECV) {
 				setrqm();
-				break;
 			}
 
 #if defined(VAEG_EXT)

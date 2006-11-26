@@ -389,7 +389,7 @@ dat をピクセルデータ列として、ピクセル値が0の部分を0、非0の部分を1にしたマスクを
 返す
 */
 static UINT16 zeromask(UINT16 dat, int scrnmode) {
-	UINT16 mask;
+	UINT16 mask = 0;
 	int BPP = bpp[scrnmode];
 	UINT16 pixmask  = ~(0xffff >> BPP); // 4bppなら0xf000
 	UINT16 maskelem = ~(0xffff << BPP); // 4bppなら0x000f
@@ -431,6 +431,29 @@ static void write_dest(void) {
 #endif
 }
 
+
+static void write_dest2(void) {
+	UINT16 dat;
+	UINT16 dest;
+	UINT16 datmask;
+
+	dest = sgp_memoryread_w(sgp.dest.nextaddress);
+	dest = SWAPWORD(dest);
+	datmask = sgp.newvalmask;
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
+	case 0x0300:		// 禁止 → 0x0200と同じ
+		datmask &= ~zeromask(dest, sgp.dest.scrnmode);
+		break;
+	}
+	dat = logicalop(sgp.newval, dest, &datmask);
+
+	dat = (dest & ~datmask) | (dat & datmask);
+	dat = SWAPWORD(dat);
+	sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+}
+
+
 static void init_src_line(void) {
 	int dot;
 	if (sgp.bltmode & SGP_BLTMODE_SF) {
@@ -461,6 +484,7 @@ static void init_dest_line(void) {
 	//}
 	//block->buf <<= (dotcountmax[block->scrnmode] - block->dotcount) * bpp[block->scrnmode];
 #else
+/* @@1
 	read_word(&sgp.dest);
 	//sgp.dest.nextaddress-=2;
 	//sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode];
@@ -468,6 +492,9 @@ static void init_dest_line(void) {
 		sgp.dest.dotcount -= sgp.dest.dot;
 	//}
 	sgp.dest.buf <<= (dotcountmax[sgp.dest.scrnmode] - sgp.dest.dotcount) * bpp[sgp.dest.scrnmode];
+*/
+	sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode]; //@@1
+	sgp.dest.dotcount -= sgp.dest.dot;					//@@1
 #endif
 	sgp.dest.xcount = sgp.dest.width;
 }
@@ -703,7 +730,7 @@ static void cmd_scan_left(void) {
 
 static void exec_bitblt(void) {
 	UINT16 dat;
-	UINT16 dest;
+//@@1	UINT16 dest;
 	UINT16 datmask;
 	int BPP = bpp[sgp.dest.scrnmode];
 	UINT16 PIXMASK = ~(0xffff << BPP);
@@ -719,19 +746,22 @@ static void exec_bitblt(void) {
 	else {
 		dat = sgp.src.buf >> (16 - BPP);
 	}
-	dest = sgp.dest.buf >> (16 - BPP);
+//@@1	dest = sgp.dest.buf >> (16 - BPP);
 
 	switch (sgp.bltmode & SGP_BLTMODE_TP) {
 	case 0x0000:		// ソースをそのまま転送
+	default:	//@@1
 		datmask = 0xffff;
 		break;
 	case 0x0100:		// ソースが0の部分は転送しない
 		datmask = dat ? 0xffff : 0;
 		break;
+/* @@1
 	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
 	case 0x0300:		// 禁止 → 0x0200と同じ
 		datmask = dest ? 0 : 0xffff;
 		break;
+*/
 	}
 /*
 	sgp.dest.buf = (sgp.dest.buf << 4) | dat;
@@ -740,7 +770,7 @@ static void exec_bitblt(void) {
 	sgp.newval = (sgp.newval << BPP) | (dat & PIXMASK);
 	sgp.newvalmask = (sgp.newvalmask << BPP) | (datmask & PIXMASK);
 	sgp.dest.dotcount--;
-	sgp.dest.buf <<= BPP;
+//@@1	sgp.dest.buf <<= BPP;
 
 	if (EXTPIX) {
 		sgp.src.buf <<= 1;
@@ -765,9 +795,12 @@ static void exec_bitblt(void) {
 			sgp.newval &= SWAPWORD(sgp.color);
 		}
 //		write_word(&sgp.dest);
-		write_dest();
+//@@1	write_dest();
+		write_dest2();	//@@1
+
 		sgp.dest.nextaddress += 2;
-		read_word(&sgp.dest);
+//@@1	read_word(&sgp.dest);
+		sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode]; //@@1
 		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
 			sgp.remainclock -= 10 * 2;
 		}
@@ -816,7 +849,7 @@ static void exec_bitblt(void) {
 // HD = 1 の場合
 static void exec_bitblt_hd(void) {
 	UINT16 dat;
-	UINT16 dest;
+//@@1	UINT16 dest;
 	UINT16 datmask;
 	int BPP = bpp[sgp.dest.scrnmode];
 	UINT16 PIXMASK = ~(0xffff << BPP);
@@ -832,25 +865,28 @@ static void exec_bitblt_hd(void) {
 	else {
 		dat = sgp.src.buf;
 	}
-	dest = sgp.dest.buf & PIXMASK;
+//@@1	dest = sgp.dest.buf & PIXMASK;
 
 	switch (sgp.bltmode & SGP_BLTMODE_TP) {
 	case 0x0000:		// ソースをそのまま転送
+	default:	//@@1
 		datmask = 0xffff;
 		break;
 	case 0x0100:		// ソースが0の部分は転送しない
 		datmask = dat ? 0xffff : 0;
 		break;
+/* @@1
 	case 0x0200:		// デスティネーションブロックが0の部分だけ転送する
 	case 0x0300:		// 禁止 → 0x0200と同じ
 		datmask = dest ? 0 : 0xffff;
 		break;
+*/
 	}
 
 	sgp.newval = (sgp.newval >> BPP) | ((dat & PIXMASK) << (16 - BPP));
 	sgp.newvalmask = (sgp.newvalmask >> BPP) | ((datmask & PIXMASK) << (16 - BPP));
 	sgp.dest.dotcount--;
-	sgp.dest.buf >>= BPP;
+//@@1	sgp.dest.buf >>= BPP;
 
 	if (EXTPIX) {
 		sgp.src.buf >>= 1;
@@ -871,9 +907,11 @@ static void exec_bitblt_hd(void) {
 		if (EXTPIX) {
 			sgp.newval &= SWAPWORD(sgp.color);
 		}
-		write_dest();
+//@@1		write_dest();
+		write_dest2();	//@@1
 		sgp.dest.nextaddress -= 2;
-		read_word(&sgp.dest);
+//@@1		read_word(&sgp.dest);
+		sgp.dest.dotcount = dotcountmax[sgp.dest.scrnmode];	//@@1
 		if ((sgp.bltmode & SGP_BLTMODE_TP) == 0x0100) {
 			sgp.remainclock -= 10 * 2;
 		}
@@ -953,7 +991,7 @@ static void exec_line_x(void) {
 	int shift;
 //	BOOL written = FALSE;
 	UINT16 dat;
-	UINT16 dest;
+//	UINT16 dest;
 	UINT16 datmask;
 	int DOTCOUNTMAX = dotcountmax[sgp.dest.scrnmode];
 	int BPP = bpp[sgp.dest.scrnmode];
@@ -1021,6 +1059,8 @@ static void exec_line_x(void) {
 			sgp.newval >>= shift;
 			sgp.newvalmask >>= shift;
 		}
+
+/*
 		dest = sgp_memoryread_w(sgp.dest.nextaddress);
 		dest = SWAPWORD(dest);
 		datmask = sgp.newvalmask;
@@ -1035,6 +1075,8 @@ static void exec_line_x(void) {
 		dat = (dest & ~datmask) | (dat & datmask);
 		dat = SWAPWORD(dat);
 		sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+*/
+		write_dest2();
 
 		if (sgp.dest.xcount > 0) {
 			if (sgp.dest.dotcount == 0) {
@@ -1085,7 +1127,7 @@ Y方向に1ドットずつ進めながらラインを描画する
 static void exec_line_y(void) {
 	int ydir, xdir;
 	int DOTCOUNTMAX = dotcountmax[sgp.dest.scrnmode];
-	UINT16 dest;
+//	UINT16 dest;
 	UINT16 dat;
 	UINT16 datmask;
 	int BPP = bpp[sgp.dest.scrnmode];
@@ -1095,6 +1137,26 @@ static void exec_line_y(void) {
 	xdir = (sgp.bltmode & SGP_BLTMODE_LINE_HD) ? -1 : 1;
 
 	// 現在位置にドットを描画
+	dat = SWAPWORD(sgp.color);
+	switch (sgp.bltmode & SGP_BLTMODE_TP) {
+	case 0x0000:		// ソースをそのまま転送
+	default:
+		datmask = 0xffff;
+		break;
+	case 0x0100:		// ソースが0の部分は転送しない
+		datmask = zeromask(dat, sgp.dest.scrnmode);
+		break;
+	}
+
+	pixmask = ~(0xffff >> BPP);
+	pixmask >>= sgp.dest.dotcount * BPP;
+	datmask &= pixmask;
+
+	sgp.newval = dat;
+	sgp.newvalmask = datmask;
+
+	write_dest2();
+/*	
 	dat = SWAPWORD(sgp.color);
 	dest = sgp_memoryread_w(sgp.dest.nextaddress);
 	dest = SWAPWORD(dest);
@@ -1123,6 +1185,7 @@ static void exec_line_y(void) {
 
 	dat = SWAPWORD(dat);
 	sgp_memorywrite_w(sgp.dest.nextaddress, dat);
+*/
 
 	// 次の位置を求める
 	

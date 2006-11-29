@@ -653,7 +653,7 @@ static void cmd_line(void) {
 	TRACEOUT(("SGP: cmd: line: %04x, dot=%d, mode=%d, w=%d, h=%d, fbw=%d, addr=%08lx", sgp.bltmode, sgp.dest.dot, sgp.dest.scrnmode, sgp.dest.width, sgp.dest.height, sgp.dest.fbw, sgp.dest.address));
 	
 	sgp.pc += 12;
-	sgp.remainclock -= 106 * 2;	// ToDo 要測定
+	sgp.remainclock -= 109;
 
 	/*if (sgp.dest.width == 0 && sgp.dest.height == 0) {
 		// 実機の場合、メモリ破壊を起こすことから、
@@ -1045,6 +1045,9 @@ static void exec_line_x(void) {
 	// カウンタ更新
 	sgp.dest.xcount--;
 
+	// 時間消費
+	sgp.remainclock -= 11;	// X方向に1ドット進んだ分
+
 	if (sgp.dest.dotcount == 0 || 
 		sgp.lineslopecount >= sgp.lineslopedenominator ||
 		sgp.dest.xcount == 0) {
@@ -1078,6 +1081,9 @@ static void exec_line_x(void) {
 */
 		write_dest2();
 
+		// 時間消費
+		sgp.remainclock -= 3;	// 1ワード書き込んだ分
+
 		if (sgp.dest.xcount > 0) {
 			if (sgp.dest.dotcount == 0) {
 				// アドレスを2進める
@@ -1098,6 +1104,9 @@ static void exec_line_x(void) {
 				else {
 					sgp.dest.nextaddress -= sgp.dest.fbw;
 				}
+
+				// 時間消費
+				sgp.remainclock -= 11;	// Y方向に1ドット進んだ分
 			}
 
 //			dest = sgp_memoryread_w(sgp.dest.nextaddress);
@@ -1112,10 +1121,6 @@ static void exec_line_x(void) {
 	if (sgp.dest.xcount == 0) {
 		sgp.func = FUNC_FETCH_COMMAND;
 	}
-
-	// 時間消費
-	sgp.remainclock -= 3 * 2;		// ToDo 要測定
-
 }
 
 
@@ -1125,6 +1130,7 @@ static void exec_line_x(void) {
 Y方向に1ドットずつ進めながらラインを描画する
 */
 static void exec_line_y(void) {
+	static UINT32 ystepwait[]={8,9,9,10};
 	int ydir, xdir;
 	int DOTCOUNTMAX = dotcountmax[sgp.dest.scrnmode];
 //	UINT16 dest;
@@ -1156,6 +1162,10 @@ static void exec_line_y(void) {
 	sgp.newvalmask = datmask;
 
 	write_dest2();
+
+	// 時間消費
+	sgp.remainclock -= 3;	// 1ワード書き込んだ分
+
 /*	
 	dat = SWAPWORD(sgp.color);
 	dest = sgp_memoryread_w(sgp.dest.nextaddress);
@@ -1196,7 +1206,10 @@ static void exec_line_y(void) {
 	else {
 		sgp.dest.nextaddress -= sgp.dest.fbw;
 	}
-	
+
+	// 時間消費
+	sgp.remainclock -= ystepwait[sgp.dest.scrnmode];	// Y方向に1ドット進んだ分
+
 	sgp.lineslopecount += sgp.lineslopenumerator;
 	if (sgp.lineslopecount >= sgp.lineslopedenominator) {
 		// x = x + xdir
@@ -1211,6 +1224,9 @@ static void exec_line_y(void) {
 		}
 		
 		sgp.lineslopecount -= sgp.lineslopedenominator;
+
+		// 時間消費
+		sgp.remainclock -= 11;	// X方向に1ドット進んだ分
 	}
 
 	// カウンタの更新、終了判定
@@ -1218,9 +1234,6 @@ static void exec_line_y(void) {
 	if (sgp.dest.ycount == 0) {
 		sgp.func = FUNC_FETCH_COMMAND;
 	}
-
-	// 時間消費
-	sgp.remainclock -= 3 * 2;		// ToDo 要測定
 }
 
 

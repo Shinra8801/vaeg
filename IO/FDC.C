@@ -78,6 +78,10 @@ static void stop_executionphase(void);
 
 
 #if defined(VAEG_EXT)
+
+static BOOL pcmseekplay = FALSE;
+static BOOL seek1sound = FALSE;	// 次にヘッドロード音を出すときは1シリンダシーク用の音を出す
+
 // ----------------------------------------------------------------------
 // head location management
 
@@ -178,7 +182,7 @@ static void want_sector(void) {
 			// ヘッドロードが完了していない
 			fdc.reach = FDD_HEADREACH_WAITINGLOAD;
 		}
-		// 現在から、または、ヘッド完了から半トラック待つ
+		// 現在から、または、ヘッドロード完了から半トラック待つ
 		fdc.reachtime = fdc.roundtime / 2;
 	}
 }
@@ -189,6 +193,29 @@ static void want_sector(void) {
 
 // TODO: FDC_ReadDataなどで、エラー検出時でも、hltの時間を待って
 //       結果を返すようにする。
+
+static void head_load_sound(void) {
+	if (np2cfg.MOTOR) {
+		// ヘッドロード音
+		if (seek1sound) {
+			soundmng_pcmstop(SOUND_PCMSEEK1);
+			soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
+			seek1sound = FALSE;
+		}
+		else {
+			soundmng_pcmstop(SOUND_PCMHEADON);
+			soundmng_pcmplay(SOUND_PCMHEADON, FALSE);
+		}
+	}
+}
+
+static void head_unload_sound(void) {
+	if (np2cfg.MOTOR) {
+		// ヘッドアンロード音
+		soundmng_pcmstop(SOUND_PCMHEADOFF);
+		soundmng_pcmplay(SOUND_PCMHEADOFF, FALSE);
+	}
+}
 
 static void update_head(void) {
 	SINT32 now;
@@ -211,6 +238,8 @@ static void update_head(void) {
 			fdc.headlastclock += d;
 
 			fdc.reach = FDD_HEADREACH_IDLE;
+
+			head_unload_sound();
 		}
 		break;
 	}
@@ -227,6 +256,7 @@ static void activate_head(void) {
 		case FDD_HEAD_UNLOADED:
 			fdc.head = FDD_HEAD_LOADING;
 			fdc.headlastclock = now;
+			head_load_sound();
 			break;
 		case FDD_HEAD_IDLE:
 			fdc.head = FDD_HEAD_STABLE;
@@ -238,6 +268,7 @@ static void activate_head(void) {
 		fdc.headlastactive = fdc.us;
 		fdc.head = FDD_HEAD_LOADING;
 		fdc.headlastclock = now;
+		head_load_sound();
 	}
 }
 
@@ -258,6 +289,8 @@ static void deactivate_head(void) {
 			fdc.headlastclock = now;
 
 			fdc.reach = FDD_HEADREACH_IDLE;
+
+			head_unload_sound();
 			break;
 
 		}
@@ -268,7 +301,13 @@ static void deactivate_head(void) {
 		fdc.headlastclock = now;
 
 		fdc.reach = FDD_HEADREACH_IDLE;
+
+		head_unload_sound();
 	}
+}
+
+static void unload_head_forcedly(void) {
+	fdc.head = FDD_HEAD_UNLOADED;
 }
 
 // ----------------------------------------------------------------------
@@ -299,6 +338,16 @@ static void start_seek(int us, int ncn) {
 	}
 	else {
 		fdc.headncn[us] = ncn;
+		if (np2cfg.MOTOR) {
+			if (fdc.head != FDD_HEAD_UNLOADED && 
+				(ncn == fdc.headpcn[us] + 1 || ncn + 1 == fdc.headpcn[us])) {
+				seek1sound = TRUE;
+			}
+			else {
+				seek1sound = FALSE;
+			}
+		}
+		unload_head_forcedly();
 		fdc_stepwaitset();
 	}
 }
@@ -336,8 +385,22 @@ void fdc_stepwait(NEVENTITEM item) {
 		if (fdc.headncn[us] != fdc.headpcn[us]) {
 			if (np2cfg.MOTOR) {
 				// シーク音
-				soundmng_pcmstop(SOUND_PCMSEEK1);
-				soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
+				if (!pcmseekplay) {
+					/*
+					if (fdc.head != FDD_HEAD_UNLOADED &&
+						(fdc.headncn[us] == fdc.headpcn[us] + 1 ||
+						 fdc.headncn[us] + 1 == fdc.headpcn[us])) {
+						// ヘッドロード かつ 1シリンダ移動
+						soundmng_pcmstop(SOUND_PCMSEEK1);
+						soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
+					}
+					else {*/
+						// ヘッドアンロード、または、2シリンダ以上移動
+						soundmng_pcmstop(SOUND_PCMSEEK);
+						soundmng_pcmplay(SOUND_PCMSEEK, TRUE);
+						pcmseekplay = TRUE;
+					/*}*/
+				}
 			}
 			if (fdc.headncn[us] < fdc.headpcn[us]) {
 				fdc.headpcn[us]--;
@@ -348,6 +411,11 @@ void fdc_stepwait(NEVENTITEM item) {
 			if (fdc.headncn[us] == fdc.headpcn[us]) {
 				// 目的のシリンダに到達
 				succeed_seek(us);
+
+				if (pcmseekplay) {
+					soundmng_pcmstop(SOUND_PCMSEEK);
+					pcmseekplay = FALSE;
+				}
 			}
 		}
 	}
@@ -2152,6 +2220,10 @@ void fdc_reset(void) {
 	fdc.headlastactive = -1;
 	fdc.reach = FDD_HEADREACH_IDLE;
 	fdc.clock = CLOCK48;
+
+	soundmng_pcmstop(SOUND_PCMSEEK);
+	pcmseekplay = FALSE;
+	seek1sound = FALSE;
 #endif
 #if defined(SUPPORT_PC88VA)
 	if (pccore.model_va == PCMODEL_NOTVA) {

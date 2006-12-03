@@ -2,6 +2,10 @@
 enum {
 	SOUND_PCMSEEK		= 0,
 	SOUND_PCMSEEK1		= 1,
+#if defined(VAEG_EXT)
+	SOUND_PCMHEADON		= 2,
+	SOUND_PCMHEADOFF	= 3,
+#endif
 
 	SOUND_MAXPCM
 };

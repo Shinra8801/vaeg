@@ -1726,10 +1726,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	}
 
 	if (soundmng_initialize() == SUCCESS) {
+#if defined(VAEG_EXT)
+		soundmng_pcmload(SOUND_PCMSEEK, "seek.wav", EXTROMIO_FILE);
+		soundmng_pcmload(SOUND_PCMSEEK1, "seek1.wav", EXTROMIO_FILE);
+#else
 		soundmng_pcmload(SOUND_PCMSEEK, "SEEKWAV", EXTROMIO_RES);
 		soundmng_pcmload(SOUND_PCMSEEK1, "SEEK1WAV", EXTROMIO_RES);
+#endif
 		soundmng_pcmvolume(SOUND_PCMSEEK, np2cfg.MOTORVOL);
 		soundmng_pcmvolume(SOUND_PCMSEEK1, np2cfg.MOTORVOL);
+#if defined(VAEG_EXT)
+		soundmng_pcmload(SOUND_PCMHEADON, "headon.wav", EXTROMIO_FILE);
+		soundmng_pcmload(SOUND_PCMHEADOFF, "headoff.wav", EXTROMIO_FILE);
+		soundmng_pcmvolume(SOUND_PCMHEADON, np2cfg.MOTORVOL);
+		soundmng_pcmvolume(SOUND_PCMHEADOFF, np2cfg.MOTORVOL);
+#endif
 	}
 
 	if (np2oscfg.useromeo) {

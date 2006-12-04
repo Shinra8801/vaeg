@@ -79,7 +79,6 @@ static void stop_executionphase(void);
 
 #if defined(VAEG_EXT)
 
-static BOOL pcmseekplay = FALSE;
 static BOOL seek1sound = FALSE;	// 次にヘッドロード音を出すときは1シリンダシーク用の音を出す
 
 // ----------------------------------------------------------------------
@@ -197,6 +196,7 @@ static void want_sector(void) {
 static void head_load_sound(void) {
 	if (np2cfg.MOTOR) {
 		// ヘッドロード音
+		soundmng_pcmstop(SOUND_PCMHEADOFF);
 		if (seek1sound) {
 			soundmng_pcmstop(SOUND_PCMSEEK1);
 			soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
@@ -308,6 +308,7 @@ static void deactivate_head(void) {
 
 static void unload_head_forcedly(void) {
 	fdc.head = FDD_HEAD_UNLOADED;
+	head_unload_sound();
 }
 
 // ----------------------------------------------------------------------
@@ -346,6 +347,9 @@ static void start_seek(int us, int ncn) {
 			else {
 				seek1sound = FALSE;
 			}
+			// シーク音
+			soundmng_pcmstop(SOUND_PCMSEEK);
+			soundmng_pcmplay(SOUND_PCMSEEK, TRUE);
 		}
 		unload_head_forcedly();
 		fdc_stepwaitset();
@@ -383,25 +387,6 @@ void fdc_stepwait(NEVENTITEM item) {
 
 	for (us = 0; us < 4; us++) {
 		if (fdc.headncn[us] != fdc.headpcn[us]) {
-			if (np2cfg.MOTOR) {
-				// シーク音
-				if (!pcmseekplay) {
-					/*
-					if (fdc.head != FDD_HEAD_UNLOADED &&
-						(fdc.headncn[us] == fdc.headpcn[us] + 1 ||
-						 fdc.headncn[us] + 1 == fdc.headpcn[us])) {
-						// ヘッドロード かつ 1シリンダ移動
-						soundmng_pcmstop(SOUND_PCMSEEK1);
-						soundmng_pcmplay(SOUND_PCMSEEK1, FALSE);
-					}
-					else {*/
-						// ヘッドアンロード、または、2シリンダ以上移動
-						soundmng_pcmstop(SOUND_PCMSEEK);
-						soundmng_pcmplay(SOUND_PCMSEEK, TRUE);
-						pcmseekplay = TRUE;
-					/*}*/
-				}
-			}
 			if (fdc.headncn[us] < fdc.headpcn[us]) {
 				fdc.headpcn[us]--;
 			}
@@ -412,9 +397,8 @@ void fdc_stepwait(NEVENTITEM item) {
 				// 目的のシリンダに到達
 				succeed_seek(us);
 
-				if (pcmseekplay) {
+				if (np2cfg.MOTOR) {
 					soundmng_pcmstop(SOUND_PCMSEEK);
-					pcmseekplay = FALSE;
 				}
 			}
 		}
@@ -2222,7 +2206,6 @@ void fdc_reset(void) {
 	fdc.clock = CLOCK48;
 
 	soundmng_pcmstop(SOUND_PCMSEEK);
-	pcmseekplay = FALSE;
 	seek1sound = FALSE;
 #endif
 #if defined(SUPPORT_PC88VA)

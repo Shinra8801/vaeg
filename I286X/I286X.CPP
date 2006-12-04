@@ -1816,7 +1816,11 @@ I286 imul_reg_ea_data16(void) {					// 69: imul REG, EA, DATA16
 				or		I286_FLAGL, ah
 				rcl		al, 1
 				adc		dx, 0
+#if defined(VAEG_FIX)
+				jz		imulnooverflow
+#else
 				jne		imulnooverflow
+#endif
 				or		I286_FLAG, (O_FLAG or C_FLAG)
 
 imulnooverflow:	GET_NEXTPRE2
@@ -1853,7 +1857,11 @@ I286 imul_reg_ea_data8(void) {					// 6B: imul REG, EA, DATA8
 				or		I286_FLAGL, ah
 				rcl		al, 1
 				adc		dx, 0
+#if defined(VAEG_FIX)
+				jz		imulnooverflow
+#else
 				jne		imulnooverflow
+#endif
 				or		I286_FLAG, (O_FLAG or C_FLAG)
 
 imulnooverflow:	GET_NEXTPRE1

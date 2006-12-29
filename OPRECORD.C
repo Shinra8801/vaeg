@@ -7,10 +7,18 @@
 #include	"cpucore.h"
 #include	"nevent.h"
 #include	"serial.h"
+#include	"np2ver.h"
 
 #include	"oprecord.h"
 
 #if defined(SUPPORT_OPRECORD)
+
+
+typedef struct {
+	char	desc[16];
+	char	vaegrel[16];
+	BYTE	dmy[32];
+} _OPRECORDHEADER;
 
 typedef struct {
 	UINT32	past;
@@ -49,10 +57,16 @@ enum {
 	BUFFER_SIZE		= 1024,
 };
 
-		_OPRECORD oprecord = {0};
+static const _OPRECORDHEADER oprecordheader = {
+	"OPRECORD",
+	VAEGREL_CORE
+};
+
+//		_OPRECORD oprecord = {0};
 
 static	OPRECORD_SETFDD setfdd;
-static	OPRECORD_RESTARTPLAY restartplay;
+//static	OPRECORD_RESTARTPLAY restartplay;
+static	OPRECORD_PLAYCOMPLETED playcompleted;
 
 static	BYTE buffer[BUFFER_SIZE];
 static	BYTE *bufferp;
@@ -76,8 +90,14 @@ void oprecord_set_setfdd(OPRECORD_SETFDD _setfdd) {
 	setfdd = _setfdd;
 }
 
+/*
 void oprecord_set_restartplay(OPRECORD_RESTARTPLAY _restartplay) {
 	restartplay = _restartplay;
+}
+*/
+
+void oprecord_set_playcompleted(OPRECORD_PLAYCOMPLETED _playcompleted) {
+	playcompleted = _playcompleted;
 }
 
 // ---- 記録
@@ -155,7 +175,11 @@ void oprecord_record_key(UINT8 code) {
 	e->code = code;
 }
 
+
+/* 使わない
 int oprecord_start_record(const char *filename) {
+	FILEH fh;
+
 	if (recording) return -1;
 	if (playing) {
 		oprecord_stop_play();
@@ -167,6 +191,21 @@ int oprecord_start_record(const char *filename) {
 		// 作成失敗
 		return -1;
 	}
+
+	return oprecord_start_record2(fh);
+}
+*/
+
+int oprecord_start_record2(FILEH _fh) {
+	if (recording) return -1;
+	if (playing) {
+		oprecord_stop_play();
+	}
+
+	fh = _fh;
+
+	// ヘッダ書き出し
+	file_write(fh, &oprecordheader, sizeof(oprecordheader));
 
 	// 変数初期化
 	bufferp = buffer;
@@ -190,6 +229,9 @@ void oprecord_stop_record(void) {
 	recording = FALSE;
 }
 
+BOOL oprecord_recording(void) {
+	return recording;
+}
 
 
 // ---- 再生
@@ -274,7 +316,7 @@ void oprecord_play_update(void) {
 		case TYPE_END:
 		default:
 			oprecord_stop_play();
-			if (oprecord.repeat) restartplay();
+//			if (oprecord.repeat) restartplay();
 			goto exit;
 			break;
 		case TYPE_FDD:
@@ -291,19 +333,33 @@ void oprecord_play_update(void) {
 	}
 exit:;
 }
-
+/* 使わない
 int oprecord_start_play(const char *filename) {
 	if (playing) return -1;
 	if (recording) {
 		oprecord_stop_record();
 	}
-
 	// ファイルを開く
 	fh = file_open_rb(filename);
 	if (fh == FILEH_INVALID) {
 		return -1;
 	}
-	
+	return oprecord_start_play2(fh);
+}
+*/
+int oprecord_start_play2(FILEH _fh) {
+	_OPRECORDHEADER header;
+
+	if (playing) return -1;
+	if (recording) {
+		oprecord_stop_record();
+	}
+
+	fh = _fh;	
+
+	// ヘッダを読み込む
+	file_read(fh, &header, sizeof(header));
+
 	bufferp = buffer + BUFFER_SIZE;
 	load();
 	lasttime = now();
@@ -319,6 +375,26 @@ void oprecord_stop_play(void) {
 	file_close(fh);
 
 	playing = FALSE;
+
+	if (playcompleted) playcompleted();
+}
+
+int oprecord_check_version(FILEH fh, char *ver, UINT size) {
+	_OPRECORDHEADER header;
+
+	// ヘッダを読み込む
+	file_read(fh, &header, sizeof(header));
+
+	if (milstr_cmp(header.vaegrel, VAEGREL_CORE)) {
+		// リリース不一致
+		milstr_ncpy(ver, header.vaegrel, size);
+		return 1;
+	}
+	return 0;
+}
+
+BOOL oprecord_playing(void) {
+	return playing;
 }
 
 int oprecord_play_joypad(UINT8 id, UINT8 *arrow, UINT8 *button) {

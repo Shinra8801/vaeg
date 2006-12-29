@@ -76,7 +76,7 @@ static const char newdisk_filter[] =									\
 static const FILESEL newdiskui = {newdisk_title, str_d88, newdisk_filter, 1};
 
 
-// ----
+// ---- change disk
 
 void dialog_changefdd(HWND hWnd, REG8 drv) {
 
@@ -137,6 +137,22 @@ const FILESEL	*hddui;
 	}
 }
 
+#if defined(SUPPORT_OPRECORD)
+// ---- select floppy image
+
+BOOL dialog_selectfdimage(HWND hWnd, char *path, UINT size, int *readonly) {
+
+	if (path[0] == '\0') {
+		file_cpyname(path, fddfolder, size);
+	}
+	if (dlgs_selectfile(hWnd, &fddui, path, size, readonly)) {
+		file_cpyname(fddfolder, path, sizeof(fddfolder));
+		return TRUE;
+	}
+	return FALSE;
+}
+
+#endif
 
 // ---- newdisk
 

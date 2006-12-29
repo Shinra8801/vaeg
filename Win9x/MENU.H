@@ -44,4 +44,5 @@ void xmenu_setmousedevice(UINT8 value);
 
 #if defined(SUPPORT_OPRECORD)
 void xmenu_setrepeat(int value);
+void xmenu_setoprecord(void);
 #endif

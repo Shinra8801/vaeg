@@ -9,5 +9,5 @@
 // #define	NP2VER_SDLZAU
 
 #if defined(SUPPORT_PC88VA)
-#define VAEGREL_CORE		"Rel.061203"
+#define VAEGREL_CORE		"Rel.061224"
 #endif

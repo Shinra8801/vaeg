@@ -1,3 +1,4 @@
+#include "dosio.h"
 
 enum {
 	STATFLAG_SUCCESS	= 0,
@@ -40,6 +41,17 @@ void statflag_seterr(STFLAGH sfh, const char *str);
 int statsave_save(const char *filename);
 int statsave_check(const char *filename, char *buf, int size);
 int statsave_load(const char *filename);
+
+#if defined(VAEG_EXT)
+BOOL statsave_skipall(FILEH fh);
+#endif
+
+#if defined(SUPPORT_OPRECORD)
+typedef void (*STATSAVE_LOAD_DISK_HOOK)(int drv, char *path, UINT size, int *readonly);
+
+void statsave_set_load_disk_hook(STATSAVE_LOAD_DISK_HOOK hook);
+
+#endif
 
 #ifdef __cplusplus
 }

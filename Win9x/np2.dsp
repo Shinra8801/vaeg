@@ -799,6 +799,10 @@ SOURCE=.\DIALOG\D_MPU98.CPP
 # End Source File
 # Begin Source File
 
+SOURCE=.\DIALOG\D_OPRECORD.CPP
+# End Source File
+# Begin Source File
+
 SOURCE=.\DIALOG\D_SCREEN.CPP
 # End Source File
 # Begin Source File

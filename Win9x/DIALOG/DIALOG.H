@@ -20,3 +20,10 @@ void dialog_changehdd(HWND hWnd, REG8 drv);
 void dialog_font(HWND hWnd);
 void dialog_writebmp(HWND hWnd);
 
+#if defined(SUPPORT_OPRECORD)
+void dialog_recoprecord(HWND hWnd);
+void dialog_playoprecord(HWND hWnd);
+BOOL dialog_opplay(HWND hWnd, char *path, UINT size);
+BOOL dialog_oprec(HWND hWnd, char *path, UINT size);
+BOOL dialog_selectfdimage(HWND hWnd, char *path, UINT size, int *readonly);
+#endif

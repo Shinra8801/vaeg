@@ -270,18 +270,27 @@ static void addstatsavemenu(HMENU hMenu, UINT pos) {
 
 #if defined(SUPPORT_OPRECORD)
 static const char xmenu_oprec[] = "&Replay";
+/*
 static const char xmenu_oprecrec[] = "Rec %u";
 static const char xmenu_oprecplay[] = "Play %u";
+*/
 
 static void addoprecordmenu(HMENU hMenu, UINT pos) {
 
 	HMENU	hSubMenu;
+/*
 	UINT	i;
 	char	buf[16];
+*/
 
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDSTOP, "Stop");
-	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDREPEAT, "Repeat");
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDSTOP,   "&Stop");
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORD_PLAY,  "&Play");
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORD_PLAYMULTI,  "&Multi play");
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORD_REC,   "&Record");
+	AppendMenu(hSubMenu, MF_MENUBARBREAK, 0, NULL);
+	AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDREPEAT, "R&epeat");
+/*
 	AppendMenu(hSubMenu, MF_MENUBARBREAK, 0, NULL);
 	for (i=0; i<SUPPORT_OPRECORD; i++) {
 		SPRINTF(buf, xmenu_oprecrec, i);
@@ -292,13 +301,30 @@ static void addoprecordmenu(HMENU hMenu, UINT pos) {
 		SPRINTF(buf, xmenu_oprecplay, i);
 		AppendMenu(hSubMenu, MF_STRING, IDM_OPRECORDPLAY + i, buf);
 	}
+*/
 	InsertMenu(hMenu, pos, MF_BYPOSITION | MF_POPUP,
 											(UINT32)hSubMenu, xmenu_oprec);
 }
 
 void xmenu_setrepeat(int value) {
-	oprecord.repeat = value;
 	CheckMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORDREPEAT, MFCHECK(value));
+}
+
+void xmenu_setoprecord(void) {
+	if (oprecord_recording() || oprecord_playing()) {
+		// Stop を有効に、Record, Play を無効に
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORDSTOP, MF_ENABLED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_REC, MF_GRAYED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_PLAY, MF_GRAYED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_PLAYMULTI, MF_GRAYED);
+	}
+	else {
+		// Stop を無効に、Record, Play を有効に
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORDSTOP, MF_GRAYED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_REC, MF_ENABLED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_PLAY, MF_ENABLED);
+		EnableMenuItem(np2class_gethmenu(hWndMain), IDM_OPRECORD_PLAYMULTI, MF_ENABLED);
+	}
 }
 #endif
 
@@ -337,11 +363,12 @@ void xmenu_initialize(void) {
 #if defined(SUPPORT_STATSAVE)
 	if (np2oscfg.statsave) {
 		addstatsavemenu(hMenu, 1);
-#if defined(SUPPORT_OPRECORD)
-		if (np2oscfg.oprecord) {
-			addoprecordmenu(hMenu, 2);
-		}
+	}
 #endif
+#if defined(SUPPORT_OPRECORD)
+	if (np2oscfg.oprecord) {
+		addoprecordmenu(hMenu, 1);
+		xmenu_setoprecord();
 	}
 #endif
 }

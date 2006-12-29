@@ -1,3 +1,5 @@
+#if !defined(_DOSIO_H_)
+#define	_DOSIO_H_
 
 #define		FILEH				HANDLE
 #define		FILEH_INVALID		(INVALID_HANDLE_VALUE)
@@ -97,3 +99,4 @@ void file_setseparator(char *path, int maxlen);
 }
 #endif
 
+#endif // _DOSIO_H_

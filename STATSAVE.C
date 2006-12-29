@@ -61,8 +61,14 @@
 
 typedef struct {
 	char	name[16];
+#if defined(VAEG_EXT)
+	char	vername[24];
+	UINT32	ver;
+	UINT32	size;
+#else
 	char	vername[28];
 	UINT32	ver;
+#endif
 } NP2FHDR;
 
 typedef struct {
@@ -176,6 +182,9 @@ static SFFILEH statflag_open(const char *filename, char *err, int errlen) {
 
 	FILEH	fh;
 	SFFILEH	ret;
+#if defined(VAEG_EXT)
+	NP2FHDR	_np2flagdef = np2flagdef;
+#endif
 
 	fh = file_open_rb(filename);
 	if (fh == FILEH_INVALID) {
@@ -186,7 +195,12 @@ static SFFILEH statflag_open(const char *filename, char *err, int errlen) {
 		goto sfo_err2;
 	}
 	if ((file_read(fh, &ret->f, sizeof(NP2FHDR)) == sizeof(NP2FHDR)) &&
+#if defined(VAEG_EXT)
+		((_np2flagdef.size = ret->f.size), TRUE) &&
+		(!memcmp(&ret->f, &_np2flagdef, sizeof(_np2flagdef)))) {
+#else
 		(!memcmp(&ret->f, &np2flagdef, sizeof(np2flagdef)))) {
+#endif
 		ZeroMemory(ret, sizeof(_SFFILEH));
 		ret->fh = fh;
 		ret->secpos = sizeof(NP2FHDR);
@@ -370,9 +384,18 @@ sfw_err1:
 }
 
 static void statflag_close(SFFILEH sffh) {
+#if defined(VAEG_EXT)
+	NP2FHDR	np2fhdr = np2flagdef;		
+#endif
 
 	if (sffh) {
 		statflag_closesection(sffh);
+#if defined(VAEG_EXT)
+		np2fhdr.size = sffh->secpos;
+		if (file_seek(sffh->fh, 0L, FSEEK_SET) == 0L) {
+			file_write(sffh->fh, &np2fhdr, sizeof(np2fhdr));
+		}
+#endif
 		file_close(sffh->fh);
 		_MFREE(sffh);
 	}
@@ -990,6 +1013,10 @@ static const char str_scsix[] = "SCSI%u";
 static const char str_updated[] = "%s: updated";
 static const char str_notfound[] = "%s: not found";
 
+#if defined(SUPPORT_OPRECORD)
+STATSAVE_LOAD_DISK_HOOK flagload_disk_hook = NULL;
+#endif
+
 static int disksave(STFLAGH sfh, const char *path, int readonly) {
 
 	STATDISK	st;
@@ -1093,8 +1120,25 @@ static int flagload_disk(STFLAGH sfh, const SFENTRY *tbl) {
 	for (i=0; i<4; i++) {
 		ret |= statflag_read(sfh, &st, sizeof(st));
 		if (st.path[0]) {
+#if defined(SUPPORT_OPRECORD)
+			if (flagload_disk_hook) {
+				flagload_disk_hook(i, st.path, sizeof(st.path), &st.readonly);
+			}
+			if (st.path[0]) {
+				fdd_set(i, st.path, FTYPE_NONE, st.readonly);
+			}
+			else {
+				fdd_eject(i);
+			}
+#else
 			fdd_set(i, st.path, FTYPE_NONE, st.readonly);
+#endif
 		}
+#if defined(VAEG_FIX)
+		else {
+			fdd_eject(i);
+		}
+#endif
 	}
 	for (i=0x00; i<0x02; i++) {
 		ret |= statflag_read(sfh, &st, sizeof(st));
@@ -1627,3 +1671,23 @@ const SFENTRY	*tblterm;
 	return(ret);
 }
 
+#if defined(VAEG_EXT)
+BOOL statsave_skipall(FILEH fh) {
+	NP2FHDR	np2fhdr;
+	long	pos;
+
+	if (file_read(fh, &np2fhdr, sizeof(NP2FHDR)) != sizeof(NP2FHDR)) {
+		// Ž¸”s
+		return TRUE;
+	}
+	pos = np2fhdr.size - sizeof(NP2FHDR);
+	file_seek(fh, pos, FSEEK_CUR);
+	return FALSE;
+}
+#endif
+
+#if defined(SUPPORT_OPRECORD)
+void statsave_set_load_disk_hook(STATSAVE_LOAD_DISK_HOOK hook) {
+	flagload_disk_hook = hook;
+}
+#endif

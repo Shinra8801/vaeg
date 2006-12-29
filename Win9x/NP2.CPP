@@ -96,7 +96,11 @@ static	char		szClassName[] = "NP2-MainWindow";
 						{0, 0, 0x3e, 19200, "", "", "", ""},		// ver0.34
 						{0, 0, 0x3e, 19200, "", "", "", ""},		// ver0.34
 						0xffffff, 0xffbf6a, 0, 0,
-						0, 1, 0, 9801, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+						0, 1, 0, 9801, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#if defined(SUPPORT_OPRECORD)
+						1
+#endif
+						};
 
 		char		fddfolder[MAX_PATH];
 		char		hddfolder[MAX_PATH];
@@ -115,6 +119,15 @@ static	int			np2quitmsg = 0;
 static	HMENU		hStat = NULL;
 static	BYTE		scrnmode;
 static	WINLOCEX	smwlex;
+
+#if defined(SUPPORT_OPRECORD)
+#define OPPLAYMAXFILES 10
+static	char		opplayfile[OPPLAYMAXFILES][MAX_PATH];
+static	int			opplayfiles = 0;	// opplayfileに格納されているファイルの数
+static	int			opplayfilenext = 0;	// 次に再生するファイルのopplayfileでのindex
+static	BOOL		oprepeat = FALSE;
+static	BOOL		oprestart = FALSE;
+#endif
 
 #if defined(SUPPORT_PC88VA)
 static const char np2help[] = "vaeg.chm";
@@ -335,10 +348,305 @@ static int flagload(const char *ext, const char *title, BOOL force) {
 	}
 	sysmng_workclockreset();
 	sysmng_updatecaption(1);
-	winuileave();
 	return(id);
 }
 #endif
+
+
+// ---- replay
+
+#if defined(SUPPORT_OPRECORD)
+
+static void check_and_substitute_disk(char *path, UINT size, int *readonly, const char *defaultpath) {
+	short	attr;
+	FILEH	fh;
+	char	str[MAX_PATH + 96];
+
+	if (path && path[0]) {
+		for (;;) {
+			attr = file_attr(path);
+			if (attr & 0x18) {
+			}
+			else {
+				fh = file_open(path);
+				if (fh == FILEH_INVALID) {
+				}
+				else {
+					file_close(fh);
+					break;
+				}
+			}
+
+			// filenameが有効でない。
+			wsprintf(str, "Failed to access:\n  %s\nPlease select a substitute floppy image.", path);
+			MessageBox(hWndMain, str, "Replay", MB_OK | MB_ICONWARNING);
+
+			// 代わりのファイルを選択してもらう
+			if (defaultpath) {
+				file_cpyname(path, defaultpath, size);
+			}
+			else {
+				path[0] = '\0';
+			}
+			if (dialog_selectfdimage(hWndMain, path, size, readonly)) {
+			}
+			else {
+				// キャンセル
+				path[0] = '\0';
+				break;
+			}
+		}
+	}
+}
+
+static void opplay_statsave_load_disk_hook(int drv, char *path, UINT size, int *readonly) {
+	check_and_substitute_disk(path, size, readonly, fdd_diskname(drv));
+}
+
+/*
+static void opplay(const char *path) {
+	char	statpath[MAX_PATH];
+	int		ret;
+	int		id;
+	char	buf[1024];
+	BOOL	force = TRUE;
+	const char	*title = "Status Load";
+
+	winuienter();
+
+	file_cpyname(statpath, path, sizeof(statpath));
+	file_cutext(statpath);
+	file_catname(statpath, ".ops", sizeof(statpath));
+
+	id = IDYES;
+	ret = statsave_check(statpath, buf, sizeof(buf));
+	if (ret & (~STATFLAG_DISKCHG)) {
+		MessageBox(hWndMain, "Couldn't restart", title, MB_OK | MB_ICONSTOP);
+		id = IDNO;
+	}
+	else if ((!force) && (ret & STATFLAG_DISKCHG)) {
+		char buf2[1024 + 256];
+		wsprintf(buf2, "Conflict!\n\n%s\nContinue?", buf);
+		id = MessageBox(hWndMain, buf2, title,
+									MB_YESNOCANCEL | MB_ICONQUESTION);
+	}
+	if (id == IDYES) {
+		statsave_set_load_disk_hook(opplay_statsave_load_disk_hook);
+		statsave_load(statpath);
+		statsave_set_load_disk_hook(NULL);
+		toolwin_setfdd(0, fdd_diskname(0));
+		toolwin_setfdd(1, fdd_diskname(1));
+	}
+	sysmng_workclockreset();
+	sysmng_updatecaption(1);
+
+	if (id == IDYES) {
+		oprecord_start_play(path);	
+		xmenu_setoprecord();
+		file_cpyname(opplayfile, path, sizeof(opplayfile));
+	}
+
+	winuileave();
+}
+*/
+static void opplay(const char *path) {
+	int		ret;
+	int		id;
+	char	buf[1024];
+//	BOOL	force = TRUE;
+	FILEH	fh = NULL;
+	const char	*title = "Replay";
+
+	winuienter();
+
+	id = IDYES;
+	fh = file_open(path);
+	if (fh == FILEH_INVALID) {
+		id = IDNO;
+	}
+	else {
+		char	ver[16];
+
+		statsave_skipall(fh);
+		if (oprecord_check_version(fh, ver, sizeof(ver))) {
+			// リリース不一致
+			wsprintf(buf, 
+				"This data is created by another version (%s).\nExecute it anyway ?", ver);
+			id = MessageBox(hWndMain, buf, title,
+										MB_YESNO | MB_ICONQUESTION);
+		}
+		file_close(fh);
+	}
+	if (id == IDYES) {
+		ret = statsave_check(path, buf, sizeof(buf));
+		if (ret & (~STATFLAG_DISKCHG)) {
+			MessageBox(hWndMain, "Couldn't restart.\nThe state data is not compatible.", title, MB_OK | MB_ICONSTOP);
+			id = IDNO;
+		}
+	//	else if ((!force) && (ret & STATFLAG_DISKCHG)) {
+	//		char buf2[1024 + 256];
+	//		wsprintf(buf2, "Conflict!\n\n%s\nContinue?", buf);
+	//		id = MessageBox(hWndMain, buf2, title,
+	//									MB_YESNOCANCEL | MB_ICONQUESTION);
+	//	}
+	}
+	if (id == IDYES) {
+		statsave_set_load_disk_hook(opplay_statsave_load_disk_hook);
+		statsave_load(path);
+		statsave_set_load_disk_hook(NULL);
+		toolwin_setfdd(0, fdd_diskname(0));
+		toolwin_setfdd(1, fdd_diskname(1));
+	}
+	sysmng_workclockreset();
+	sysmng_updatecaption(1);
+
+	if (id == IDYES) {
+		fh = file_open(path);
+		statsave_skipall(fh);
+		oprecord_start_play2(fh);	
+		xmenu_setoprecord();
+		//file_cpyname(opplayfile, path, sizeof(opplayfile));
+	}
+
+	winuileave();
+}
+
+static void opplaymulti(void) {
+	opplayfilenext = 0;
+	opplay(opplayfile[0]);
+}
+
+static void oprestartcheck(void) {
+	if (oprestart) {
+		oprestart = FALSE;
+		opplay(opplayfile[opplayfilenext]);
+	}
+}
+
+static void playcompleted(void) {
+	xmenu_setoprecord();
+	opplayfilenext++;
+	if (opplayfilenext < opplayfiles) {
+		oprestart = TRUE;
+	}
+	else if (opplayfiles && oprepeat) {
+		opplayfilenext = 0;
+		oprestart = TRUE;
+	}
+}
+
+
+/*
+static void setfdd(UINT8 drv, const char *filename, int readonly) {
+	short	attr;
+	FILEH	fh;
+	BOOL	badfile = TRUE;
+	char	str[MAX_PATH + 96];
+	char	path[MAX_PATH];
+const char	*p;
+
+	if (filename) {
+		while (badfile) {
+			attr = file_attr(filename);
+			if (attr & 0x18) {
+			}
+			else {
+				fh = file_open(filename);
+				if (fh == FILEH_INVALID) {
+				}
+				else {
+					file_close(fh);
+					break;
+				}
+			}
+
+			// filenameが有効でない。
+			winuienter();
+
+			wsprintf(str, "Failed to access:\n  %s\nPlease select a substitute floppy image.", filename);
+			MessageBox(hWndMain, str, "Replay", MB_OK | MB_ICONWARNING);
+
+			// 代わりのファイルを選択してもらう
+			p = fdd_diskname(drv);
+			if (p) {
+				file_cpyname(path, p, sizeof(path));
+			}
+			else {
+				path[0] = '\0';
+			}
+			if (dialog_selectfdimage(hWndMain, path, sizeof(path), &readonly)) {
+				filename = path;
+			}
+			else {
+				// キャンセル
+				filename = NULL;
+			}
+
+			winuileave();
+
+			if (!filename) {
+				break;
+			}
+		}
+	}
+
+	diskdrv_setfdd(drv, filename, readonly);
+	toolwin_setfdd(drv, filename);
+}
+*/
+static void setfdd(UINT8 drv, const char *filename, int readonly) {
+	char	path[MAX_PATH];
+
+	file_cpyname(path, filename, sizeof(path));
+	check_and_substitute_disk(path, sizeof(path), &readonly, fdd_diskname(drv));
+	if (path[0]) filename = path;
+	else filename = NULL;
+
+	diskdrv_setfdd(drv, filename, readonly);
+	toolwin_setfdd(drv, filename);
+}
+
+/*
+static void restartplay(void) {
+	SendMessage(hWndMain, WM_COMMAND, IDM_OPRECORDPLAY + oprecord.playno, 0);
+}
+*/
+
+static void oprec(const char *path) {
+	int		ret;
+	char	str[MAX_PATH + 64];
+	FILEH	fh;
+
+	if (!path || !path[0]) return;
+
+	soundmng_stop();
+	ret = statsave_save(path);
+	soundmng_play();
+
+	winuienter();
+
+	if (ret) {
+		file_delete(path);
+		wsprintf(str, "Failed to save the state:\n  %s", path);
+		MessageBox(hWndMain, str, "Record operation", MB_OK | MB_ICONSTOP);
+	}
+	else {
+		fh = file_open(path);
+		if (fh == FILEH_INVALID) {
+		}
+		else {
+			statsave_skipall(fh);
+			oprecord_start_record2(fh);
+			xmenu_setoprecord();
+		}
+	}
+
+	winuileave();
+}
+
+
+#endif
+
 
 
 // ---- proc
@@ -961,12 +1269,77 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 
 #if defined(SUPPORT_OPRECORD)
 		case IDM_OPRECORDSTOP:
+			opplayfiles = 0;
 			oprecord_stop_play();
 			oprecord_stop_record();
+			xmenu_setoprecord();
 			break;
 
 		case IDM_OPRECORDREPEAT:
-			xmenu_setrepeat(oprecord.repeat ? FALSE : TRUE);
+			oprepeat = oprepeat ? FALSE : TRUE;
+			xmenu_setrepeat(oprepeat);
+			break;
+
+		case IDM_OPRECORD_REC:
+			{
+				char	path[MAX_PATH];
+
+				winuienter();
+				b = dialog_oprec(hWnd, path, sizeof(path));
+				winuileave();
+				if (b) {
+					oprec(path);
+				}
+			}
+/*
+			winuienter();
+			dialog_recoprecord(hWnd);
+			xmenu_setoprecord();
+			winuileave();
+*/
+			break;
+
+		case IDM_OPRECORD_PLAY:
+			winuienter();
+			b = dialog_opplay(hWnd, opplayfile[0], sizeof(opplayfile[0]));
+			winuileave();
+
+			if (b) {
+				opplayfiles = 1;
+				opplaymulti();
+			}
+/*
+			{
+				char	path[MAX_PATH];
+
+				winuienter();
+				b = dialog_opplay(hWnd, path, sizeof(path));
+				winuileave();
+
+				if (b) {
+					opplay(path);
+				}
+			}
+*/
+			break;
+
+		case IDM_OPRECORD_PLAYMULTI:
+			{
+				int i;
+
+				winuienter();
+				b = TRUE;
+				for (i = 0; i < OPPLAYMAXFILES; i++) {
+					b = dialog_opplay(hWnd, opplayfile[i], sizeof(opplayfile[i]));
+					if (!b) break;
+				}
+				winuileave();
+
+				opplayfiles = i;
+				if (opplayfiles) {
+					opplaymulti();
+				}
+			}
 			break;
 #endif
 
@@ -986,6 +1359,7 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			}
 #endif
 #if defined(SUPPORT_OPRECORD)
+/*
 			if ((cmd >= IDM_OPRECORDREC) &&
 				(cmd < (IDM_OPRECORDREC + SUPPORT_OPRECORD))) {
 				char ext[4];
@@ -1015,6 +1389,7 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 				oprecord_start_play(path);
 				oprecord.playno = cmd - IDM_OPRECORDPLAY;
 			}
+*/
 #endif
 			break;
 	}
@@ -1490,16 +1865,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return(0L);
 }
 
-#if defined(SUPPORT_OPRECORD)
-static void setfdd(UINT8 drv, const char *filename, UINT8 readonly) {
-	diskdrv_setfdd(drv, filename, readonly);
-	toolwin_setfdd(drv, filename);
-}
 
-static void restartplay(void) {
-	SendMessage(hWndMain, WM_COMMAND, IDM_OPRECORDPLAY + oprecord.playno, 0);
-}
-#endif
 
 #if defined(VAEG_EXT)
 static void debugwait(void) {
@@ -1579,7 +1945,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 #endif
 #if defined(SUPPORT_OPRECORD)
 	oprecord_set_setfdd(setfdd);
-	oprecord_set_restartplay(restartplay);
+//	oprecord_set_restartplay(restartplay);
+	oprecord_set_playcompleted(playcompleted);
 #endif
 #if defined(SUPPORT_PC88VA)
 	bkupmemva_load();
@@ -1827,6 +2194,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	while(1) {
 		if (!np2stopemulate) {
 #if defined(SUPPORT_OPRECORD)
+			oprestartcheck();
 			oprecord_play_update();
 #endif
 			if (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE)) {

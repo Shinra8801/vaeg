@@ -518,6 +518,11 @@
 		<param name="Local" value="syssetup.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="リプレイ">
+		<param name="Name" value="メニュー - Replay">
+		<param name="Local" value="replay.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="ディップスイッチ">
 		<param name="Local" value="dipsw.html">
 		</OBJECT>

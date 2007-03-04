@@ -1404,6 +1404,112 @@ I286 v30_ror4_ea8(void) {						// 0F 2A 11/000/reg
 }
 
 
+I286 v30_test1_ea8_cl(void) {					// F0 10 11/000/reg
+												// F0 10 mod/000/mem disp
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA8(3)
+					// オペランドがレジスタの場合
+					// byte ptr I286_REG[eax]でレジスタにアクセスできる
+
+					mov		cl, CPU_CL
+					and		cl, 0007h	// 下位3bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	byte ptr I286_REG[eax], dl		// clビット目をテスト
+					FLAG_STORE00
+
+					GET_NEXTPRE2		// 命令2～3バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA8(12)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		al, byte ptr I286_MEM[ecx]
+					mov		cl, CPU_CL
+					and		cl, 0007h	// 下位3bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	al, dl		// clビット目をテスト
+					FLAG_STORE00
+
+					ret
+
+				EXTMEM_EA8
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(バイト)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		cl, CPU_CL
+					and		cl, 0007h	// 下位3bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	al, dl		// clビット目をテスト
+					FLAG_STORE00
+
+					ret
+		}
+}
+
+
+I286 v30_test1_ea16_cl(void) {					// F0 11 11/000/reg
+												// F0 11 mod/000/mem disp
+		__asm {
+				GET_NEXTPRE1		// 0F の1バイト分、IPを進め、命令を先読みする
+									// BL=命令2バイト目、BH=命令3バイト目 ... となる
+				movzx	eax, bh		// EAX に命令の3バイト目を代入
+
+				PREPART_EA16(3)
+					// オペランドがレジスタの場合
+					// word ptr I286_REG[eax*2]でレジスタにアクセスできる
+
+					mov		cl, CPU_CL
+					and		cl, 000fh	// 下位4bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	word ptr I286_REG[eax*2], dx		// clビット目をテスト
+					FLAG_STORE00
+
+					GET_NEXTPRE2		// 命令2～3バイト目の分 IPを進める
+					ret
+
+				MEMORY_EA16(12)
+					// オペランドがメモリ(直接アクセス)の場合
+					// ecxにアドレスが入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		ax, word ptr I286_MEM[ecx]
+					mov		cl, CPU_CL
+					and		cl, 000fh	// 下位4bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	ax, dx		// clビット目をテスト
+					FLAG_STORE00
+
+					ret
+
+				EXTMEM_EA16
+					// オペランドがメモリの場合
+					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// GET_NEXTPRE?は実行済み
+
+					mov		cl, CPU_CL
+					and		cl, 000fh	// 下位4bitが有効
+					mov		dx, 1
+					shl		dx, cl
+					test	ax, dx		// clビット目をテスト
+					FLAG_STORE00
+
+					ret
+		}
+}
+
+
 I286 v30_clr1_ea8_cl(void) {					// 0F 12 11/000/reg
 												// 0F 12 mod/000/mem disp
 		__asm {
@@ -1439,7 +1545,7 @@ I286 v30_clr1_ea8_cl(void) {					// 0F 12 11/000/reg
 
 				EXTMEM_EA8
 					// オペランドがメモリの場合
-					// ecxにアドレスが、eaxにメモリから読んだ値(ワード)が入っている
+					// ecxにアドレスが、eaxにメモリから読んだ値(バイト)が入っている
 					// GET_NEXTPRE?は実行済み
 
 					mov		dl, CPU_CL
@@ -1519,7 +1625,7 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 					mov		dx, 1
 					shl		dx, cl
 					test	al, dl		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
 					ret
@@ -1535,7 +1641,7 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 					mov		dx, 1
 					shl		dx, cl
 					test	al, dl		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE1		// imm3 の分、IPを進める
 					ret
@@ -1550,7 +1656,7 @@ I286 v30_test1_ea8_i3(void) {					// F0 18 11/000/reg  imm3
 					mov		dx, 1
 					shl		dx, cl
 					test	al, dl		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE1		// imm3 の分、IPを進める
 					ret
@@ -1574,7 +1680,7 @@ I286 v30_test1_ea16_i4(void) {					// F0 19 11/000/reg  imm4
 					mov		dx, 1
 					shl		dx, cl
 					test	word ptr I286_REG[eax*2], dx		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE3		// 命令2～4バイト目の分 IPを進める
 					ret
@@ -1590,7 +1696,7 @@ I286 v30_test1_ea16_i4(void) {					// F0 19 11/000/reg  imm4
 					mov		dx, 1
 					shl		dx, cl
 					test	ax, dx		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE1		// imm4 の分、IPを進める
 					ret
@@ -1605,7 +1711,7 @@ I286 v30_test1_ea16_i4(void) {					// F0 19 11/000/reg  imm4
 					mov		dx, 1
 					shl		dx, cl
 					test	ax, dx		// clビット目をテスト
-					FLAG_STORE0			// ToDo: test命令と同じにしたけれど正しい？
+					FLAG_STORE00
 
 					GET_NEXTPRE1		// imm4 の分、IPを進める
 					ret
@@ -1827,8 +1933,8 @@ static const	I286TBL	v30ope0x0f_xtable[64] = {
 			v30_reserved_0x0f,				// 0E:
 			v30_reserved_0x0f,				// 0F:
 
-			v30_reserved_0x0f,				// 10:
-			v30_reserved_0x0f,				// 11:
+			v30_test1_ea8_cl,				// 10:
+			v30_test1_ea16_cl,				// 11:
 			v30_clr1_ea8_cl,				// 12:
 			v30_reserved_0x0f,				// 13:
 			v30_set1_ea8_cl,				// 14:

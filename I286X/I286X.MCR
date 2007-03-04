@@ -33,6 +33,13 @@
 				__asm {	mov		I286_FLAGL, ah						}	\
 				__asm {	and		I286_FLAG, not O_FLAG				}
 
+#if defined(SUPPORT_V30EXT)
+#define	FLAG_STORE00													\
+				__asm {	lahf										}	\
+				__asm {	mov		I286_FLAGL, ah						}	\
+				__asm {	and		I286_FLAG, not (O_FLAG or A_FLAG)	}
+#endif
+
 #define	FLAG_STORE_OF													\
 				__asm {	lahf										}	\
 				__asm {	mov		I286_FLAGL, ah						}	\

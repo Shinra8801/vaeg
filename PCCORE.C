@@ -798,6 +798,12 @@ static void drawscreenva(void) {
 	}
 }
 
+
+static void screendispva_setnevent() {
+	nevent_set(NEVENT_FLAMES, tsp.dispclock, screenvsyncva, NEVENT_RELATIVE);
+	nevent_set(NEVENT_FLAMES2, tsp.sysp4vsyncextension, sysp4vsyncend, NEVENT_RELATIVE);
+}
+
 // 表示期間の開始
 void screendispva(NEVENTITEM item) {
 /*
@@ -805,7 +811,9 @@ void screendispva(NEVENTITEM item) {
 */
 //	gdc_work(GDCWORK_SLAVE);
 	tsp.vsync = 0;
+/*	sysp4vsyncstartに移動
 	screendispflag = 0;
+*/
 	if (!np2cfg.DISPSYNC) {
 		drawscreenva();
 	}
@@ -816,6 +824,7 @@ void screendispva(NEVENTITEM item) {
 //		gdc.vsyncint = 1;
 	}
 */
+	screendispva_setnevent();
 }
 
 // VSYNC期間の開始
@@ -877,6 +886,8 @@ void sysp4vsyncstart(NEVENTITEM item) {
 	// (割り込みより前に IN AL,40hでVSYNC(bit5)=1が検出される場合がある
 	// 「最終平気UPO」ハング対策)
 	nevent_set(NEVENT_FLAMES2, 6, sysp4vsyncint, NEVENT_RELATIVE);
+
+	screendispflag = 0;
 }
 
 void sysp4vsyncend(NEVENTITEM item) {
@@ -890,6 +901,7 @@ void sysp4vsyncend(NEVENTITEM item) {
 	}
 
 	nevent_set(NEVENT_FLAMES2, tsp.sysp4dispclock, sysp4vsyncstart, NEVENT_RELATIVE);
+
 }
 
 #endif
@@ -1058,13 +1070,22 @@ void pccore_exec(BOOL draw) {
 	MEMWAIT_VRAM = np2cfg.wait[2];
 	MEMWAIT_GRCG = np2cfg.wait[4];
 #if defined(SUPPORT_PC88VA)
+/*	screendispvaに移動
 	tsp.vsync = 0;
+*/
 	if (pccore.model_va == PCMODEL_NOTVA) {
 		nevent_set(NEVENT_FLAMES, gdc.dispclock, screenvsync, NEVENT_RELATIVE);
 	}
+/*	screendispva_setneventに移動
 	else {
 		nevent_set(NEVENT_FLAMES, tsp.dispclock, screenvsyncva, NEVENT_RELATIVE);
 		nevent_set(NEVENT_FLAMES2, tsp.sysp4vsyncextension, sysp4vsyncend, NEVENT_RELATIVE);
+	}
+*/
+	else {
+		if (!nevent_iswork(NEVENT_FLAMES)) {
+			screendispva_setnevent();
+		}
 	}
 #else
 	nevent_set(NEVENT_FLAMES, gdc.dispclock, screenvsync, NEVENT_RELATIVE);

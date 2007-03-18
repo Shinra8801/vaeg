@@ -15,6 +15,7 @@
 #include	"mouseifva.h"
 #include	"subsystemmx.h"
 #include	"sysportva.h"
+#include	"va91.h"
 #endif
 
 static BOOL inigetbmp(const BYTE *ptr, UINT pos) {
@@ -480,6 +481,7 @@ static const INITBL iniitem[] = {
 	{"Mouse_VA", INITYPE_UINT8,		&mouseifvacfg.device,	0},
 	{"Sub_Mock", INITYPE_BOOL,		&subsystemmxcfg.mockup,	0},
 	{"DipSw_VA", INITYPE_HEX8,		&sysportvacfg.dipsw,	0},
+	{"Use_VA91", INITYPE_BOOL,		&va91cfg.enabled,		0},
 #endif
 
 	// OSàÀë∂ÅH

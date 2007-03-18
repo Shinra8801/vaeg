@@ -1,5 +1,5 @@
 /*
- * IOCORE.H: PC-88VA I/O
+ * IOCOREVA.H: PC-88VA I/O
  */
 
 #include	"memctrlva.h"

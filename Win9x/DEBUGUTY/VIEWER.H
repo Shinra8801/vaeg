@@ -10,6 +10,9 @@ typedef struct {
 	BYTE	sysm_bank;
 	BYTE	rom1_bank;
 	BYTE	rom0_bank;
+	BYTE	va91rom0_bank;
+	BYTE	va91sysm_bank;
+	BYTE	va91enabled;
 	BYTE	lock;
 #endif
 } VIEWMEM_T;

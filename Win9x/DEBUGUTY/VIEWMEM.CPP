@@ -10,6 +10,7 @@
 //#include	"bmsio.h"
 #include	"memoryva.h"
 #include	"gvramva.h"
+#include	"va91.h"
 
 //extern	_BMSIO		bmsio;
 
@@ -75,21 +76,58 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 	case 0x0d:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, dicmem + 0x40000);
 		break;
+	case 0x0f:
+		if (cfg->va91enabled) {
+			switch(cfg->va91sysm_bank) {
+//	ToDo:
+//			case 9:
+//				break;
+			default:
+				cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, NULL);
+				break;
+			}
+		}
+		else {
+			cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, NULL);
+		}
+		break;
 	default:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, NULL);
 		break;
 	}
 	// ROMエリア0
 	src = NULL;
+	switch(cfg->rom0_bank) {
+	case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+	case 8: case 9:
+		src = rom0mem + 0x10000 * cfg->rom0_bank;
+		break;
+	case 0x0f:
+		if (cfg->va91enabled) src = va91rom0mem + 0x10000 * cfg->va91rom0_bank;
+		break;
+	}
+	/*
 	if (cfg->rom0_bank < 0x0a) {
 		src = rom0mem + 0x10000 * cfg->rom0_bank;
 	}
+	*/
 	cpmem(&adrs, &buf, &size, 0xe0000, 0xf0000, src);
 	// ROMエリア1
 	src = NULL;
+	switch(cfg->rom1_bank) {
+	case 0:
+	case 1:
+		src = rom1mem + 0x10000 * cfg->rom1_bank;
+		break;
+	case 0x0f:
+		if (cfg->va91enabled) src = va91rom1mem;
+		break;
+	}
+	/*
 	if (cfg->rom1_bank < 0x02) {
 		src = rom1mem + 0x10000 * cfg->rom1_bank;
 	}
+	*/
 	cpmem(&adrs, &buf, &size, 0xf0000, 0x100000, src);
 
 	// 0x100000以降

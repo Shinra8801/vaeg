@@ -21,6 +21,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"memoryva.h"
+#include	"va91.h"
 #include	"viewvabank.h"
 #include	"viewvideova.h"
 #include	"viewgactrlva.h"
@@ -236,6 +237,9 @@ void viewcmn_setbank(NP2VIEW_T *view) {
 		dmem->sysm_bank = memoryva.sysm_bank;
 		dmem->rom0_bank = memoryva.rom0_bank;
 		dmem->rom1_bank = memoryva.rom1_bank;
+		dmem->va91rom0_bank = va91.rom0_bank;
+		dmem->va91sysm_bank = va91.sysm_bank;
+		dmem->va91enabled = va91cfg.enabled;
 	}
 #endif
 }
@@ -371,7 +375,7 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 							r0bank = (BYTE)strtoul(work, NULL, 10);
 							GetDlgItemText(hWnd, IDC_ROM1BANK, work, sizeof(work));
 							r1bank = (BYTE)strtoul(work, NULL, 10);
-							if (seg < 0x10000 && off < 0x10000 && sbank < 0x10 && r0bank < 0x10 && r1bank < 0x04) {
+							if (seg < 0x10000 && off < 0x10000 && sbank < 0x10 && r0bank < 0x20 && r1bank < 0x10) {
 								view->seg = (WORD)seg;
 								view->off = (WORD)off;
 								view->dmem.sysm_bank = sbank;

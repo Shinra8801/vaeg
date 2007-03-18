@@ -54,6 +54,7 @@
 #include	"sgp.h"
 #include	"videova.h"
 #include	"subsystemmx.h"
+#include	"va91.h"
 #endif
 
 const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
@@ -436,6 +437,7 @@ void pccore_reset(void) {
 #if defined(SUPPORT_PC88VA)
 	if (pccore.model_va != PCMODEL_NOTVA) {
 		biosva_initialize();
+		va91_initialize();
 	}
 #endif
 	CS_BASE = 0xf0000;

@@ -47,8 +47,8 @@ BEGIN
                     68,50,10
     CONTROL         "PC-286",IDC_MODELEPSON,"Button",BS_AUTORADIOBUTTON,128,
                     68,38,10
-    CONTROL         "PC-88VA1",IDC_MODELPC88VA1,"Button",BS_AUTORADIOBUTTON | 
-                    WS_DISABLED,16,77,47,10
+    CONTROL         "PC-88VA1",IDC_MODELPC88VA1,"Button",BS_AUTORADIOBUTTON,
+                    16,77,47,10
     CONTROL         "PC-88VA2",IDC_MODELPC88VA2,"Button",BS_AUTORADIOBUTTON,
                     72,77,47,10
     GROUPBOX        "Sound",IDC_STATIC,8,88,166,46

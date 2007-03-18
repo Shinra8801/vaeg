@@ -13,6 +13,7 @@
 #include	"iocoreva.h"
 #include	"sgp.h"
 #include	"subsystemmx.h"
+#include	"va91.h"
 #endif
 
 	_ARTIC		artic;
@@ -476,6 +477,7 @@ static const IOCBFN resetfn[] = {
 			mouseifva_reset,
 			gactrlva_reset,
 			cgromva_reset,
+			va91_reset,
 #endif
 		};
 
@@ -507,6 +509,7 @@ static const IOCBFN bindfn[] = {
 			mouseifva_bind,
 			gactrlva_bind,
 			cgromva_bind,
+			va91_bind,
 #endif
 		};
 

@@ -9,6 +9,7 @@
 #include	"viewvabank.h"
 #include	"memoryva.h"
 #include	"bmsio.h"
+#include	"va91.h"
 
 #if defined(SUPPORT_PC88VA)
 
@@ -17,6 +18,8 @@ typedef struct {
 	BYTE	rom1_bank;
 	BYTE	sysm_bank;
 	BYTE	bms_bank;
+	BYTE	va91rom0_bank;
+	BYTE	va91sysm_bank;
 } _BANKSTAT, *BANKSTAT;
 
 static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
@@ -39,6 +42,8 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	_bankstat.rom1_bank = memoryva.rom1_bank;
 	_bankstat.sysm_bank = memoryva.sysm_bank;
 //	_bankstat.bms_bank = bmsio.bank;
+	_bankstat.va91rom0_bank = va91.rom0_bank;
+	_bankstat.va91sysm_bank = va91.sysm_bank;
 
 	if (view->lock) {
 		if (view->buf1.type != ALLOCTYPE_VABANK) {
@@ -63,26 +68,33 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 		r = &_bankstat;
 	}
 
-	for (y=0; y<rc->bottom && pos<3; y+=16, pos++) {
+	for (y=0; y<rc->bottom && pos<5; y+=16, pos++) {
 		switch(pos) {
 			case 0:
-				wsprintf(str, "System memory bank = %.2x",
+				wsprintf(str, "System memory bank      = %.2x",
 								r->sysm_bank);
 				break;
 			case 1:
-				wsprintf(str, "ROM0 bank          = %.2x",
+				wsprintf(str, "ROM0 bank               = %.2x",
 								r->rom0_bank);
 				break;
 			case 2:
-				wsprintf(str, "ROM1 bank          = %.2x",
+				wsprintf(str, "ROM1 bank               = %.2x",
 								r->rom1_bank);
 				break;
 /*
 			case 3:
-				wsprintf(str, "BMS(ECh) bank      = %.2x",
+				wsprintf(str, "BMS(ECh) bank           = %.2x",
 								r->bms_bank);
 				break;
 */
+			case 3:
+				wsprintf(str, "VA91 System memory bank = %.2x",
+								r->va91sysm_bank);
+				break;
+			case 4:
+				wsprintf(str, "VA91 ROM0 bank          = %.2x",
+								r->va91rom0_bank);
 		}
 		TextOut(hdc, 0, y, str, strlen(str));
 	}
@@ -119,7 +131,7 @@ LRESULT CALLBACK viewvabank_proc(NP2VIEW_T *view,
 void viewvabank_init(NP2VIEW_T *dst, NP2VIEW_T *src) {
 
 	dst->type = VIEWMODE_VABANK;
-	dst->maxline = 4;
+	dst->maxline = 6;
 	dst->mul = 1;
 	dst->pos = 0;
 }

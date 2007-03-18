@@ -48,6 +48,7 @@
 #include	"subsystemif.h"
 #include	"subsystem.h"
 #include	"boardsb2.h"
+#include	"va91.h"
 #endif
 
 #if defined(MACOS)

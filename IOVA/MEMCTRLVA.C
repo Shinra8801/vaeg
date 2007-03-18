@@ -9,18 +9,27 @@
 #include	"iocoreva.h"
 #include	"memoryva.h"
 #include	"sgp.h"
+#include	"va91.h"
 
 #if defined(SUPPORT_PC88VA)
 
 // ---- I/O
 
 static void IOOUTCALL memctrlva_o152(UINT port, REG8 dat) {
-	memoryva.rom0_bank = ((dat & 0x40) >> 2) | dat & 0x0f;
-	memoryva.rom1_bank = (dat & 0xb0) >> 4;
+	if (pccore.model_va == PCMODEL_VA1) {
+		memoryva.rom0_bank = (dat & 0x0f);
+		memoryva.rom1_bank = ((dat & 0xf0) >> 4);
+	}
+	else {
+		memoryva.rom0_bank = ((dat & 0x40) >> 2) | (dat & 0x0f);
+		memoryva.rom1_bank = ((dat & 0xb0) >> 4);
+	}
 	(void)port;
 }
 
 static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
+	if ((dat & 0x0f) == 0x0f)
+	TRACEOUT(("memctrlva: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
 	memoryva.sysm_bank = dat & 0x0f;
 	if ((dat ^ gactrlva.gmsp) & 0x10) {
 		// シングルプレーン⇔マルチプレーン 切り替え
@@ -36,9 +45,15 @@ static void IOOUTCALL memctrlva_o153(UINT port, REG8 dat) {
 
 static REG8 IOINPCALL memctrlva_i152(UINT port) {
 	(void)port;
-	return (memoryva.rom0_bank & 0x0f) |
-		   ((memoryva.rom0_bank & 0x10) << 2) |
-		   ((memoryva.rom1_bank & 0x0b) << 4);
+	if (pccore.model_va == PCMODEL_VA1) {
+		return (memoryva.rom0_bank & 0x0f) |
+			   ((memoryva.rom1_bank & 0x0f) << 4);
+	}
+	else {
+		return (memoryva.rom0_bank & 0x0f) |
+			   ((memoryva.rom0_bank & 0x10) << 2) |
+			   ((memoryva.rom1_bank & 0x0b) << 4);
+	}
 }
 
 static REG8 IOINPCALL memctrlva_i153(UINT port) {
@@ -46,6 +61,13 @@ static REG8 IOINPCALL memctrlva_i153(UINT port) {
 	return (memoryva.sysm_bank & 0x0f) |
 		   gactrlva.gmsp |
 		   0x40;
+}
+
+static REG8 IOINPCALL memctrlva_i156(UINT port) {
+	// ROMバンクステータス
+	REG8 dat = 0xff;
+	dat = ~(~dat | ~va91_rombankstatus());
+	return dat;
 }
 
 static void IOOUTCALL memctrlva_o180(UINT port, REG8 dat) {
@@ -92,6 +114,7 @@ void memctrlva_bind(void) {
 
 	iocoreva_attachinp(0x152, memctrlva_i152);
 	iocoreva_attachinp(0x153, memctrlva_i153);
+	iocoreva_attachinp(0x156, memctrlva_i156);
 	iocoreva_attachinp(0x180, memctrlva_i180);
 
 	iocoreva_attachinp(0x030, memctrlva_i030);

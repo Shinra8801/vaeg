@@ -16,6 +16,7 @@
 #define VUROM00ROM "VUROM00.ROM"
 #define VUROM08ROM "VUROM08.ROM"
 #define VUROM1ROM  "VUROM1.ROM"
+#define VUDICROM   "VUDIC.ROM"
 
 // ---- I/O
 
@@ -26,6 +27,7 @@ static void IOOUTCALL va91_off2(UINT port, REG8 dat) {
 }
 
 static void IOOUTCALL va91_off3(UINT port, REG8 dat) {
+	if (dat!=9 && dat!=0x0c && dat!=0x0d)
 	TRACEOUT(("va91: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
 	va91.sysm_bank = dat & 0x0f;
 }
@@ -40,17 +42,24 @@ static REG8 IOINPCALL va91_iff3(UINT port) {
 
 REG8 va91_rombankstatus(void) {
 //	return 0xff;
-	return (va91cfg.enabled) ? 0x7f : 0xff;
+	return (va91.cfg.enabled) ? 0x7f : 0xff;
 }
 
 // ---- I/F
 
+
 void va91_reset(void) {
+	// ダイアログで設定した内容を動作環境に反映する
+	// VA-EGリセット時に呼ばれる(STATSAVEのロード時は呼ばれない)
+	va91.cfg = va91cfg;
+
+	// バンクをリセット
 	va91_off2(0, 0);
+	va91_off3(0, 0);
 }
 
 void va91_bind(void) {
-	if (va91cfg.enabled) {
+	if (va91.cfg.enabled) {
 		iocoreva_attachout(0xff2, va91_off2);
 		iocoreva_attachout(0xff3, va91_off3);
 
@@ -64,7 +73,14 @@ void va91_initialize(void) {
 	FILEH	fh;
 	BOOL	success;
 
-	if (!va91cfg.enabled) return;
+	if (!va91.cfg.enabled) return;
+
+	getbiospath(path, VUDICROM, sizeof(path));
+	fh = file_open_rb(path);
+	if (fh != FILEH_INVALID) {
+		success = (file_read(fh, va91dicmem, 0x80000) == 0x80000);
+		file_close(fh);
+	}
 
 	getbiospath(path, VUROM00ROM, sizeof(path));
 	fh = file_open_rb(path);

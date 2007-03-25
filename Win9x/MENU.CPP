@@ -8,6 +8,7 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"mouseifva.h"
+#include	"va91.h"
 #endif
 
 #if defined(SUPPORT_OPRECORD)
@@ -626,5 +627,11 @@ void xmenu_setmousedevice(UINT8 value) {
 	hmenu = np2class_gethmenu(hWndMain);
 	CheckMenuItem(hmenu, IDM_PORTJOY, MFCHECK(value == 0x00));
 	CheckMenuItem(hmenu, IDM_PORTMOUSE, MFCHECK(value == 0x01));
+}
+
+void xmenu_setva91(BYTE value) {
+	value &= 1;
+	va91cfg.enabled = value;
+	CheckMenuItem(np2class_gethmenu(hWndMain), IDM_VA91, MFCHECK(value));
 }
 #endif

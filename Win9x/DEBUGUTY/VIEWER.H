@@ -6,13 +6,15 @@ typedef struct {
 	BYTE	vram;
 	BYTE	itf;
 	BYTE	A20;
+#if defined(SUPPORT_BMS)
+	BYTE	bmsio_bank;
+#endif
 #if defined(SUPPORT_PC88VA)
 	BYTE	sysm_bank;
 	BYTE	rom1_bank;
 	BYTE	rom0_bank;
 	BYTE	va91rom0_bank;
 	BYTE	va91sysm_bank;
-	BYTE	va91enabled;
 	BYTE	lock;
 #endif
 } VIEWMEM_T;

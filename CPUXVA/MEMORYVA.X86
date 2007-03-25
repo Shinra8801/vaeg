@@ -20,6 +20,7 @@ section .bss
 
 	global	_va91rom0mem
 	global	_va91rom1mem
+	global	_va91dicmem
 
 ;TVRAM 256Kbytes
 _textmem	resb	0x40000
@@ -50,6 +51,9 @@ _va91rom0mem	resb	0xa0000
 
 ;VA91 ROM1
 _va91rom1mem	resb	0x10000
+
+;VA91 辞書ROM
+_va91dicmem		resb	0x80000
 
 
 TEXTMEMORY	equ		_textmem
@@ -190,6 +194,25 @@ knj2_wt1:			mov		ebx, ecx
 knj2_wt9:			pop		ebx
 					ret
 
+; VA91 System memory area
+					align	16
+@va91sysm_wt:		JMPVA91SYSMBANK	_va91sysmbyte_write
+
+; VA91 Backup RAM
+					align	16
+
+@va91knj2_wt:		mov		ebx, ecx
+					sub		ebx, CPUADDR_BACKUP + 2000h
+					jc		va91knj2_wt9
+
+					cmp		ebx, BACKUPMEMORY_SIZE - 2000h
+					jae		knj2_wt9
+
+					mov		[BACKUPMEMORY + 2000h + ebx], dl
+
+va91knj2_wt9:		pop		ebx
+					ret
+
 ; ----------------------------------------------------------------- write word
 
 	extern	@i286w_wt
@@ -242,6 +265,28 @@ knj2w_wt2:			inc		cx
 knj2w_wt3:			dec		cx
 					xchg	dh, dl
 					jmp		@knj2_wt
+
+; VA91 System memory area
+					align	16
+@va91sysmw_wt:		JMPVA91SYSMBANK	_va91sysmword_write
+
+; VA91 Backup RAM
+;	WORDアクセスした場合、下位バイトのみ書き込み
+;	奇数アドレスからのWORDアクセスは通常通り書き込み
+					align	16
+@va91knj2w_wt:		test	cx,1
+					jnz		va91knj2w_wt2
+					jmp		@va91knj2_wt			;下位バイトのみ書き込み
+
+va91knj2w_wt2:		inc		cx
+					xchg	dh, dl
+					push	dword va91knj2w_wt3
+					push	ebx
+					jmp		@va91knj2_wt
+
+va91knj2w_wt3:		dec		cx
+					xchg	dh, dl
+					jmp		@va91knj2_wt
 
 
 ; ----------------------------------------------------------------- read byte
@@ -380,6 +425,19 @@ rom1invalid_rd9:	pop		ebx
 					sub		ebx, CPUADDR_SYSM - 0x40000
 
 					mov		al, [FONTMEMORY + ebx]
+					pop		ebx
+					ret
+
+; VA91 Dictionary ROM
+					align	16
+@va91dic1_rd:		mov		ebx, ecx
+					sub		ebx, CPUADDR_SYSM
+					jmp		va91dic_rd
+
+@va91dic2_rd:		mov		ebx, ecx
+					sub		ebx, CPUADDR_SYSM - 0x40000
+
+va91dic_rd:			mov		al, [_va91dicmem + ebx]
 					pop		ebx
 					ret
 
@@ -591,6 +649,19 @@ va91knj2w_rd3:		dec		cx
 					mov		ah, al
 					jmp		@va91knj2_rd
 
+; VA91 Dictionary ROM
+					align	16
+@va91dic1w_rd:		mov		ebx, ecx
+					sub		ebx, CPUADDR_SYSM
+					jmp		va91dicw_rd
+
+@va91dic2w_rd:		mov		ebx, ecx
+					sub		ebx, CPUADDR_SYSM - 0x40000
+
+va91dicw_rd:		mov		ax, [_va91dicmem + ebx]
+					pop		ebx
+					ret
+
 ; VA91 ROM area 0
 					align	16
 @va91rom0w_rd:		xor		ebx, ebx
@@ -667,13 +738,15 @@ _backupmem_wp	db 0				;バックアップメモリ ライトプロテクト
 			endstruc
 
 
+			struc	va91cfg_t
+.enabled		resd 1
+			endstruc
+
 			struc	va91_t
 .sysm_bank		resb 1				;bit3-0
 .rom0_bank		resb 1				;bit3-0
-			endstruc
-
-			struc	va91cfg_t
-.enabled		resd 1
+.dmy			resb 2
+.cfg			resb va91cfg_t_size
 			endstruc
 
 
@@ -742,6 +815,23 @@ _sysmbyte_write	dd	@i286_wn		;0
 				dd	@i286_wn		;c
 				dd	@i286_wn		;d
 				dd	@i286_wn		;e
+				dd	@va91sysm_wt	;@i286_wn		;f
+
+_va91sysmbyte_write	dd	@i286_wn		;0
+				dd	@i286_wn		;1
+				dd	@i286_wn		;2
+				dd	@i286_wn		;3
+				dd	@i286_wn		;4
+				dd	@i286_wn		;5
+				dd	@i286_wn		;6
+				dd	@i286_wn		;7
+				dd	@i286_wn		;8
+				dd	@va91knj2_wt	;9
+				dd	@i286_wn		;a
+				dd	@i286_wn		;b
+				dd	@i286_wn		;c
+				dd	@i286_wn		;d
+				dd	@i286_wn		;e
 				dd	@i286_wn		;f
 
 
@@ -774,6 +864,23 @@ _sysmword_write	dd	@i286_wn		;0
 				dd	@i286_wn		;7
 				dd	@i286_wn		;8
 				dd	@knj2w_wt		;9
+				dd	@i286_wn		;a
+				dd	@i286_wn		;b
+				dd	@i286_wn		;c
+				dd	@i286_wn		;d
+				dd	@i286_wn		;e
+				dd	@va91sysmw_wt	;f
+
+_va91sysmword_write	dd	@i286_wn	;0
+				dd	@i286_wn		;1
+				dd	@i286_wn		;2
+				dd	@i286_wn		;3
+				dd	@i286_wn		;4
+				dd	@i286_wn		;5
+				dd	@i286_wn		;6
+				dd	@i286_wn		;7
+				dd	@i286_wn		;8
+				dd	@va91knj2w_wt	;9
 				dd	@i286_wn		;a
 				dd	@i286_wn		;b
 				dd	@i286_wn		;c
@@ -880,8 +987,8 @@ _va91sysmbyte_read	dd	@i286_rn		;0
 				dd	@va91knj2_rd	;9
 				dd	@i286_rn		;a
 				dd	@i286_rn		;b
-				dd	@i286_rn		;c
-				dd	@i286_rn		;d
+				dd	@va91dic1_rd	;c
+				dd	@va91dic2_rd	;d
 				dd	@i286_rn		;e
 				dd	@i286_rn		;f
 
@@ -921,23 +1028,6 @@ _sysmword_read	dd	@i286w_rn		;0
 				dd	@dic2w_rd		;d
 				dd	@i286w_rn		;e
 				dd	@va91sysmw_rd	;@i286w_rn		;f
-
-_va91sysmword_read	dd	@i286_rn		;0
-				dd	@i286_rn		;1
-				dd	@i286_rn		;2
-				dd	@i286_rn		;3
-				dd	@i286_rn		;4
-				dd	@i286_rn		;5
-				dd	@i286_rn		;6
-				dd	@i286_rn		;7
-				dd	@i286_rn		;8
-				dd	@va91knj2w_rd	;9
-				dd	@i286_rn		;a
-				dd	@i286_rn		;b
-				dd	@i286_rn		;c
-				dd	@i286_rn		;d
-				dd	@i286_rn		;e
-				dd	@i286_rn		;f
 
 _rom0word_read	dd	@stdrom0w_rd	;00
 				dd	@stdrom0w_rd	;01
@@ -988,6 +1078,24 @@ _rom1word_read	dd	@stdrom1w_rd	;0
 				dd	@stdrom1w_rd	;d
 				dd	@stdrom1w_rd	;e
 				dd	@va91rom1w_rd	;@stdrom1w_rd	;f
+
+_va91sysmword_read	dd	@i286_rn		;0
+				dd	@i286_rn		;1
+				dd	@i286_rn		;2
+				dd	@i286_rn		;3
+				dd	@i286_rn		;4
+				dd	@i286_rn		;5
+				dd	@i286_rn		;6
+				dd	@i286_rn		;7
+				dd	@i286_rn		;8
+				dd	@va91knj2w_rd	;9
+				dd	@i286_rn		;a
+				dd	@i286_rn		;b
+				dd	@va91dic1w_rd	;c
+				dd	@va91dic2w_rd	;d
+				dd	@i286_rn		;e
+				dd	@i286_rn		;f
+
 
 
 

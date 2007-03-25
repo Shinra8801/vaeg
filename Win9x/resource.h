@@ -239,8 +239,11 @@
 #define IDC_ROM0BANK                    1205
 #define IDC_ROM1BANK                    1206
 #define IDC_LOCKBANK                    1207
+#define IDC_VA91SYSMBANK                1208
 #define IDC_BMSIO                       1209
+#define IDC_VA91ROM0BANK                1209
 #define IDC_BMS                         1210
+#define IDC_BMSIOBANK                   1210
 #define IDC_BMSBANKS                    1211
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
@@ -403,6 +406,7 @@
 #define IDM_VIEWMODESUBREG              40129
 #define IDM_VIEWMODESUBASM              40130
 #define IDM_VIEWMODEGACTRLVA            40131
+#define IDM_VA91                        40132
 
 // Next default values for new objects
 // 
@@ -410,7 +414,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
-#define _APS_NEXT_COMMAND_VALUE         40132
+#define _APS_NEXT_COMMAND_VALUE         40133
 #define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

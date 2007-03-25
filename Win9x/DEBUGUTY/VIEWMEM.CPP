@@ -7,12 +7,11 @@
 
 #if defined(SUPPORT_PC88VA)
 #include	"pccore.h"
-//#include	"bmsio.h"
+#include	"bmsio.h"
 #include	"memoryva.h"
 #include	"gvramva.h"
 #include	"va91.h"
 
-//extern	_BMSIO		bmsio;
 
 /*
 CPUメモリアドレス*adrsから*sizeバイトのうち、
@@ -53,9 +52,14 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 
 	// Main Memory
 	cpmem(&adrs, &buf, &size, 0x00000, 0x80000, mem);
-	// ToDo: I-Oバンクメモリ
-//	cpmem(&adrs, &buf, &size, 0x80000, 0xa0000, bmsio.addr);
-	cpmem(&adrs, &buf, &size, 0x80000, 0xa0000, NULL);
+
+	// I-Oバンクメモリ
+	src = NULL;
+	if (cfg->bmsio_bank < bmsio.cfg.numbanks) {
+		src = bmsiowork.bmsmem + cfg->bmsio_bank * 0x20000;
+	}
+	cpmem(&adrs, &buf, &size, 0x80000, 0xa0000, src);
+
 	// システムメモリエリア
 	switch(cfg->sysm_bank) {
 	case 1:
@@ -67,9 +71,11 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 	case 8:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, fontmem);
 		break;
-//	ToDo:
-//	case 9:
-//		break;
+	case 9:
+		cpmem(&adrs, &buf, &size, 0xa0000, 0xb0000, fontmem + 0x40000);
+		cpmem(&adrs, &buf, &size, 0xb0000, 0xb4000, backupmem);
+		cpmem(&adrs, &buf, &size, 0xb4000, 0xe0000, NULL);
+		break;
 	case 0x0c:
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, dicmem);
 		break;
@@ -77,11 +83,19 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 		cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, dicmem + 0x40000);
 		break;
 	case 0x0f:
-		if (cfg->va91enabled) {
+		if (va91.cfg.enabled) {
 			switch(cfg->va91sysm_bank) {
-//	ToDo:
-//			case 9:
-//				break;
+			case 9:
+				cpmem(&adrs, &buf, &size, 0xa0000, 0xb2000, NULL);
+				cpmem(&adrs, &buf, &size, 0xb2000, 0xb4000, backupmem + 0x2000);
+				cpmem(&adrs, &buf, &size, 0xb4000, 0xe0000, NULL);
+				break;
+			case 0x0c:
+				cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, va91dicmem);
+				break;
+			case 0x0d:
+				cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, va91dicmem + 0x40000);
+				break;
 			default:
 				cpmem(&adrs, &buf, &size, 0xa0000, 0xe0000, NULL);
 				break;
@@ -103,7 +117,7 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 		src = rom0mem + 0x10000 * cfg->rom0_bank;
 		break;
 	case 0x0f:
-		if (cfg->va91enabled) src = va91rom0mem + 0x10000 * cfg->va91rom0_bank;
+		if (va91.cfg.enabled) src = va91rom0mem + 0x10000 * cfg->va91rom0_bank;
 		break;
 	}
 	/*
@@ -120,7 +134,7 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 		src = rom1mem + 0x10000 * cfg->rom1_bank;
 		break;
 	case 0x0f:
-		if (cfg->va91enabled) src = va91rom1mem;
+		if (va91.cfg.enabled) src = va91rom1mem;
 		break;
 	}
 	/*

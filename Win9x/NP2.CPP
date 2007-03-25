@@ -57,6 +57,7 @@
 #if defined(SUPPORT_PC88VA)
 #include	"bkupmemva.h"
 #include	"mouseifva.h"
+#include	"va91.h"
 #endif
 
 #ifdef BETA_RELEASE
@@ -1155,6 +1156,11 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			xmenu_setmousedevice(MOUSEIFVA_MOUSE);
 			update |= SYS_UPDATECFG;
 			break;
+
+		case IDM_VA91:
+			xmenu_setva91(va91cfg.enabled ^ 1);
+			update |= SYS_UPDATECFG;
+			break;
 #endif
 
 		case IDM_SERIAL1:
@@ -2050,6 +2056,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 
 #if defined(SUPPORT_PC88VA)
 	xmenu_setmousedevice(mouseifvacfg.device);
+	xmenu_setva91(va91cfg.enabled);
 #endif
 
 	ShowWindow(hWnd, nCmdShow);

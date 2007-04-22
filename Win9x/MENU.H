@@ -11,6 +11,9 @@ void menu_addmenubar(HMENU popup, HMENU menubar);
 
 void xmenu_initialize(void);
 void xmenu_disablewindow(void);
+#if defined(VAEG_EXT)
+void xmenu_update(void);
+#endif
 void xmenu_setroltate(BYTE value);
 void xmenu_setdispmode(BYTE value);
 void xmenu_setraster(BYTE value);

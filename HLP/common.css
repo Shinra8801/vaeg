@@ -1,7 +1,7 @@
 
 BODY {
   COLOR: #000000;
-  BACKGROUND: #ffffee;
+  BACKGROUND: #ffffff;
   FONT-FAMILY: ‚l‚r ‚oƒSƒVƒbƒN, MS UI Gothic;
   FONT-SIZE: 90%;
 }
@@ -22,14 +22,17 @@ A:hover {
   COLOR: red;
 }
 
+H1 { 
+  font-size: 125%;
+  border: solid;
+  border-width: 0px 0px 2px 0px;
+  border-color: #602810;
+  letter-spacing: 1em;
+}
+
 H2 {
-  TEXT-INDENT: 0;
   COLOR: #000000;
-  FONT-SIZE: 150%;
-  BORDER: outset thin;
-  BORDER-TOP: 0;
-  BORDER-LEFT: 0;
-  BORDER-RIGHT: 0;
+  FONT-SIZE: 110%;
 }
 
 H3 {
@@ -53,20 +56,53 @@ H4 {
 P {
   MARGIN-BOTTOM: 0.75em;
   MARGIN-TOP: 0.75em;
+  margin-left: 2em;
 }
 
+P.menu {
+  margin-left: 0em;
+}
+
+BLOCKQUOTE {
+  margin-left: 4em;
+}
+
+.va {
+  font-weight: bold;
+  color: #ff4000;
+  background-color: #ffe0c0;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+  margin-right: 0.2em;
+}
+
+.98 {
+  font-weight: bold;
+  color: #8040e0;
+  background-color: #e0e0ff;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+  margin-right: 0.2em;
+}
+
+
 DT {
-  MARGIN-TOP: 2em;
+  MARGIN-TOP: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 DD {
   MARGIN-LEFT: 1.5em;
-  MARGIN-BOTTOM: 0em;
+  MARGIN-BOTTOM: 1em;
+}
+
+OL {
+  MARGIN-LEFT: 4.0em;
 }
 
 UL {
   LIST-STYLE: disc;
-  MARGIN-LEFT: 1.5em;
+  MARGIN-LEFT: 3.5em;
 }
 
 LI {
@@ -85,6 +121,13 @@ TABLE {
   MARGIN-BOTTOM: 0.5em;
 }
 
+TABLE.spec {
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+  border-collapse: collapse;
+}
+
 TABLE.dummy {
   FONT-SIZE: 100%;
   MARGIN-TOP: 0.5em;
@@ -92,13 +135,15 @@ TABLE.dummy {
 }
 
 TH {
-  BACKGROUND: #e0e0e0;
+  BACKGROUND: #ffd694;
   VERTICAL-ALIGN: top;
+  padding: 0.2em;
 }
 
 TD {
-  BACKGROUND: #ffffff;
+  BACKGROUND: #fff5cf;
   VERTICAL-ALIGN: top;
+  padding: 0.2em;
 }
 
 TD.topic {
@@ -127,10 +172,14 @@ TD.dummy {
 TD.spec1 {
   BACKGROUND: #ffffee;
   VERTICAL-ALIGN: top;
+  border-style: solid;
+  border-width: 1px;
 }
 
 TD.spec2 {
   BACKGROUND: #ffffff;
   VERTICAL-ALIGN: top;
+  border-style: solid;
+  border-width: 1px;
 }
 

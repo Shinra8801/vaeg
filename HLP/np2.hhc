@@ -21,12 +21,22 @@
 		<param name="ImageNumber" value="11">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="簡単な導入方法">
+		<param name="Name" value="導入方法">
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="インストール設定">
+			<param name="Name" value="インストール">
 			<param name="Local" value="how2use1.html">
+			<param name="ImageNumber" value="11">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="起動とリセット">
+			<param name="Local" value="how2use7.html">
+			<param name="ImageNumber" value="11">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="基本設定">
+			<param name="Local" value="how2use6.html">
 			<param name="ImageNumber" value="11">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
@@ -35,13 +45,13 @@
 			<param name="ImageNumber" value="11">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="ハードディスク">
+			<param name="Name" value="ハードディスクイメージ">
 			<param name="Local" value="how2use3.html">
 			<param name="ImageNumber" value="11">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="その他のファイル">
-			<param name="Local" value="how2use4.html">
+			<param name="Name" value="ディップスイッチ等">
+			<param name="Local" value="how2use8.html">
 			<param name="ImageNumber" value="11">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
@@ -215,11 +225,6 @@
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="システムセットアップメニュー">
-			<param name="Local" value="syssetup.html">
-			<param name="ImageNumber" value="11">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Vermouth">
 			<param name="Local" value="vermouth.html">
 			<param name="ImageNumber" value="11">
@@ -250,12 +255,7 @@
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="PC-98x1シリーズ">
-			<param name="Local" value="pc98x1.html">
-			<param name="ImageNumber" value="11">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="ねこープロジェクトII 機能仕様">
+			<param name="Name" value="機能仕様">
 			<param name="Local" value="spec.html">
 			<param name="ImageNumber" value="11">
 			</OBJECT>
@@ -291,7 +291,7 @@
 		<param name="ImageNumber" value="11">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="WebPage">
+		<param name="Name" value="Webサイト">
 		<param name="Local" value="webpage.html">
 		<param name="ImageNumber" value="11">
 		</OBJECT>

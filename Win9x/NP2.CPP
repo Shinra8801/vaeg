@@ -2059,6 +2059,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	xmenu_setva91(va91cfg.enabled);
 #endif
 
+#if defined(VAEG_EXT)
+	xmenu_update();
+#endif
+
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 

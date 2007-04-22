@@ -1,4 +1,8 @@
 
+#ifndef MEMCALL
+#define	MEMCALL
+#endif
+
 typedef struct {		// see, memoryva.x86
 		UINT8	sysm_bank;
 		UINT8	rom0_bank;
@@ -27,6 +31,8 @@ extern	BYTE	rom1mem[0x20000];
 
 extern	_MEMORYVA	memoryva;
 extern	BOOL	textmem_dirty;
+
+void MEMCALL i286_memorymap_va(void);
 
 #ifdef __cplusplus
 }

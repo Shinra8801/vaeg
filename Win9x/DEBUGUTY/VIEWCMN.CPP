@@ -242,6 +242,7 @@ void viewcmn_setbank(NP2VIEW_T *view) {
 		dmem->rom0_bank = memoryva.rom0_bank;
 		dmem->rom1_bank = memoryva.rom1_bank;
 		dmem->va91rom0_bank = va91.rom0_bank;
+		dmem->va91rom1_bank = va91.rom1_bank;
 		dmem->va91sysm_bank = va91.sysm_bank;
 	}
 #endif
@@ -368,12 +369,17 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 						EnableWindow(GetDlgItem(hWnd, IDC_VA91ROM0BANK), TRUE);
 						wsprintf(work, "%d", view->dmem.va91rom0_bank);
 						SetDlgItemText(hWnd, IDC_VA91ROM0BANK, work);
+						EnableWindow(GetDlgItem(hWnd, IDC_VA91ROM1BANK), TRUE);
+						wsprintf(work, "%d", view->dmem.va91rom1_bank);
+						SetDlgItemText(hWnd, IDC_VA91ROM1BANK, work);
 					}
 					else {
 						EnableWindow(GetDlgItem(hWnd, IDC_VA91SYSMBANK), FALSE);
 						SetDlgItemText(hWnd, IDC_VA91SYSMBANK, "");
 						EnableWindow(GetDlgItem(hWnd, IDC_VA91ROM0BANK), FALSE);
 						SetDlgItemText(hWnd, IDC_VA91ROM0BANK, "");
+						EnableWindow(GetDlgItem(hWnd, IDC_VA91ROM1BANK), FALSE);
+						SetDlgItemText(hWnd, IDC_VA91ROM1BANK, "");
 					}
 
 					SetDlgItemCheck(hWnd, IDC_LOCKBANK, view->dmem.lock);
@@ -389,7 +395,7 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 						NP2VIEW_T	*view;
 						char work[16];
 						unsigned long seg, off;
-						BYTE sbank, r0bank, r1bank, va91sbank, va91r0bank, bmsiobank;
+						BYTE sbank, r0bank, r1bank, va91sbank, va91r0bank, va91r1bank, bmsiobank;
 						int result = IDCANCEL;
 
 						view = viewcmn_findbydialog(hWnd);
@@ -410,10 +416,12 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 							va91sbank = (BYTE)strtoul(work, NULL, 10);
 							GetDlgItemText(hWnd, IDC_VA91ROM0BANK, work, sizeof(work));
 							va91r0bank = (BYTE)strtoul(work, NULL, 10);
+							GetDlgItemText(hWnd, IDC_VA91ROM1BANK, work, sizeof(work));
+							va91r1bank = (BYTE)strtoul(work, NULL, 10);
 							if (seg < 0x10000 && off < 0x10000 && 
 								bmsiobank < 0x100 &&
 								sbank < 0x10 && r0bank < 0x20 && r1bank < 0x10 &&
-								va91sbank < 0x10 && va91r0bank < 0x10) {
+								va91sbank < 0x10 && va91r0bank < 0x10 && va91r1bank < 0x10) {
 
 								view->seg = (WORD)seg;
 								view->off = (WORD)off;
@@ -423,6 +431,7 @@ LRESULT CALLBACK ViewerAddressDialogProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM 
 								view->dmem.rom1_bank = r1bank;
 								view->dmem.va91sysm_bank = va91sbank;
 								view->dmem.va91rom0_bank = va91r0bank;
+								view->dmem.va91rom1_bank = va91r1bank;
 								view->dmem.lock = GetDlgItemCheck(hWnd, IDC_LOCKBANK);
 								result = IDOK;
 							}

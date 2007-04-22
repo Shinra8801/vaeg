@@ -26,7 +26,7 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 // Dialog
 //
 
-IDD_CONFIG DIALOG DISCARDABLE  0, 0, 180, 200
+IDD_CONFIG DIALOG DISCARDABLE  0, 0, 179, 217
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Configure"
 CLASS "np2dialog"
@@ -40,36 +40,36 @@ BEGIN
                     WS_VSCROLL | WS_GROUP | WS_TABSTOP
     RTEXT           "ClockCount",IDC_CLOCKMSG,58,41,36,8
     LTEXT           "MHz",IDC_STATIC,96,41,14,8
-    GROUPBOX        "Architecture",IDC_STATIC,8,56,166,28
+    GROUPBOX        "Architecture",IDC_STATIC,8,56,166,43
     CONTROL         "PC-9801VM",IDC_MODELVM,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,16,68,51,10
+                    WS_GROUP | WS_TABSTOP,16,83,51,10
     CONTROL         "PC-9801VX",IDC_MODELVX,"Button",BS_AUTORADIOBUTTON,72,
-                    68,50,10
+                    83,50,10
     CONTROL         "PC-286",IDC_MODELEPSON,"Button",BS_AUTORADIOBUTTON,128,
-                    68,38,10
+                    83,38,10
     CONTROL         "PC-88VA1",IDC_MODELPC88VA1,"Button",BS_AUTORADIOBUTTON,
-                    16,77,47,10
+                    16,68,47,10
     CONTROL         "PC-88VA2",IDC_MODELPC88VA2,"Button",BS_AUTORADIOBUTTON,
-                    72,77,47,10
-    GROUPBOX        "Sound",IDC_STATIC,8,88,166,46
-    LTEXT           "Sampling Rate",IDC_STATIC,14,101,43,8
+                    72,68,47,10
+    GROUPBOX        "Sound",IDC_STATIC,8,104,166,46
+    LTEXT           "Sampling Rate",IDC_STATIC,14,117,43,8
     CONTROL         "11KHz",IDC_RATE11,"Button",BS_AUTORADIOBUTTON | 
-                    WS_GROUP | WS_TABSTOP,66,100,32,10
-    CONTROL         "22KHz",IDC_RATE22,"Button",BS_AUTORADIOBUTTON,104,100,
+                    WS_GROUP | WS_TABSTOP,66,116,32,10
+    CONTROL         "22KHz",IDC_RATE22,"Button",BS_AUTORADIOBUTTON,104,116,
                     32,10
-    CONTROL         "44KHz",IDC_RATE44,"Button",BS_AUTORADIOBUTTON,138,100,
+    CONTROL         "44KHz",IDC_RATE44,"Button",BS_AUTORADIOBUTTON,138,116,
                     32,10
-    LTEXT           "Buffer",IDC_STATIC,14,118,19,8
-    EDITTEXT        IDC_SOUNDBUF,66,116,30,12,WS_GROUP
-    LTEXT           "ms",IDC_STATIC,102,118,10,8
+    LTEXT           "Buffer",IDC_STATIC,14,134,19,8
+    EDITTEXT        IDC_SOUNDBUF,66,132,30,12,WS_GROUP
+    LTEXT           "ms",IDC_STATIC,102,134,10,8
     CONTROL         "Allow Resize",IDC_ALLOWRESIZE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,8,142,162,10
+                    WS_TABSTOP,8,158,162,10
     CONTROL         "Disable MMX",IDC_DISABLEMMX,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,8,156,162,10
+                    WS_TABSTOP,8,172,162,10
     CONTROL         "Comfirm Dialog (on Reset/Exit)",IDC_COMFIRM,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,170,162,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,186,162,10
     CONTROL         "Resume",IDC_RESUME,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,8,184,162,10
+                    WS_TABSTOP,8,200,162,10
     DEFPUSHBUTTON   "&OK",IDOK,130,7,44,14,WS_GROUP
     PUSHBUTTON      "Cancel",IDCANCEL,130,24,44,14
 END
@@ -611,6 +611,8 @@ BEGIN
     EDITTEXT        IDC_VA91ROM0BANK,157,74,34,14,ES_AUTOHSCROLL
     LTEXT           "IO Bank",IDC_STATIC,7,34,35,14,SS_CENTERIMAGE
     EDITTEXT        IDC_BMSIOBANK,42,34,34,14,ES_AUTOHSCROLL
+    LTEXT           "ROM1Bank (VA91)",IDC_STATIC,99,94,58,14,SS_CENTERIMAGE
+    EDITTEXT        IDC_VA91ROM1BANK,157,94,34,14,ES_AUTOHSCROLL
 END
 
 IDD_BMS DIALOG DISCARDABLE  0, 0, 187, 95
@@ -638,6 +640,11 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
+    IDD_CONFIG, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 200
+    END
+
     IDD_NEWDISK, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -900,7 +907,7 @@ BEGIN
             MENUITEM "Beep &high",                  IDM_BEEPHIGH
             MENUITEM SEPARATOR
             MENUITEM "&Disable boards",             IDM_NOSOUND
-            MENUITEM "Sound board 2 (&VA2/3)",      IDM_SOUNDBOARD2
+            MENUITEM "Sound board 2 (&VA)",         IDM_SOUNDBOARD2
             MENUITEM "PC-9801-&14",                 IDM_PC9801_14
             MENUITEM "PC-9801-&26K",                IDM_PC9801_26K
             MENUITEM "PC-9801-8&6",                 IDM_PC9801_86

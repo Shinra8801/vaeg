@@ -2,27 +2,23 @@
 <HTML>
 <HEAD>
   <META HTTP-EQUIV="Content-Type" CONTENT="text/html;charset=Shift_JIS">
-  <TITLE>簡単な導入方法 - ディスクイメージ</TITLE>
+  <TITLE>導入方法 - ディスクイメージ</TITLE>
   <LINK REL="stylesheet" TYPE="text/css" HREF="common.css">
 </HEAD>
 <BODY BGCOLOR="#ffffee" TEXT="#000000" LINK="blue" VLINK="purple" ALINK="red">
 
 <BR><BR>
 
-<H3><B>簡単な導入方法 / ディスクイメージ</B></H3>
+<H1>導入方法/ディスクイメージ</H1>
 
-<DL>
-<DT><B>ディスクイメージ</B></DT>
-<DD><P>ねこープロジェクトIIでは、直接FDDからデータの読み書きは行なわず、ディスクイメージ(仮想ディスクファイル)よりデータの読み書きを行います。<BR>ねこープロジェクトIIは、ベタ形式 および D88形式のフォーマットを使用します。</P>
-<P>PC-9801シリーズの場合は<A HREF="tools.html#make_hd">make_hd</A>、PC-ATマシンでは<A HREF="tools.html#ditt">DITT</A>で D88形式でディスクイメージを作成化して下さい。</P>
+<H2>ディスクイメージ</H2>
+<P>88VA Eternal Grafxでは、直接FDDからデータの読み書きは行なわず、ディスクイメージ(仮想ディスクファイル)よりデータの読み書きを行います。対応しているディスクイメージの形式は、ベタ形式 および D88形式です。</P>
+<P>PC-88VAシリーズでは、<A HREF="tools.html#xdisk2va">XDISK2VA</A>、PC-8801シリーズ(およびPC-88VAのV1/V2モード)では<A HREF="tools.html#xdisk2">XDISK2</A>、PC-9801シリーズの場合は<A HREF="tools.html#make_hd">make_hd</A>、PC-ATマシンでは<A HREF="tools.html#ditt">DITT</A>で D88形式でディスクイメージを作成して下さい。</P>
 <P>Windows95では ベタ形式のみですが <A HREF="tools.html#vifc">VFIC</A>、<A HREF="tools.html#diskimg">ディスク イマージュ</A>をご利用下さい。</P></DD>
 </DL>
 
-<BR><BR>
-
-<DL>
-<DT><B>ディスクイメージの作成方法</B></DT>
-<DD><P><FONT SIZE="-1" COLOR="#800000">※ イメージ化する場合には必ずライトプロテクトをして下さい。</FONT></P>
+<H2>ディスクイメージの作成方法</H2>
+<P><FONT SIZE="-1" COLOR="#800000">※ イメージ化する場合には必ずライトプロテクトをして下さい。</FONT></P>
 <P><B>make_hdを用いて D88形式で作成</B></P>
 <OL>
 <LI>make_hdの存在するディレクトリに移動します。</LI>
@@ -37,8 +33,7 @@
 <LI>ディスク イマージュを起動し設定します。<BR>フロッピーディスクを挿入したドライブと ディスクタイプ(MS-DOSの1.2MBフォーマットは 1.25MB)を指定して FD -&gt; HDをクリックします。</LI>
 <LI>ファイル名を指定します。<BR>保存するファイル名指定のダイアログが表示されますので 保存するファイル名を指定します。</LI>
 <LI>拡張子を変更します。<BR>ディスクイマージュの拡張子は標準で binとなっていますが、一般的なベタイメージの拡張子は xdf, dup等ですので、これらに変更します。</LI></OL>
-<P>ベタイメージは ファイルサイズが 1,261,568バイトのイメージファイルを指します。<BR>拡張子はあまり意味はありませんが、ねこープロジェクトIIでは xdf, dup等にしておくとディスクイメージ選択が容易に行なえます。</P></DD>
-</DL>
+<P>ベタイメージは ファイルサイズが 1,261,568バイトのイメージファイルを指します。<BR>拡張子はあまり意味はありませんが、88VA Eternal Grafxでは xdf, dup等にしておくとディスクイメージ選択が容易に行なえます。</P>
 
 </BODY>
 </HTML>

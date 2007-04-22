@@ -19,6 +19,7 @@ typedef struct {
 	BYTE	sysm_bank;
 	BYTE	bms_bank;
 	BYTE	va91rom0_bank;
+	BYTE	va91rom1_bank;
 	BYTE	va91sysm_bank;
 } _BANKSTAT, *BANKSTAT;
 
@@ -43,6 +44,7 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 	_bankstat.sysm_bank = memoryva.sysm_bank;
 //	_bankstat.bms_bank = bmsio.bank;
 	_bankstat.va91rom0_bank = va91.rom0_bank;
+	_bankstat.va91rom1_bank = va91.rom1_bank;
 	_bankstat.va91sysm_bank = va91.sysm_bank;
 
 	if (view->lock) {
@@ -68,7 +70,7 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 		r = &_bankstat;
 	}
 
-	for (y=0; y<rc->bottom && pos<5; y+=16, pos++) {
+	for (y=0; y<rc->bottom && pos<6; y+=16, pos++) {
 		switch(pos) {
 			case 0:
 				wsprintf(str, "System memory bank      = %.2x",
@@ -95,6 +97,11 @@ static void viewvabank_paint(NP2VIEW_T *view, RECT *rc, HDC hdc) {
 			case 4:
 				wsprintf(str, "VA91 ROM0 bank          = %.2x",
 								r->va91rom0_bank);
+				break;
+			case 5:
+				wsprintf(str, "VA91 ROM1 bank          = %.2x",
+								r->va91rom1_bank);
+				break;
 		}
 		TextOut(hdc, 0, y, str, strlen(str));
 	}

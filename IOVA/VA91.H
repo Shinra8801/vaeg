@@ -10,7 +10,7 @@ typedef struct {		// see, memoryva.x86 va91cfg_t
 typedef struct {		// see, memoryva.x86 va91_t
 	UINT8		sysm_bank;
 	UINT8		rom0_bank;
-	UINT8		dmy0;
+	UINT8		rom1_bank;
 	UINT8		dmy1;
 	_VA91CFG	cfg;
 } _VA91, *VA91;
@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 extern	BYTE	va91rom0mem[0xa0000];
-extern	BYTE	va91rom1mem[0x10000];
+extern	BYTE	va91rom1mem[0x20000];
 extern	BYTE	va91dicmem[0x80000];
 
 extern	_VA91CFG	va91cfg;

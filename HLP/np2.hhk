@@ -15,19 +15,23 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="BIOS.ROM">
-		<param name="Local" value="how2use4.html">
+		<param name="Name" value="導入方法 - インストール">
+		<param name="Local" value="how2use1.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="FONT.ROM">
-		<param name="Local" value="how2use4.html">
+		<param name="Name" value="導入方法 - インストール">
+		<param name="Local" value="how2use1.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="SOUND.ROM">
-		<param name="Local" value="how2use4.html">
+		<param name="Name" value="導入方法 - インストール">
+		<param name="Local" value="how2use1.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="リズムファイル">
-		<param name="Local" value="how2use4.html">
+		<param name="Name" value="リズム音源音声データ">
+		<param name="Name" value="導入方法 - インストール">
+		<param name="Local" value="how2use1.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="アンインストール">
@@ -515,7 +519,8 @@
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="システムセットアップメニュー">
-		<param name="Local" value="syssetup.html">
+		<param name="Name" value="導入方法 - ディップスイッチ等">
+		<param name="Local" value="how2use8.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="リプレイ">
@@ -549,6 +554,26 @@
 		<param name="Local" value="tools.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="GETROMVA">
+		<param name="Name" value="ツール">
+		<param name="Local" value="tools.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="XDISK2VA">
+		<param name="Name" value="ツール">
+		<param name="Local" value="tools.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="XDISK2">
+		<param name="Name" value="ツール">
+		<param name="Local" value="tools.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="GETBIOS">
+		<param name="Name" value="ツール">
+		<param name="Local" value="tools.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="DITT">
 		<param name="Local" value="tools.html">
 		</OBJECT>
@@ -564,5 +589,22 @@
 		<param name="Name" value="ディスク イマージュ">
 		<param name="Local" value="tools.html">
 		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="バージョンアップボード">
+		<param name="Name" value="導入方法 - インストール">
+		<param name="Local" value="how2use1.html">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="ROMイメージ">
+			<param name="Name" value="導入方法 - インストール">
+			<param name="Local" value="how2use1.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="メニュー">
+			<param name="Name" value="メニュー - Device">
+			<param name="Local" value="device.html">
+			</OBJECT>
+	</UL>
 </UL>
 </BODY></HTML>

@@ -1,5 +1,5 @@
 /*
- * VA91.C: PC-88VA-91 Version-up board
+ * VA91.C: PC-88VA-91 Software version-up board
  */
 
 #include	"compiler.h"
@@ -21,14 +21,15 @@
 // ---- I/O
 
 static void IOOUTCALL va91_off2(UINT port, REG8 dat) {
-	if (dat>=0x10)
-	TRACEOUT(("va91: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
-	va91.rom0_bank = dat & 0x0f;
+//	if (dat>=0x10)
+//	TRACEOUT(("va91: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+	va91.rom0_bank = ((dat & 0x40) >> 2) | (dat & 0x0f);
+	va91.rom1_bank = ((dat & 0xb0) >> 4);
 }
 
 static void IOOUTCALL va91_off3(UINT port, REG8 dat) {
-	if (dat!=9 && dat!=0x0c && dat!=0x0d)
-	TRACEOUT(("va91: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
+//	if (dat!=9 && dat!=0x0c && dat!=0x0d)
+//	TRACEOUT(("va91: out %x %x %.4x:%.4x", port, dat, CPU_CS, CPU_IP));
 	va91.sysm_bank = dat & 0x0f;
 }
 
@@ -37,11 +38,10 @@ static REG8 IOINPCALL va91_iff2(UINT port) {
 }
 
 static REG8 IOINPCALL va91_iff3(UINT port) {
-	return va91.sysm_bank & 0x0f;
+	return (va91.sysm_bank & 0x0f) | 0xf0;
 }
 
 REG8 va91_rombankstatus(void) {
-//	return 0xff;
 	return (va91.cfg.enabled) ? 0x7f : 0xff;
 }
 
@@ -52,6 +52,10 @@ void va91_reset(void) {
 	// ダイアログで設定した内容を動作環境に反映する
 	// VA-EGリセット時に呼ばれる(STATSAVEのロード時は呼ばれない)
 	va91.cfg = va91cfg;
+	if (pccore.model_va != PCMODEL_VA1) {
+		// 初代VAでなければバージョンアップボードは無効
+		va91.cfg.enabled = FALSE;
+	}
 
 	// バンクをリセット
 	va91_off2(0, 0);
@@ -99,7 +103,7 @@ void va91_initialize(void) {
 	getbiospath(path, VUROM1ROM, sizeof(path));
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
-		success = (file_read(fh, va91rom1mem, 0x10000) == 0x10000);
+		success = (file_read(fh, va91rom1mem, 0x20000) == 0x20000);
 		file_close(fh);
 	}
 }

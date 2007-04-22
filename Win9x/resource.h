@@ -245,6 +245,7 @@
 #define IDC_BMS                         1210
 #define IDC_BMSIOBANK                   1210
 #define IDC_BMSBANKS                    1211
+#define IDC_VA91ROM1BANK                1211
 #define IDS_TOOLWIN                     30001
 #define IDS_KEYDISP                     30002
 #define IDS_SOFTKBD                     30003

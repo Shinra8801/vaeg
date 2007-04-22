@@ -6,6 +6,10 @@
 #include	"pccore.h"
 #include	"fddfile.h"
 
+#if defined(VAEG_EXT)
+#include	"menu.h"
+#endif
+
 	UINT	sys_updates;
 
 
@@ -93,3 +97,8 @@ void sysmng_updatecaption(BYTE flag) {
 	SetWindowText(hWndMain, work);
 }
 
+#if defined(VAEG_EXT)
+void sysmng_updatemodel(void) {
+	xmenu_update();
+}
+#endif

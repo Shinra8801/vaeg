@@ -1650,6 +1650,9 @@ const SFENTRY	*tblterm;
 
 	// I/OçÏÇËíºÇµ
 	i286_memorymap((pccore.model & PCMODEL_EPSON)?1:0);
+#if defined(SUPPORT_PC88VA)
+	i286_memorymap_va();
+#endif
 	iocore_build();
 	iocore_bind();
 	cbuscore_bind();

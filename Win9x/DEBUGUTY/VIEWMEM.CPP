@@ -117,7 +117,9 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 		src = rom0mem + 0x10000 * cfg->rom0_bank;
 		break;
 	case 0x0f:
-		if (va91.cfg.enabled) src = va91rom0mem + 0x10000 * cfg->va91rom0_bank;
+		if (va91.cfg.enabled && cfg->va91rom0_bank < 0x0a) {
+			src = va91rom0mem + 0x10000 * cfg->va91rom0_bank;
+		}
 		break;
 	}
 	/*
@@ -134,7 +136,9 @@ void viewmemva_read(VIEWMEM_T *cfg, DWORD adrs, BYTE *buf, DWORD size) {
 		src = rom1mem + 0x10000 * cfg->rom1_bank;
 		break;
 	case 0x0f:
-		if (va91.cfg.enabled) src = va91rom1mem;
+		if (va91.cfg.enabled && cfg->va91rom1_bank < 0x02) {
+			src = va91rom1mem + 0x10000 * cfg->va91rom1_bank;
+		}
 		break;
 	}
 	/*

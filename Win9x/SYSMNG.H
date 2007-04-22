@@ -66,6 +66,9 @@ void sysmng_hddaccess(BYTE drv);
 void sysmng_workclockreset(void);
 BOOL sysmng_workclockrenewal(void);
 void sysmng_updatecaption(BYTE flag);
+#if defined(VAEG_EXT)
+void sysmng_updatemodel(void);
+#endif
 
 #if defined(VAEG_EXT)
 void toolwin_fddaccess(BYTE drv, int color);

@@ -15,6 +15,10 @@
 #include	"oprecord.h"
 #endif
 
+#if defined(VAEG_EXT)
+#include	"strres.h"
+#endif
+
 #define	MFCHECK(a) ((a)?MF_CHECKED:MF_UNCHECKED)
 
 typedef struct {
@@ -373,6 +377,60 @@ void xmenu_initialize(void) {
 	}
 #endif
 }
+
+#if defined(VAEG_EXT)
+void xmenu_update(void) {
+#if defined(SUPPORT_PC88VA)
+	int disabledforva[]={
+		IDM_RASTER,
+		IDM_JOY2,
+		IDM_MEM640, IDM_MEM16, IDM_MEM36, IDM_MEM76, IDM_MEM116, IDM_MEM136,
+		IDM_PC9801_14, IDM_PC9801_26K, IDM_PC9801_86, IDM_PC9801_26_86, IDM_PC9801_86_CB,
+		IDM_PC9801_118, IDM_SPEAKBOARD, IDM_SPARKBOARD, IDM_AMD98,
+		IDM_JASTSOUND,
+	};
+	int disabledfor98[]={
+		IDM_SOUNDBOARD2,
+		IDM_PORTJOY, IDM_PORTMOUSE,
+		IDM_F12ZENKAKU,
+	};
+#endif
+	HMENU	hmenu;
+	int i;
+
+	hmenu = np2class_gethmenu(hWndMain);
+
+#if defined(SUPPORT_PC88VA)
+	if (milstr_cmp(np2cfg.model, str_VA1)==0) {
+		// VA1
+		EnableMenuItem(hmenu, IDM_VA91, MF_ENABLED);
+	}
+	else {
+		EnableMenuItem(hmenu, IDM_VA91, MF_GRAYED);
+	}
+
+	if (milstr_cmp(np2cfg.model, str_VA1)==0 || milstr_cmp(np2cfg.model, str_VA2)==0) {
+		// VA
+		for (i = 0; i < sizeof(disabledforva) / sizeof(int); i++) {
+			EnableMenuItem(hmenu, disabledforva[i], MF_GRAYED);
+		}
+		for (i = 0; i < sizeof(disabledfor98) / sizeof(int); i++) {
+			EnableMenuItem(hmenu, disabledfor98[i], MF_ENABLED);
+		}
+	}
+	else {
+		// 98
+		for (i = 0; i < sizeof(disabledforva) / sizeof(int); i++) {
+			EnableMenuItem(hmenu, disabledforva[i], MF_ENABLED);
+		}
+		for (i = 0; i < sizeof(disabledfor98) / sizeof(int); i++) {
+			EnableMenuItem(hmenu, disabledfor98[i], MF_GRAYED);
+		}
+	}
+
+#endif
+}
+#endif
 
 void xmenu_disablewindow(void) {
 

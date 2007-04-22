@@ -14,6 +14,7 @@ typedef struct {
 	BYTE	rom1_bank;
 	BYTE	rom0_bank;
 	BYTE	va91rom0_bank;
+	BYTE	va91rom1_bank;
 	BYTE	va91sysm_bank;
 	BYTE	lock;
 #endif

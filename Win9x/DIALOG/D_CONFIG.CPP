@@ -192,6 +192,9 @@ const char	*str;
 	if (milstr_cmp(np2cfg.model, str)) {
 		milstr_ncpy(np2cfg.model, str, sizeof(np2cfg.model));
 		update |= SYS_UPDATECFG;
+#if defined(VAEG_EXT)
+		sysmng_updatemodel();
+#endif
 	}
 
 	if (GetDlgItemCheck(hWnd, IDC_RATE11)) {

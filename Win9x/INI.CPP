@@ -478,6 +478,7 @@ static const INITBL iniitem[] = {
 	{"BMS_Size", INITYPE_UINT8,		&bmsiocfg.numbanks,		0},
 #endif
 #if defined(SUPPORT_PC88VA)
+	{"LockdKey", INITYPE_HEX8,		&np2cfg.lockedkey,		0},
 	{"Mouse_VA", INITYPE_UINT8,		&mouseifvacfg.device,	0},
 	{"Sub_Mock", INITYPE_BOOL,		&subsystemmxcfg.mockup,	0},
 	{"DipSw_VA", INITYPE_HEX8,		&sysportvacfg.dipsw,	0},
@@ -487,6 +488,9 @@ static const INITBL iniitem[] = {
 	// OSàÀë∂ÅH
 	{"keyboard", INIRO_KB,			&np2oscfg.KEYBOARD,		0},
 	{"F12_COPY", INITYPE_UINT8,		&np2oscfg.F12COPY,		0},
+#if defined(VAEG_EXT)
+	{"ALTR_KEY", INITYPE_UINT8,		&np2oscfg.ALTRKEY,		0},
+#endif
 	{"Joystick", INITYPE_BOOL,		&np2oscfg.JOYPAD1,		0},
 	{"Joy1_btn", INITYPE_ARGH8,		np2oscfg.JOY1BTN,		4},
 

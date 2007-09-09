@@ -10,7 +10,8 @@ typedef struct {
 	BYTE	port032;
 	BYTE	port040;
 	WORD	modesw;			// bit0: X88V1, bit1: X88V2
-	BYTE	dmy2[32];
+	BYTE	port190;
+	BYTE	dmy2[31];
 } _SYSPORTVA, *SYSPORTVA;
 
 typedef struct {

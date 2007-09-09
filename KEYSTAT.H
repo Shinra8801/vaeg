@@ -130,7 +130,13 @@ enum {
 	NKEYREF_uPD8255		= 0xf7,
 	NKEYREF_USER		= 0xf8,
 	NKEYREF_SOFTKBD		= 0xf9,
-	NKEYREF_NC			= 0xff
+	NKEYREF_NC			= 0xff,
+#if defined(SUPPORT_PC88VA)
+	NKEYREF_INIT		= 0xfe,
+
+	LOCKED_CAPS			= 0x01,
+	LOCKED_KANA			= 0x02,
+#endif
 };
 
 
@@ -171,9 +177,11 @@ extern "C" {
 extern	NKEYTBL		nkeytbl;
 extern	KEYCTRL		keyctrl;
 
-
 void keystat_initialize(void);
-
+#if defined(SUPPORT_PC88VA)
+UINT8 keystat_getlockedkey(void);
+void keystat_setlockedkey(UINT8 lockedkey);
+#endif
 void keystat_tblreset(void);
 void keystat_tblset(REG8 ref, const UINT8 *key, UINT cnt);
 void keystat_tblload(const char *filename);

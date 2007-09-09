@@ -22,6 +22,9 @@ void xmenu_setframe(BYTE value);
 void xmenu_setkey(BYTE value);
 void xmenu_setxshift(BYTE value);
 void xmenu_setf12copy(BYTE value);
+#if defined(VAEG_EXT)
+void xmenu_setaltrkey(BYTE value);
+#endif
 void xmenu_setbeepvol(BYTE value);
 #if defined(SUPPORT_PC88VA)
 void xmenu_setsound(WORD value);

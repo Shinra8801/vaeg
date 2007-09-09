@@ -8,10 +8,10 @@
 #define	MSSHIFT		16
 
 typedef struct {
-	UINT32	tick;
-	UINT32	msstep;
-	UINT	cnt;
-	UINT32	fraction;
+	UINT32	tick;			// 前回timing_getcount実行時のGETTICK()の値
+	UINT32	msstep;			// 1msecあたりの画面表示サイクル数 << MSSHIFT
+	UINT	cnt;			// 経過時間を画面表示サイクル数であらわしたもの(整数部)
+	UINT32	fraction;		// 経過時間を画面表示サイクル数であらわしたもの(小数点以下MSSHIFTビット)
 } TIMING;
 
 static	TIMING	timing;
@@ -39,6 +39,10 @@ void timing_setcount(UINT value) {
 	timing.cnt = value;
 }
 
+/*
+経過時間を画面表示サイクル数で返却する
+	この値はtiming_setcountでリセットできる。
+*/
 UINT timing_getcount(void) {
 
 	UINT32	ticknow;

@@ -15,7 +15,7 @@
 
 	_SYSPORTVACFG	sysportvacfg = {0xcd};
 
-	_SYSPORTVA		sysportva;
+	_SYSPORTVA		sysportva = {0};
 
 
 static void modeled_oneventset() {
@@ -110,6 +110,18 @@ static REG8 IOINPCALL sysp_i151(UINT port) {
 	return sysportva.modesw >> 8;
 }
 
+static void IOOUTCALL sysp_o190(UINT port, REG8 dat) {
+	dat &= 0x1d;
+	if ((dat ^ sysportva.port190) & 0xfe) {
+		TRACEOUT(("o190: unsupported bits are specified: 0x%.2x", dat));
+	}
+	sysportva.port190 = dat;
+}
+
+static REG8 IOINPCALL sysp_i190(UINT port) {
+	return sysportva.port190;
+}
+
 static void IOOUTCALL sysp_o1c6(UINT port, REG8 dat) {
 	sysportva.modesw = (dat & 0x01) ? 0xfffe : 0xfffd;
 	if (dat & 0x02) {
@@ -196,6 +208,8 @@ void systemportva_reset(void) {
 	sysportva.c = 0xf9;
 	sysportva.port010 = 0;
 	sysportva.port040 = 0;
+	sysportva.port190 &= 0x01;	// bit0ˆÈŠO‚ð0ƒNƒŠƒA
+	sysportva.port190 |= 0x18;	// FBEEP=1, AVC2,AVC1=1,0
 	//beep_oneventset();
 	//modeled_oneventset();
 }
@@ -213,6 +227,9 @@ void systemportva_bind(void) {
 
 	iocoreva_attachinp(0x150, sysp_i150);
 	iocoreva_attachinp(0x151, sysp_i151);
+
+	iocoreva_attachout(0x190, sysp_o190);
+	iocoreva_attachinp(0x190, sysp_i190);
 
 	iocoreva_attachout(0x1c6, sysp_o1c6);
 

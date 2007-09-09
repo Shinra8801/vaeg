@@ -213,15 +213,17 @@ static REG8 IOINPCALL keyboardva_i000(UINT port) {
 static void IOOUTCALL keyboardva_o197(UINT port, REG8 dat) {
 
 	TRACEOUT(("keyboard: o197 -> %02x %.4x:%.4x", dat, CPU_CS, CPU_IP));
-	if ((dat & 0xc0) == 0x80) {
+	if ((dat & 0x40) == 0x40) {		// テクマニではbit7=1となっているが、
+									// VAのROMはbit7=0で本ポートに出力している。
+									// このため、bit7は無視
+		// モードコマンド
+	}
+	else {
 		// オペレーションコマンド
 		if (dat & 0x01) {
 			// RESET
 			keyboard_resetsignal();
 		}
-	}
-	else {
-		// モードコマンド
 	}
 	
 	(void)port;
@@ -239,12 +241,20 @@ static const IOINP keybrdi41[2] = {
 
 
 void keyboard_reset(void) {
+#if defined(SUPPORT_PC88VA)
+	UINT8	mapbkup[KB_MAP];
+
+	// リセット時はkeymapをクリアしない
+	CopyMemory(mapbkup, keybrd.keymap, sizeof(mapbkup));
+#endif
 
 	ZeroMemory(&keybrd, sizeof(keybrd));
 	keybrd.data = 0xff;
 	keybrd.mode = 0x5e;
 
 #if defined(SUPPORT_PC88VA)
+	CopyMemory(keybrd.keymap, mapbkup, sizeof(keybrd.keymap));
+	/*
 	{
 		int i;
 
@@ -252,6 +262,7 @@ void keyboard_reset(void) {
 			keybrd.keymap[i] = 0xff;
 		}
 	}
+	*/
 #endif
 
 }

@@ -31,6 +31,9 @@ typedef struct {
 	BYTE	DISPCLK;
 	BYTE	KEYBOARD;
 	BYTE	F12COPY;
+#if defined(VAEG_EXT)
+	BYTE	ALTRKEY;
+#endif
 
 	BYTE	MOUSE_SW;
 	BYTE	JOYPAD1;

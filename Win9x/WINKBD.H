@@ -13,3 +13,8 @@ void winkbd_roll(BOOL pcat);
 void winkbd_setf12(UINT f12key);
 void winkbd_resetf12(void);
 
+#if defined(VAEG_EXT)
+void winkbd_callback(void);
+void winkbd_setaltr(UINT altrkey);
+void winkbd_resetaltr(void);
+#endif

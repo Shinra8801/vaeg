@@ -23,9 +23,7 @@ typedef struct {
 		KEYCTRL		keyctrl;
 static	KEYSTAT		keystat;
 
-
 void keystat_initialize(void) {
-
 	char	path[MAX_PATH];
 
 	ZeroMemory(&keyctrl, sizeof(keyctrl));
@@ -76,6 +74,25 @@ void keystat_tblset(REG8 ref, const UINT8 *key, UINT cnt) {
 	}
 }
 
+#if defined(SUPPORT_PC88VA)
+UINT8 keystat_getlockedkey(void) {
+	UINT8 ret = 0;
+
+	if (keyctrl.kanaref != NKEYREF_NC) {
+		ret |= LOCKED_KANA;
+	}
+	if (keyctrl.capsref != NKEYREF_NC) {
+		ret |= LOCKED_CAPS;
+	}
+
+	return ret;
+}
+
+void keystat_setlockedkey(UINT8 lockedkey) {
+	keyctrl.capsref = (lockedkey & LOCKED_CAPS) ? NKEYREF_INIT : NKEYREF_NC;
+	keyctrl.kanaref = (lockedkey & LOCKED_KANA) ? NKEYREF_INIT : NKEYREF_NC;
+}
+#endif
 
 // ---- config...
 

@@ -92,6 +92,9 @@ const OEMCHAR np2version[] = OEMTEXT(NP2VER_CORE);
 #else
 				3, 1, 80, 0, 0,
 #endif
+#if defined(SUPPORT_PC88VA)
+				0,
+#endif
 				{OEMTEXT(""), OEMTEXT("")},
 #if defined(SUPPORT_SCSI)
 				{OEMTEXT(""), OEMTEXT(""), OEMTEXT(""), OEMTEXT("")},
@@ -334,6 +337,19 @@ void pccore_cfgupdate(void) {
 			renewal = TRUE;
 		}
 	}
+#if defined(SUPPORT_PC88VA)
+	{
+		UINT8 val;
+
+		if (pccore.model_va != PCMODEL_NOTVA) {
+			val = keystat_getlockedkey();
+			if (np2cfg.lockedkey != val) {
+				np2cfg.lockedkey = val;
+				renewal = TRUE;
+			}
+		}
+	}
+#endif
 	if (renewal) {
 		sysmng_update(SYS_UPDATECFG);
 	}
@@ -364,6 +380,11 @@ void pccore_reset(void) {
 	pccore_set();
 #if defined(SUPPORT_BMS)
 	bmsio_set();
+#endif
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va != PCMODEL_NOTVA) {
+		keystat_setlockedkey(np2cfg.lockedkey);
+	}
 #endif
 	nevent_allreset();
 
@@ -982,7 +1003,7 @@ void pccore_debugmem(UINT32 op, UINT32 addr, UINT16 data) {
 }
 
 void pccore_debugint(UINT32 no) {
-	if (no != 0x82 && !(no == 0x83 /*&& CPU_AX==0x2e00*/) && no != 0x96) {
+	if (no != 0x82 && !(no == 0x83 && CPU_AX==0x2e00) && no != 0x96) {
 		TRACEOUT(("cpu: int 0x%02x %04x:%04x rom0=%02x AX=%04x BX=%04x CX=%04x DX=%04x SI=%04x DI=%04x BP=%04x SP=%04x DS=%04x ES=%04x SS=%04x",
 		no, CPU_CS, CPU_IP,  memoryva.rom0_bank, CPU_AX, CPU_BX, CPU_CX, CPU_DX, CPU_SI, CPU_DI, CPU_BP, CPU_SP, CPU_DS, CPU_ES, CPU_SS));
 	}

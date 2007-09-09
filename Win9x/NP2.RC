@@ -898,6 +898,13 @@ BEGIN
             MENUITEM "F12 = &Zenkaku (VA)",         IDM_F12ZENKAKU
             MENUITEM "F12 = User1",                 IDM_USERKEY1
             MENUITEM "F12 = User2",                 IDM_USERKEY2
+            MENUITEM SEPARATOR
+            MENUITEM "ALT(R) = GRPH",               IDM_ALTRGRPH
+            MENUITEM "ALT(R) = tenkey [=]",         IDM_ALTREQU
+            MENUITEM "ALT(R) = tenkey [ , ]",       IDM_ALTRCOMMA
+            MENUITEM "ALT(R) = Zenkaku (VA)",       IDM_ALTRZENKAKU
+            MENUITEM "ALT(R) = User1",              IDM_ALTRUSERKEY1
+            MENUITEM "ALT(R) = User2",              IDM_ALTRUSERKEY2
         END
         POPUP "&Sound"
         BEGIN

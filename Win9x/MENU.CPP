@@ -535,6 +535,28 @@ void xmenu_setf12copy(BYTE value) {
 #endif
 }
 
+#if defined(VAEG_EXT)
+void xmenu_setaltrkey(BYTE value) {
+
+	HMENU	hmenu;
+
+	if (value > 8) {
+		value = 0;
+	}
+	np2oscfg.ALTRKEY = value;
+	hmenu = np2class_gethmenu(hWndMain);
+	//CheckMenuItem(hmenu, IDM_ALTRMOUSE, MFCHECK(value == 0));
+	//CheckMenuItem(hmenu, IDM_ALTRCOPY, MFCHECK(value == 1));
+	//CheckMenuItem(hmenu, IDM_ALTRSTOP, MFCHECK(value == 2));
+	CheckMenuItem(hmenu, IDM_ALTREQU, MFCHECK(value == 3));
+	CheckMenuItem(hmenu, IDM_ALTRCOMMA, MFCHECK(value == 4));
+	CheckMenuItem(hmenu, IDM_ALTRUSERKEY1, MFCHECK(value == 5));
+	CheckMenuItem(hmenu, IDM_ALTRUSERKEY2, MFCHECK(value == 6));
+	CheckMenuItem(hmenu, IDM_ALTRZENKAKU, MFCHECK(value == 7));
+	CheckMenuItem(hmenu, IDM_ALTRGRPH, MFCHECK(value == 8));
+}
+#endif
+
 void xmenu_setbeepvol(BYTE value) {
 
 	HMENU	hmenu;

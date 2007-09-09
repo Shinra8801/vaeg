@@ -17,7 +17,7 @@ static UINT8 key106[256] = {
 #endif
 			//	 SFT,CTRL, ALT,PAUS,CAPS,KANA,    ,    		; 0x10
 #if defined(SUPPORT_PC88VA)
-				0x70,0x58,0x5b,0x60,0x71,0x72,  NC,  NC,
+				0x70,0x58,  NC,0x60,0x71,0x72,  NC,  NC,
 #else
 				0x70,0x74,0x73,0x60,0x71,0x72,  NC,  NC,
 #endif
@@ -79,8 +79,12 @@ static UINT8 key106[256] = {
 				  NC,  NC,0x33,  NC,  NC,  NC,  NC,  NC,
 			//	    ,    ,    ,    ,    ,    ,    ,    		; 0xe8
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC,
-			//	CAPS,    ,KANA,    ,    ,    ,    ,    		; 0xf0
+			//	CAPS,    ,KANA,KNJ ,    ,    ,    ,    		; 0xf0
+#if defined(VAEG_EXT)
+				0x71,  NC,0x72,0x5b,  NC,  NC,  NC,  NC,
+#else
 				0x71,  NC,0x72,  NC,  NC,  NC,  NC,  NC,
+#endif
 			//	    ,    ,    ,    ,    ,    ,    ,    		; 0xf8
 				  NC,  NC,  NC,  NC,  NC,  NC,  NC,  NC};
 
@@ -173,14 +177,31 @@ static const UINT8 key106ext[256] = {
 #if defined(SUPPORT_PC88VA)
 static const UINT8 f12keys[] = {
 			0x61, 0x60, 0x4d, 0x4f, 0x76, 0x77, 0x5b};
+static const UINT8 altrkeys[] = {
+			0x61, 0x60, 0x4d, 0x4f, 0x76, 0x77, 0x5b, 0x73};
 #else
 static const UINT8 f12keys[] = {
 			0x61, 0x60, 0x4d, 0x4f, 0x76, 0x77};
 #endif
 
+
+#if defined(VAEG_EXT)
+static UINT8 knjdown = 0;	// 漢字キーが押された場合に非0
+							// (エミュレーションマシンの)VSYNCごとにカウントダウンし
+							// 0になったらキーを離した状態にする
+#endif
+
+
 void winkbd_keydown(WPARAM wParam, LPARAM lParam) {
 
 	BYTE	data;
+
+#if defined(VAEG_EXT)
+	if (wParam == 0xf4) wParam = 0xf3;	
+		// 漢字キーは押すたびに交互にwParamの値がf3/f4で入れ替わる
+		// ここでは0xf3に統一する
+	if (wParam == 0xf3) knjdown = 10;
+#endif
 
 	data = key106[wParam & 0xff];
 	if (data != NC) {
@@ -252,6 +273,16 @@ void winkbd_keyup(WPARAM wParam, LPARAM lParam) {
 	}
 }
 
+#if defined(VAEG_EXT)
+void winkbd_callback(void) {
+	if (knjdown) {
+		if (!--knjdown) {
+			winkbd_keyup(0xf3, 0);
+		}
+	}
+}
+#endif
+
 void winkbd_roll(BOOL pcat) {
 
 	if (pcat) {
@@ -287,3 +318,27 @@ void winkbd_resetf12(void) {
 	}
 }
 
+#if defined(VAEG_EXT)
+void winkbd_setaltr(UINT altrkey) {
+
+	UINT8	key;
+
+	altrkey--;
+	if (altrkey < (sizeof(altrkeys)/sizeof(UINT8))) {
+		key = altrkeys[altrkey];
+	}
+	else {
+		key = NC;
+	}
+	key106[0x12] = key;
+}
+
+void winkbd_resetaltr(void) {
+
+	UINT	i;
+
+	for (i=0; i<(sizeof(altrkeys)/sizeof(UINT8)); i++) {
+		keystat_forcerelease(altrkeys[i]);
+	}
+}
+#endif

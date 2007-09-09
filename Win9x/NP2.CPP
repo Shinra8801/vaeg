@@ -90,7 +90,11 @@ static	char		szClassName[] = "NP2-MainWindow";
 						"NP2",
 #endif
 						CW_USEDEFAULT, CW_USEDEFAULT, 1, 1, 0, 1, 0, 0,
+#if defined(VAEG_EXT)
+						0, 0, KEY_UNKNOWN, 0, 8,
+#else
 						0, 0, KEY_UNKNOWN, 0,
+#endif
 						0, 0, 0, {1, 2, 2, 1},
 						{5, 0, 0x3e, 19200, "", "", "", ""},		// ver0.34
 						{0, 0, 0x3e, 19200, "", "", "", ""},		// ver0.34
@@ -1006,6 +1010,43 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			xmenu_setf12copy(7);
 			winkbd_resetf12();
 			winkbd_setf12(7);
+			update |= SYS_UPDATEOSCFG;
+			break;
+#endif
+
+#if defined(VAEG_EXT)
+		case IDM_ALTREQU:
+			xmenu_setaltrkey(3);
+			winkbd_resetaltr();
+			winkbd_setaltr(3);
+			update |= SYS_UPDATEOSCFG;
+			break;
+
+		case IDM_ALTRCOMMA:
+			xmenu_setaltrkey(4);
+			winkbd_resetaltr();
+			winkbd_setaltr(4);
+			update |= SYS_UPDATEOSCFG;
+			break;
+
+		case IDM_ALTRUSERKEY1:
+			xmenu_setaltrkey(5);
+			winkbd_resetaltr();
+			winkbd_setaltr(5);
+			update |= SYS_UPDATEOSCFG;
+			break;
+
+		case IDM_ALTRUSERKEY2:
+			xmenu_setaltrkey(6);
+			winkbd_resetaltr();
+			winkbd_setaltr(6);
+			update |= SYS_UPDATEOSCFG;
+			break;
+
+		case IDM_ALTRZENKAKU:
+			xmenu_setaltrkey(7);
+			winkbd_resetaltr();
+			winkbd_setaltr(7);
 			update |= SYS_UPDATEOSCFG;
 			break;
 #endif
@@ -1992,6 +2033,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	}
 	winkbd_roll(xrollkey);
 	winkbd_setf12(np2oscfg.F12COPY);
+#if defined(VAEG_EXT)
+	winkbd_setaltr(np2oscfg.ALTRKEY);
+#endif
 	keystat_initialize();
 
 	np2class_initialize(hInstance);
@@ -2040,6 +2084,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 	xmenu_setkey(0);
 	xmenu_setxshift(0);
 	xmenu_setf12copy(np2oscfg.F12COPY);
+#if defined(VAEG_EXT)
+	xmenu_setaltrkey(np2oscfg.ALTRKEY);
+#endif
 	xmenu_setbeepvol(np2cfg.BEEP_VOL);
 	xmenu_setsound(np2cfg.SOUND_SW);
 	xmenu_setjastsound(np2oscfg.jastsnd);
@@ -2223,6 +2270,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 				if (np2oscfg.NOWAIT) {
 					joymng_sync();
 					mousemng_sync();
+#if defined(VAEG_EXT)
+					winkbd_callback();
+#endif
 					pccore_exec(framecnt == 0);
 					dclock_callback();
 					if (np2oscfg.DRAW_SKIP) {		// nowait frame skip
@@ -2242,6 +2292,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 					if (framecnt < np2oscfg.DRAW_SKIP) {
 						joymng_sync();
 						mousemng_sync();
+#if defined(VAEG_EXT)
+						winkbd_callback();
+#endif
 						pccore_exec(framecnt == 0);
 						dclock_callback();
 						framecnt++;
@@ -2255,6 +2308,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 						UINT cnt;
 						joymng_sync();
 						mousemng_sync();
+#if defined(VAEG_EXT)
+						winkbd_callback();
+#endif
 						pccore_exec(framecnt == 0);
 						dclock_callback();
 						framecnt++;

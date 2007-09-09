@@ -121,6 +121,10 @@ typedef struct {
 	UINT8	PROTECTMEM;
 	UINT8	hdrvacc;
 
+#if defined(SUPPORT_PC88VA)
+	UINT8	lockedkey;
+#endif
+
 	OEMCHAR	sasihdd[2][MAX_PATH];									// ver0.74
 #if defined(SUPPORT_SCSI)
 	OEMCHAR	scsihdd[4][MAX_PATH];									// ver0.74

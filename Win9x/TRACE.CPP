@@ -4,10 +4,11 @@
 #include	"dosio.h"
 #include	"ini.h"
 
-
 #ifdef TRACE
 
 #define	EXT										// Shinra
+#define EXT2										// Shinra
+//#undef EXT2
 
 #define FILEBUFSIZE			(1 << 20)
 // #define FILELASTBUFONLY
@@ -20,9 +21,16 @@
 
 #define	IDC_VIEW		(WM_USER + 100)
 
-#if defined(EXT)
-#define	VIEW_BUFFERSIZE	20488
-#define VIEW_DROPPEDSIZE 16384		// < VIEW_BUFFERSIZE
+
+#if defined(EXT2)
+#define VIEW_EDITSIZE	64000		// 0xffff is the max size on Windows 9x
+#define VIEW_MAXCHAR	(VIEW_EDITSIZE-1)
+#define VIEW_QUEUESIZE	32000		// must be < VIEW_MAXCHAR + 1
+#define VIEW_TIMER	1
+#define VIEW_DELAY	50				// (msec)
+#elif defined(EXT)
+#define	VIEW_BUFFERSIZE	64000		//20488
+#define VIEW_DROPPEDSIZE 32000		//16384		// < VIEW_BUFFERSIZE
 #define VIEW_TIMER	1
 #define VIEW_DELAY	250				// (msec)
 #else
@@ -38,6 +46,14 @@ typedef struct {
 	BYTE	en;
 	FILEH	fh;
 	HWND	hwnd;
+#if defined(EXT2)
+//	long	lines;
+//	BOOL	disablepaint;
+	char	queue[VIEW_QUEUESIZE];
+	long	queueused;
+	unsigned lineno;
+	BOOL	timerrunning;
+#endif
 } TRACEWIN;
 
 typedef struct {
@@ -72,7 +88,10 @@ static	TRACEWIN	tracewin;
 static	HWND		hView = NULL;
 static	HFONT		hfView = NULL;
 static	HBRUSH		hBrush = NULL;
+#if defined(EXT2)
+#else
 static	char		szView[VIEW_BUFFERSIZE];
+#endif
 static	TRACECFG	tracecfg;
 
 static const char	np2trace[] = "np2trace.ini";
@@ -87,7 +106,22 @@ static const INITBL	initbl[4] = {
 static	BOOL		timerrunning = FALSE;
 #endif
 
-#if defined(EXT)
+#if defined(EXT2)
+static void starttimer(void) {
+	if (!tracewin.timerrunning) {
+		tracewin.timerrunning = TRUE;
+		if (!SetTimer(tracewin.hwnd , VIEW_TIMER, VIEW_DELAY, NULL)) {
+			tracewin.timerrunning = FALSE;
+		}
+	}
+}
+
+static void killtimer(void) {
+	KillTimer(tracewin.hwnd, VIEW_TIMER);
+	tracewin.timerrunning = FALSE;
+}
+
+#elif defined(EXT)
 static void starttimer(void) {
 	if (!timerrunning) {
 		timerrunning = TRUE;
@@ -109,14 +143,24 @@ static void View_ScrollToBottom(HWND hWnd) {
 	int		MaxPos;
 
 	GetScrollRange(hWnd, SB_VERT, &MinPos, &MaxPos);
+#if defined(EXT2) || defined(EXT)
+	SendMessage(hWnd, EM_LINESCROLL, 0, MaxPos);
+#else
 	PostMessage(hWnd, EM_LINESCROLL, 0, MaxPos);
+#endif
 }
 
 static void View_ClrString(void) {
 
+#if defined(EXT2)
+	char	szView[10];
+#endif
 	szView[0] = '\0';
 	SetWindowText(hView, szView);
 }
+
+
+#if !defined(EXT2)
 
 static void View_AddString(const char *lpszString) {
 	int		len, vlen;
@@ -155,6 +199,97 @@ static void View_AddString(const char *lpszString) {
 #endif
 }
 
+#else
+
+static void View_DoOutput(void) {
+	long	len;
+
+	if (tracewin.queueused == 0) return;
+
+	SendMessage(hView, WM_SETREDRAW, FALSE, 0);
+	len = SendMessage(hView, WM_GETTEXTLENGTH, 0, 0);
+	if (len + tracewin.queueused > VIEW_MAXCHAR) {
+		SendMessage(hView, EM_SETSEL, 0, len + tracewin.queueused - VIEW_MAXCHAR);
+		SendMessage(hView, EM_REPLACESEL, FALSE, (LPARAM)"");
+		len = VIEW_MAXCHAR - tracewin.queueused;
+	}
+	SendMessage(hView, EM_SETSEL, len, len);
+	SendMessage(hView, EM_REPLACESEL, FALSE, (LPARAM)tracewin.queue);
+	View_ScrollToBottom(hView);
+	SendMessage(hView, WM_SETREDRAW, TRUE, 0);
+	//UpdateWindow(hView);
+
+	tracewin.queueused = 0;
+}
+
+static void View_AddString(const char *lpszString) {
+	char	header[10];
+	long	msglen;
+	long	headerlen;
+
+	sprintf(header, "%05u: ", tracewin.lineno);
+	tracewin.lineno++;
+	tracewin.lineno %= 100000;
+	headerlen = 7;
+	msglen = strlen(lpszString);
+	if (tracewin.queueused + msglen + headerlen + 2 > VIEW_QUEUESIZE - 1) {
+		View_DoOutput();
+	}
+	strcpy(tracewin.queue + tracewin.queueused, header);
+	strcpy(tracewin.queue + tracewin.queueused + headerlen, lpszString);
+	strcpy(tracewin.queue + tracewin.queueused + headerlen + msglen, crlf);
+	tracewin.queueused += msglen + headerlen + 2;
+	starttimer();
+/*
+	long	len;
+	long	msglen;
+	char	buf[0x1000];
+
+
+	strcpy(buf, lpszString);
+	strcat(buf, crlf);
+	msglen = strlen(buf);
+
+	//LockWindowUpdate(hView);
+	SendMessage(hView, WM_SETREDRAW, FALSE, 0);
+	len = SendMessage(hView, WM_GETTEXTLENGTH, 0, 0);
+	if (len + msglen > VIEW_MAXCHAR) {
+		SendMessage(hView, EM_SETSEL, 0, len + msglen - VIEW_MAXCHAR);
+		SendMessage(hView, EM_REPLACESEL, FALSE, (LPARAM)"");
+		len = VIEW_MAXCHAR - msglen;
+	}
+	//tracewin.disablepaint = TRUE;
+/*
+	while (tracewin.lines >= VIEW_MAXLINES) {
+
+		// delete the first line
+		len = SendMessage(hView, EM_LINEINDEX, 1, 0);	// get the character index of the line 1.
+		if (len >= 0) {
+			SendMessage(hView, EM_SETSEL, 0, len);
+			SendMessage(hView, EM_REPLACESEL, FALSE, (LPARAM)"");
+			tracewin.lines--;
+		}
+		else {
+			// abnormal case
+			break;
+		}
+	}
+* /
+	//tracewin.disablepaint = FALSE;
+
+	// add after the last line
+	//len = SendMessage(hView, WM_GETTEXTLENGTH, 0, 0);
+	SendMessage(hView, EM_SETSEL, len, len);
+	SendMessage(hView, EM_REPLACESEL, FALSE, (LPARAM)buf);
+	//LockWindowUpdate(NULL);
+	View_ScrollToBottom(hView);
+	SendMessage(hView, WM_SETREDRAW, TRUE, 0);
+
+	//tracewin.lines++;
+*/
+}
+
+#endif
 
 // ----
 
@@ -264,7 +399,11 @@ static LRESULT CALLBACK traceproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			if (!hView) {
 				break;
 			}
+#if defined(EXT2)
+			SendMessage(hView, EM_SETLIMITTEXT, (WPARAM)VIEW_EDITSIZE, 0);
+#else
 			SendMessage(hView, EM_SETLIMITTEXT, (WPARAM)VIEW_BUFFERSIZE, 0);
+#endif
 
 			hfView = CreateFont(VIEW_SIZE, 0, 0, 0, 0, 0, 0, 0, 
 					SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -377,11 +516,18 @@ static LRESULT CALLBACK traceproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			return(FALSE);
 #endif
 
-#if defined(EXT)
+#if defined(EXT2)
 		case WM_TIMER:
 			killtimer();
+			View_DoOutput();
+			break;
+#elif defined(EXT)
+		case WM_TIMER:
+			killtimer();
+			SendMessage(hView, WM_SETREDRAW, FALSE, 0);
 			SetWindowText(hView, szView);
 			View_ScrollToBottom(hView);
+			SendMessage(hView, WM_SETREDRAW, TRUE, 0);
 			break;
 #endif
 		default:
@@ -425,6 +571,14 @@ void trace_init(void) {
 	tracewin.en = 0;
 	tracewin.fh = FILEH_INVALID;
 	trfh_open("traces.txt");
+#endif
+
+#if defined(EXT2)
+//	tracewin.lines = 0;
+//	tracewin.disablepaint = FALSE;
+	tracewin.queueused = 0;
+	tracewin.lineno = 0;
+	tracewin.timerrunning = FALSE;
 #endif
 
 	tracecfg.posx = CW_USEDEFAULT;

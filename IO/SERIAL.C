@@ -213,8 +213,8 @@ static REG8 IOINPCALL keyboardva_i000(UINT port) {
 static void IOOUTCALL keyboardva_o197(UINT port, REG8 dat) {
 
 	TRACEOUT(("keyboard: o197 -> %02x %.4x:%.4x", dat, CPU_CS, CPU_IP));
-	if ((dat & 0x40) == 0x40) {		// テクマニではbit7=1となっているが、
-									// VAのROMはbit7=0で本ポートに出力している。
+	if ((dat & 0x40) == 0x40) {		// テクマニではbit7,6=1,1 or 1,0となっているが、
+									// VAのROMは0,1または1,0で本ポートに出力している。
 									// このため、bit7は無視
 		// モードコマンド
 	}

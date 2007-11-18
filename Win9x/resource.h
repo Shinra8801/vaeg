@@ -414,6 +414,7 @@
 #define IDM_ALTRUSERKEY2                40136
 #define IDM_ALTRZENKAKU                 40137
 #define IDM_ALTRGRPH                    40138
+#define IDM_ALTRNOWAIT                  40139
 
 // Next default values for new objects
 // 
@@ -421,7 +422,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        135
-#define _APS_NEXT_COMMAND_VALUE         40139
+#define _APS_NEXT_COMMAND_VALUE         40140
 #define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

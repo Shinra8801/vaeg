@@ -125,6 +125,13 @@ static	HMENU		hStat = NULL;
 static	BYTE		scrnmode;
 static	WINLOCEX	smwlex;
 
+#if defined(VAEG_EXT)
+static	BOOL		nowait = FALSE;
+static	unsigned int drawskip = 0;
+
+static	BOOL		dash = FALSE;		// ALT(R)ƒL[‰Ÿ‚µ‰º‚°‚É‚æ‚é‚‘¬ŽÀs
+#endif
+
 #if defined(SUPPORT_OPRECORD)
 #define OPPLAYMAXFILES 10
 static	char		opplayfile[OPPLAYMAXFILES][MAX_PATH];
@@ -289,6 +296,13 @@ void np2active_renewal(void) {										// ver0.30
 		soundmng_enable(SNDPROC_MASTER);
 	}
 }
+
+#if defined(VAEG_EXT)
+static void np2core_update(void) {
+	nowait = np2oscfg.NOWAIT || dash;
+	drawskip = (dash) ? 16 : np2oscfg.DRAW_SKIP;
+}
+#endif
 
 
 // ---- resume and statsave
@@ -1049,6 +1063,13 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			winkbd_setaltr(7);
 			update |= SYS_UPDATEOSCFG;
 			break;
+
+		case IDM_ALTRNOWAIT:
+			xmenu_setaltrkey(9);
+			winkbd_resetaltr();
+			winkbd_setaltr(0);
+			update |= SYS_UPDATEOSCFG;
+			break;
 #endif
 
 		case IDM_BEEPOFF:
@@ -1441,6 +1462,9 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			break;
 	}
 	sysmng_update(update);
+#if defined(VAEG_EXT)
+	if (update) np2core_update();
+#endif
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -1740,11 +1764,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 					break;
 				}
 			}
+#if defined(VAEG_EXT)
+			if ((lParam & 0x1000000) && wParam == VK_MENU && np2oscfg.ALTRKEY == 9) {
+				dash = TRUE;
+				np2core_update();
+				break;
+			}
+#endif
 			winkbd_keydown(wParam, lParam);
 			break;
 
 		case WM_SYSKEYUP:
 //			TRACEOUT(("WM_SYSKEYUP: wParam = %02x lParam & 0x21000000 = %02x",wParam, lParam & 0x21000000));
+#if defined(VAEG_EXT)
+			if ((lParam & 0x1000000) && wParam == VK_MENU && np2oscfg.ALTRKEY == 9) {
+				dash = FALSE;
+				np2core_update();
+				break;
+			}
+#endif
 			winkbd_keyup(wParam, lParam);
 			break;
 
@@ -2108,6 +2146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 
 #if defined(VAEG_EXT)
 	xmenu_update();
+	np2core_update();
 #endif
 
 	ShowWindow(hWnd, nCmdShow);
@@ -2267,7 +2306,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 				DispatchMessage(&msg);
 			}
 			else {
+#if defined(VAEG_EXT)
+				if (nowait) {
+#else
 				if (np2oscfg.NOWAIT) {
+#endif
 					joymng_sync();
 					mousemng_sync();
 #if defined(VAEG_EXT)
@@ -2275,12 +2318,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 #endif
 					pccore_exec(framecnt == 0);
 					dclock_callback();
+#if defined(VAEG_EXT)
+					if (drawskip) {					// nowait frame skip
+						framecnt++;
+						if (framecnt >= drawskip) {
+							processwait(0);
+						}
+					}
+#else
 					if (np2oscfg.DRAW_SKIP) {		// nowait frame skip
 						framecnt++;
 						if (framecnt >= np2oscfg.DRAW_SKIP) {
 							processwait(0);
 						}
 					}
+#endif
 					else {							// nowait auto skip
 						framecnt = 1;
 						if (timing_getcount()) {
@@ -2288,8 +2340,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 						}
 					}
 				}
+#if defined(VAEG_EXT)
+				else if (drawskip) {				// frame skip
+					if (framecnt < drawskip) {
+#else
 				else if (np2oscfg.DRAW_SKIP) {		// frame skip
 					if (framecnt < np2oscfg.DRAW_SKIP) {
+#endif
 						joymng_sync();
 						mousemng_sync();
 #if defined(VAEG_EXT)
@@ -2300,7 +2357,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst,
 						framecnt++;
 					}
 					else {
+#if defined(VAEG_EXT)
+						processwait(drawskip);
+#else
 						processwait(np2oscfg.DRAW_SKIP);
+#endif
 					}
 				}
 				else {								// auto skip

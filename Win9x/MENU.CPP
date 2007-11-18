@@ -540,7 +540,7 @@ void xmenu_setaltrkey(BYTE value) {
 
 	HMENU	hmenu;
 
-	if (value > 8) {
+	if (value > 9) {
 		value = 0;
 	}
 	np2oscfg.ALTRKEY = value;
@@ -554,6 +554,7 @@ void xmenu_setaltrkey(BYTE value) {
 	CheckMenuItem(hmenu, IDM_ALTRUSERKEY2, MFCHECK(value == 6));
 	CheckMenuItem(hmenu, IDM_ALTRZENKAKU, MFCHECK(value == 7));
 	CheckMenuItem(hmenu, IDM_ALTRGRPH, MFCHECK(value == 8));
+	CheckMenuItem(hmenu, IDM_ALTRNOWAIT, MFCHECK(value == 9));
 }
 #endif
 

@@ -905,6 +905,7 @@ BEGIN
             MENUITEM "ALT(R) = Zenkaku (VA)",       IDM_ALTRZENKAKU
             MENUITEM "ALT(R) = User1",              IDM_ALTRUSERKEY1
             MENUITEM "ALT(R) = User2",              IDM_ALTRUSERKEY2
+            MENUITEM "ALT(R) = No Wait",            IDM_ALTRNOWAIT
         END
         POPUP "&Sound"
         BEGIN

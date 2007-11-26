@@ -328,7 +328,8 @@ void winkbd_setaltr(UINT altrkey) {
 		key = altrkeys[altrkey];
 	}
 	else {
-		key = NC;
+		key = 0x73;	//NCにすると、key106extが参照されず、ALT(L)が認識されなくなる
+					//このため、デフォルトは0x73(GRPH)とする
 	}
 	key106[0x12] = key;
 }

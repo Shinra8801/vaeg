@@ -1064,6 +1064,13 @@ static void np2cmd(HWND hWnd, UINT16 cmd) {
 			update |= SYS_UPDATEOSCFG;
 			break;
 
+		case IDM_ALTRGRPH:
+			xmenu_setaltrkey(8);
+			winkbd_resetaltr();
+			winkbd_setaltr(8);
+			update |= SYS_UPDATEOSCFG;
+			break;
+
 		case IDM_ALTRNOWAIT:
 			xmenu_setaltrkey(9);
 			winkbd_resetaltr();

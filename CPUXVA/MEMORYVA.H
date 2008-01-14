@@ -10,6 +10,12 @@ typedef struct {		// see, memoryva.x86
 		UINT8	dma_sysm_bank;
 		UINT8	dma_access;
 		UINT8	backupmem_wp;
+		UINT8	dmy0;
+		UINT8	dmy1;
+
+		UINT32	rom0exist;
+		UINT32	rom1exist;
+		UINT32	sysmromexist;
 } _MEMORYVA;
 
 #ifdef __cplusplus

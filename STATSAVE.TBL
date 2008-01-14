@@ -1,7 +1,7 @@
 
 #if defined(SUPPORT_PC88VA)
 
-#define		NP2STATUS_VERSION		0x070422
+#define		NP2STATUS_VERSION		0x080114
 
 static const NP2FHDR np2flagdef = {
 						"VA-EG",

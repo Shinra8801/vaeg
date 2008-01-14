@@ -8,6 +8,11 @@
 #include	"fmboard.h"
 #include	"np2info.h"
 
+#if defined(SUPPORT_PC88VA)
+#include	"memoryva.h"
+#include	"subsystem.h"
+#include	"va91.h"
+#endif
 
 static const char str_comma[] = ", ";
 static const char str_2halfMHz[] = "2.5MHz";
@@ -15,6 +20,46 @@ static const char str_2halfMHz[] = "2.5MHz";
 static const char str_8MHz[] = "8MHz";
 static const char str_notexist[] = "not exist";
 static const char str_disable[] = "disable";
+
+#if defined(VAEG_EXT)
+static const char str_na[] = "N/A";
+static const char str_blank[] = " ";
+static const char str_exist[] = "exist";
+static const char str_ok[] = "OK";
+static const char str_ng[] = "NG";
+
+static const char str_model[] =
+						"PC-9801VF\0"				\
+						"PC-9801VM\0"				\
+						"PC-9801VX\0"				\
+						"";
+
+static const char str_model_9821[] =
+						"PC-9821";
+
+static const char str_model_epson[] =
+						"PC-286";
+
+#if defined(SUPPORT_PC88VA)
+static const char str_model_88va[] =
+						"\0"						\
+						"PC-88VA1\0"				\
+						"PC-88VA2";
+
+static const char str_romtype_88va[] =
+						"PC-88VA1\0"				\
+						"PC-88VA2/3\0"				\
+						"Unknown";
+
+static const char str_88va_rom00[] = "00";
+static const char str_88va_rom08[] = "08";
+static const char str_88va_rom1[]  = "1";
+static const char str_88va_dic[]   = "DIC";
+static const char str_88va_font[]  = "FONT";
+static const char str_88va_subsys[]= "SUBSYS";
+#endif
+
+#endif
 
 static const char str_cpu[] =
 						"8086-2\0"					\
@@ -97,6 +142,32 @@ static void info_ver(char *str, int maxlen, NP2INFOEX *ex) {
 	milstr_ncpy(str, np2version, maxlen);
 	(void)ex;
 }
+
+#if defined(VAEG_EXT)
+static void info_model(char *str, int maxlen, NP2INFOEX *ex) {
+#if defined(SUPPORT_PC88VA)
+	if (pccore.model_va == PCMODEL_NOTVA) {
+#endif
+		if (pccore.model & PCMODEL_PC9821) {
+			milstr_ncpy(str, str_model_9821, maxlen);
+		}
+		else if (pccore.model & PCMODEL_EPSON) {
+			milstr_ncpy(str, str_model_epson, maxlen);
+		}
+		else {
+			milstr_ncpy(str, milstr_list(str_model, pccore.model), maxlen);
+		}
+#if defined(SUPPORT_PC88VA)
+	}
+	else {
+		milstr_ncpy(str, milstr_list(str_model_88va, pccore.model_va), maxlen);
+	}
+#endif
+	(void)ex;
+}
+
+#endif
+
 
 static void info_cpu(char *str, int maxlen, NP2INFOEX *ex) {
 
@@ -341,6 +412,82 @@ static void info_bios(char *str, int maxlen, NP2INFOEX *ex) {
 	(void)ex;
 }
 
+#if defined(SUPPORT_PC88VA)
+static void info_romtype_88va(char *str, int maxlen, NP2INFOEX *ex) {
+	if (pccore.model_va == PCMODEL_NOTVA) {
+		milstr_ncpy(str, str_na, maxlen);
+	}
+	else {
+		int romtype;
+
+		romtype = 0xffff - (rom1mem[0xffff] * 256 + rom1mem[0xfffe]);
+		if (romtype > 2) romtype = 2;
+		milstr_ncpy(str, milstr_list(str_romtype_88va, romtype), maxlen);
+	}
+}
+
+static void info_bios_88va(char *str, int maxlen, NP2INFOEX *ex) {
+	milstr_ncpy(str, str_88va_rom00, maxlen);
+	milstr_ncat(str, str_blank, maxlen);
+	milstr_ncat(str, (((memoryva.rom0exist & 0x00ff) == 0x00ff) ? str_ok : str_ng), maxlen);
+	milstr_ncat(str, str_comma, maxlen);
+
+	milstr_ncat(str, str_88va_rom08, maxlen);
+	milstr_ncat(str, str_blank, maxlen);
+	milstr_ncat(str, (((memoryva.rom0exist & 0x0300) == 0x0300) ? str_ok : str_ng), maxlen);
+	milstr_ncat(str, str_comma, maxlen);
+
+	milstr_ncat(str, str_88va_rom1, maxlen);
+	milstr_ncat(str, str_blank, maxlen);
+	milstr_ncat(str, (((memoryva.rom1exist & 0x0003) == 0x0003) ? str_ok : str_ng), maxlen);
+	milstr_ncat(str, str_comma, maxlen);
+
+	milstr_ncat(str, str_88va_font, maxlen);
+	milstr_ncat(str, str_blank, maxlen);
+	milstr_ncat(str, (((memoryva.sysmromexist & 0x0300) == 0x0300) ? str_ok : str_ng), maxlen);
+	milstr_ncat(str, str_comma, maxlen);
+
+	milstr_ncat(str, str_88va_dic, maxlen);
+	milstr_ncat(str, str_blank, maxlen);
+	milstr_ncat(str, (((memoryva.sysmromexist & 0x3000) == 0x3000) ? str_ok : str_ng), maxlen);
+}
+
+static void info_bios_88va91(char *str, int maxlen, NP2INFOEX *ex) {
+	if (va91.cfg.enabled) {
+		milstr_ncpy(str, str_88va_rom00, maxlen);
+		milstr_ncat(str, str_blank, maxlen);
+		milstr_ncat(str, (((va91cfg.rom0exist & 0x00ff) == 0x00ff) ? str_ok : str_ng), maxlen);
+		milstr_ncat(str, str_comma, maxlen);
+
+		milstr_ncat(str, str_88va_rom08, maxlen);
+		milstr_ncat(str, str_blank, maxlen);
+		milstr_ncat(str, (((va91cfg.rom0exist & 0x0300) == 0x0300) ? str_ok : str_ng), maxlen);
+		milstr_ncat(str, str_comma, maxlen);
+
+		milstr_ncat(str, str_88va_rom1, maxlen);
+		milstr_ncat(str, str_blank, maxlen);
+		milstr_ncat(str, (((va91cfg.rom1exist & 0x0003) == 0x0003) ? str_ok : str_ng), maxlen);
+		milstr_ncat(str, str_comma, maxlen);
+
+		milstr_ncat(str, str_88va_dic, maxlen);
+		milstr_ncat(str, str_blank, maxlen);
+		milstr_ncat(str, (((va91cfg.sysmromexist & 0x3000) == 0x3000) ? str_ok : str_ng), maxlen);
+	}
+	else {
+		milstr_ncpy(str, str_disable, maxlen);
+	}
+}
+
+static void info_bios_88vasubsys(char *str, int maxlen, NP2INFOEX *ex) {
+	if (subsystem.romexist) {
+		milstr_ncpy(str, str_exist, maxlen);
+	}
+	else {
+		milstr_ncpy(str, str_notexist, maxlen);
+	}
+}
+#endif
+
 static void info_rhythm(char *str, int maxlen, NP2INFOEX *ex) {
 
 	char	rhythmstr[8];
@@ -378,6 +525,13 @@ typedef struct {
 } INFOPROC;
 
 static const INFOPROC infoproc[] = {
+#if defined(VAEG_EXT)
+			{"MODEL",		info_model},
+			{"ROMTPVA",		info_romtype_88va},
+			{"BIOSVA",		info_bios_88va},
+			{"BIOS91",		info_bios_88va91},
+			{"BIOSSUB",		info_bios_88vasubsys},
+#endif
 			{"VER",			info_ver},
 			{"CPU",			info_cpu},
 			{"CLOCK",		info_clock},

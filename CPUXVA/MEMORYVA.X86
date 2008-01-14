@@ -736,12 +736,25 @@ _backupmem_wp	db 0				;バックアップメモリ ライトプロテクト
 .dma_access		resb 1				;bit7   1..DMAからのメモリアクセスである
 									;bit6-0 常に0
 .backupmem_wp	resb 1				;バックアップメモリ ライトプロテクト
+.dmy0			resb 1
+.dmy1			resb 1
+
+.rom0exist		resb 4				;bitN ROM0N が存在する
+.rom1exist		resb 4				;bitN ROM1N が存在する
+.sysmromexist	resb 4				;bitN システムメモリエリアバンクNにROMが存在する
 
 			endstruc
 
 
 			struc	va91cfg_t
 .enabled		resd 1
+.dmy0			resb 1
+.dmy1			resb 1
+.dmy2			resb 1
+
+.rom0exist		resb 4				;bitN ROM0N が存在する
+.rom1exist		resb 4				;bitN ROM1N が存在する
+.sysmromexist	resb 4				;bitN システムメモリエリアバンクNにROMが存在する
 			endstruc
 
 			struc	va91_t

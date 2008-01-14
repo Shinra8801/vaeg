@@ -4,7 +4,14 @@
 
 
 typedef struct {		// see, memoryva.x86 va91cfg_t
-	BOOL	enabled;
+	UINT8	enabled;
+	UINT8	dmy0;
+	UINT8	dmy1;
+	UINT8	dmy2;
+
+	UINT32	rom0exist;
+	UINT32	rom1exist;
+	UINT32	sysmromexist;
 } _VA91CFG, *VA91CFG;
 
 typedef struct {		// see, memoryva.x86 va91_t

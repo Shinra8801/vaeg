@@ -27,10 +27,16 @@ void biosva_initialize(void) {
 	FILEH	fh;
 	BOOL	success;
 
+	memoryva.rom0exist = 0;
+	memoryva.rom1exist = 0;
+	memoryva.sysmromexist = 0;
+	subsystem.romexist = FALSE;
+
 	getbiospath(path, VAFONTROM, sizeof(path));
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, fontmem, 0x50000) == 0x50000);
+		if (success) memoryva.sysmromexist |= 0x300;	// bank 8,9
 		file_close(fh);
 	}
 
@@ -38,6 +44,7 @@ void biosva_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, dicmem, 0x80000) == 0x80000);
+		if (success) memoryva.sysmromexist |= 0x3000;	// bank C,D
 		file_close(fh);
 	}
 
@@ -45,6 +52,7 @@ void biosva_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, rom0mem, 0x80000) == 0x80000);
+		if (success) memoryva.rom0exist |= 0xff;		// bank 0-7
 		file_close(fh);
 	}
 
@@ -52,6 +60,7 @@ void biosva_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, rom0mem + 0x80000, 0x20000) == 0x20000);
+		if (success) memoryva.rom0exist |= 0x300;		// bank 8,9
 		file_close(fh);
 	}
 
@@ -59,6 +68,7 @@ void biosva_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, rom1mem, 0x20000) == 0x20000);
+		if (success) memoryva.rom1exist |= 0x03;		// bank 0,1
 		file_close(fh);
 	}
 
@@ -66,6 +76,7 @@ void biosva_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, subsystem.rom, 0x2000) == 0x2000);
+		if (success) subsystem.romexist = TRUE;
 		file_close(fh);
 	}
 

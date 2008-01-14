@@ -24,10 +24,17 @@ static const char str_np2title[] = "Neko Project 21  ";
 #if defined(SUPPORT_PC88VA)
 static const char np2infostr[] = 								\
 						"CPU: %CPU% %CLOCK%\n"					\
+						"MODEL: %MODEL%\n"						\
 						"SOUND: %EXSND%\n"						\
 						"RHYTHM: %RHYTHM%\n"					\
 						"\n"									\
 						"SCREEN: %DISP%\n"						\
+						"\n"									\
+						"[88VA]\n"								\
+						"ROM TYPE: %ROMTPVA%\n"					\
+						"ROM(Main): %BIOSVA%\n"					\
+						"ROM(VupB): %BIOS91%\n"					\
+						"ROM(Sub): %BIOSSUB%\n"					\
 						"\n"									\
 						"[98x1]\n"								\
 						"MEM: %MEM1%\n"							\

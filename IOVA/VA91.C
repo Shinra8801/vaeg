@@ -83,6 +83,7 @@ void va91_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, va91dicmem, 0x80000) == 0x80000);
+		if (success) va91cfg.sysmromexist |= 0x3000;	// bank C,D
 		file_close(fh);
 	}
 
@@ -90,6 +91,7 @@ void va91_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, va91rom0mem, 0x80000) == 0x80000);
+		if (success) va91cfg.rom0exist |= 0xff;		// bank 0-7
 		file_close(fh);
 	}
 
@@ -97,6 +99,7 @@ void va91_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, va91rom0mem + 0x80000, 0x20000) == 0x20000);
+		if (success) va91cfg.rom0exist |= 0x0300;		// bank 8-9
 		file_close(fh);
 	}
 
@@ -104,6 +107,7 @@ void va91_initialize(void) {
 	fh = file_open_rb(path);
 	if (fh != FILEH_INVALID) {
 		success = (file_read(fh, va91rom1mem, 0x20000) == 0x20000);
+		if (success) va91cfg.rom1exist |= 0x03;		// bank 0,1
 		file_close(fh);
 	}
 }

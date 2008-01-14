@@ -5,6 +5,7 @@
 #include "i8255.h"
 
 typedef struct {
+	BYTE	romexist;		// ROMをロードした
 	BYTE	intopcode;		// 割り込みオペコード
 	_I8255	i8255;
 	BYTE	rom[0x2000];

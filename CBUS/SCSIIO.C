@@ -12,6 +12,10 @@
 #include	"scsicmd.h"
 #include	"scsibios.res"
 
+#if defined(SUPPORT_PC88VA)
+#include	"iocoreva.h"
+#endif
+
 
 	_SCSIIO		scsiio;
 
@@ -213,8 +217,11 @@ void scsiio_reset(void) {
 	ZeroMemory(&scsiio, sizeof(scsiio));
 	if (pccore.hddif & PCHDD_SCSI) {
 		scsiio.memwnd = (0xd200 & 0x0e00) >> 9;
+#if defined(VAEG_EXT) //SASI‚ÆÕ“Ë‚ğ‰ñ”ğ‚·‚é‚½‚ß‚Ì‰¼ˆ’u
+		scsiio.resent = (2 << 3) + (7 << 0);
+#else
 		scsiio.resent = (3 << 3) + (7 << 0);
-
+#endif
 		CPU_RAM_D000 |= (3 << 2);				// ram‚É‚·‚é
 		fh = file_open_rb_c("scsi.rom");
 		r = 0;
@@ -245,6 +252,16 @@ void scsiio_bind(void) {
 		iocore_attachinp(0x0cc2, scsiio_icc2);
 		iocore_attachinp(0x0cc4, scsiio_icc4);
 		iocore_attachinp(0x0cc6, scsiio_icc6);
+#if defined(SUPPORT_PC88VA)
+		iocoreva_attachout(0x0cc0, scsiio_occ0);
+		iocoreva_attachout(0x0cc2, scsiio_occ2);
+		iocoreva_attachout(0x0cc4, scsiio_occ4);
+		iocoreva_attachout(0x0cc6, scsiio_occ6);
+		iocoreva_attachinp(0x0cc0, scsiio_icc0);
+		iocoreva_attachinp(0x0cc2, scsiio_icc2);
+		iocoreva_attachinp(0x0cc4, scsiio_icc4);
+		iocoreva_attachinp(0x0cc6, scsiio_icc6);
+#endif
 	}
 }
 

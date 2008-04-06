@@ -87,11 +87,11 @@ static void sasidmac(void) {
 
 	REG8	en;
 
-#if 0 // np2
+#if !defined(VAEG_EXT)
 	if ((sasiio.ocr & SASIOCR_DMAE) &&
 		((sasiio.phase == SASIPHASE_READ)
 			|| (sasiio.phase == SASIPHASE_WRITE))) {
-#else // Shinra
+#else
 	if ((sasiio.ocr & SASIOCR_DMAE) &&
 		((sasiio.phase == SASIPHASE_READ)
 			|| (sasiio.phase == SASIPHASE_WRITE) 
@@ -167,7 +167,7 @@ static void checkcmd(void) {
 			sasiio.sens[3] = (BYTE)sasiio.sector;
 			sasiio.error = 0x00;
 			sasiio.stat = 0x00;
-#if 1 // Shinra
+#if defined(VAEG_EXT)
 			sasidmac();
 #endif
 			break;
@@ -285,7 +285,7 @@ REG8 DMACCALL sasi_dataread(void) {
 			}
 		}
 	}
-#if 1 // Shinra
+#if defined(VAEG_EXT)
 	else if (sasiio.phase == SASIPHASE_SENSE) {
 		ret = sasiio.sens[sasiio.senspos];
 		sasiio.senspos++;

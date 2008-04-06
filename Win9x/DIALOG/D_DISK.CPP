@@ -237,7 +237,13 @@ static LRESULT CALLBACK NewSASIDlgProc(HWND hWnd, UINT msg,
 							break;
 						}
 					}
+#if defined(VAEG_FIX)
+					// 20Mが選択された場合、タイプ3(ヘッド数8)ではなく、タイプ4(ヘッド数4)の
+					// イメージを作成するように修正
+					if (val > 2) {
+#else
 					if (val > 3) {
+#endif
 						val++;
 					}
 					hddsize = val;

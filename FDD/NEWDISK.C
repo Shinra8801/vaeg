@@ -132,7 +132,11 @@ ndnhd_err:
 	return;
 }
 
+#if defined(VAEG_FIX)
+// hddtype = 0:5MB / 1:10MB / 2:15MB / 4:20MB / 5:30MB / 6:40MB
+#else
 // hddtype = 0:5MB / 1:10MB / 2:15MB / 3:20MB / 5:30MB / 6:40MB
+#endif
 void newdisk_hdi(const char *fname, UINT hddtype) {
 
 const SASIHDD	*sasi;

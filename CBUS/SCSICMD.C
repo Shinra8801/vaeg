@@ -118,6 +118,131 @@ REG8 scsicmd_transfer(REG8 id, BYTE *cdb) {
 	return(0xff);
 }
 
+#if defined(VAEG_EXT)
+static REG8 scsicmd_transferinfo_cmd(REG8 id, BYTE *cdb) {
+
+	SXSIDEV	sxsi;
+
+	if (scsiio.reg[SCSICTR_TARGETLUN] & 7) {
+		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
+	}
+
+	sxsi = sxsi_getptr((REG8)(0x20 + id));
+	if ((sxsi == NULL) || (sxsi->type == 0)) {
+		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
+	}
+
+	TRACEOUT(("scsi: command: %s (%.2x)", (cdb[0] < 0x30 ? scsicmdname[cdb[0]] : "unknown"), cdb[0]));
+	switch(cdb[0]) {
+		case 0x00:				// Test Unit Ready
+			scsiio.phase = SCSIPH_STATUS;
+			return(0x1b);		// Succeed
+/*
+		case 0x03:				// Request Sense
+			scsiio.phase = SCSIPH_DATAIN;
+			return(0x19);		// Succeed
+*/
+		case 0x12:				// Inquiry
+			scsicmd_datain(sxsi, cdb);
+			scsiio.phase = SCSIPH_DATAIN;
+			return(0x19);		// Succeed
+
+		case 0x25:				// Read Capacity
+			scsiio.data[0] = (BYTE)((sxsi->totals & 0xff000000L) >> 24);	// total blocks
+			scsiio.data[1] = (BYTE)((sxsi->totals & 0x00ff0000L) >> 16);
+			scsiio.data[2] = (BYTE)((sxsi->totals & 0x0000ff00L) >>  8);
+			scsiio.data[3] = (BYTE)((sxsi->totals & 0x000000ffL));
+			scsiio.data[4] = 0;												// block size
+			scsiio.data[5] = 0;
+			scsiio.data[6] = (sxsi->size & 0xff00) >> 8;
+			scsiio.data[7] = (sxsi->size & 0x00ff);
+			scsiio.phase = SCSIPH_DATAIN;
+			return(0x19);		// Succeed
+
+	}
+
+	SCSICMD_ERR
+	return(0xff);
+}
+
+REG8 scsicmd_transferinfo_out(REG8 id, BYTE *data) {
+	switch(scsiio.phase) {
+		case SCSIPH_COMMAND:
+			return scsicmd_transferinfo_cmd(id, data);
+		default:
+			return 0xff;
+	}
+}
+
+void scsicmd_start_transferinfo_in(REG8 id) {
+	switch(scsiio.phase) {
+		case SCSIPH_DATAIN:
+			// データは、scsicmd_transferinfo_cmdの処理で、scsiio.dataに格納済み。
+			scsiio.nextstatus = 0x1b;		// Transferコマンド正常終了(ステータスフェーズ)
+			scsiio.nextphase = SCSIPH_STATUS;
+			break;
+		case SCSIPH_STATUS:
+			scsiio.data[0] = 0; // Status
+			scsiio.nextstatus = 0x1f;		// Transferコマンド正常終了(メッセージインフェーズ)
+			scsiio.nextphase = SCSIPH_MSGIN;
+			break;
+		case SCSIPH_MSGIN:
+			scsiio.data[0] = 0; // Message
+			scsiio.nextstatus = 0x20;		// Transferコマンド(メッセージインフェーズ)がACKのアサート状態でポーズ
+			scsiio.nextphase = SCSIPH_MSGIN;
+			break;
+	}
+}
+
+REG8 scsicmd_end_transferinfo_in(void) {
+	REG8 ret = 0xff;
+
+	if (scsiio.nextstatus != 0xff) {
+		ret = scsiio.nextstatus;
+		scsiio.nextstatus = 0xff;
+		scsiio.phase = scsiio.nextphase;
+	}
+	return ret;
+}
+
+/*
+REG8 scsicmd_transferinfo(REG8 id, BYTE *cdb) {
+
+	SXSIDEV	sxsi;
+	UINT	leng;
+
+	if (scsiio.reg[SCSICTR_TARGETLUN] & 7) {
+		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
+	}
+
+	sxsi = sxsi_getptr((REG8)(0x20 + id));
+	if ((sxsi == NULL) || (sxsi->type == 0)) {
+		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
+	}
+
+	TRACEOUT(("scsi: transfer info: scsi command code = %.2x", cdb[0]));
+	switch(cdb[0]) {
+		case 0x00:				// Test Unit Ready
+			scsiio.data[0] = 0;	// Status Byte 
+			scsiio.phase = SCSIPH_STATUS;
+			return(0x1b);		// Succeed
+
+		case 0x12:				// Inquiry
+			leng = scsicmd_datain(sxsi, cdb);
+			scsiio.phase = SCSIPH_DATAIN;
+			return(0x19);			// Succeed
+
+		case 0x03:				// Request Sense
+			scsiio.phase = SCSIPH_DATAIN;
+			return(0x19);		// Succeed
+	}
+
+	SCSICMD_ERR
+	return(0xff);
+}
+*/
+#endif
+
 static REG8 scsicmd_cmd(REG8 id) {
 
 	SXSIDEV	sxsi;

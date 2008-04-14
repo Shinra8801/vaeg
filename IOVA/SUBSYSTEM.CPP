@@ -17,6 +17,12 @@
 
 #if defined(SUPPORT_PC88VA)
 
+// TRACEOUTを有効にする場合は、以下の1を0にする
+#if 1
+#undef TRACEOUT
+#define TRACEOUT(arg)
+#endif
+
 #define SLEEP_HACK		// メインからのコマンド待ち時にCPUを停止する機能を有効にする 
 
 

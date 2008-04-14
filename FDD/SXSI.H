@@ -79,9 +79,9 @@ typedef struct {
 } VHDHDR;
 
 typedef struct {
-	long	totals;
+	long	totals;			// 全セクタ数
 	UINT16	cylinders;
-	UINT16	size;
+	UINT16	size;			// セクタサイズ
 	UINT8	sectors;
 	UINT8	surfaces;
 	UINT16	type;

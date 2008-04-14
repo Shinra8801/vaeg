@@ -141,5 +141,59 @@ static const char *scsictr[0x40] = {
 		scsictr_nec,				// 3e
 		scsictr_nec,				// 3f
 };
+#if defined(VAEG_EXT)
+static const char *scsicmdname[0x30] = {
+		"Test Unit Ready",	// 00
+		"Rezero Unit",		// 01
+		"unknown",			// 02
+		"Request Sense",	// 03
+		"Format Unit",		// 04
+		"unknown",			// 05
+		"unknown",			// 06
+		"Reassign Block",	// 07
+		"Read",				// 08
+		"unknown",			// 09
+		"Write",			// 0a
+		"Seek",				// 0b
+		"unknown",			// 0c
+		"unknown",			// 0d
+		"unknown",			// 0e
+		"unknown",			// 0f
+
+		"unknown",			// 10
+		"unknown",			// 11
+		"Inquiry", // 12
+		"unknown",			// 13
+		"unknown",			// 14
+		"Mode Select",		// 15
+		"Reserve Unit",		// 16
+		"Reserve Unit",		// 17
+		"unknown",			// 18
+		"unknown",			// 19
+		"Mode Sense",		// 1a
+		"Start/Stop Unit",	// 1b
+		"unknown",			// 1c
+		"unknown",			// 1d
+		"unknown",			// 1e
+		"unknown",			// 1f
+
+		"unknown",			// 20
+		"unknown",			// 21
+		"unknown",			// 22
+		"unknown",			// 23
+		"unknown",			// 24
+		"Read Capacity",	// 25
+		"unknown",			// 26
+		"unknown",			// 27
+		"Read Extended",	// 28
+		"unknown",			// 29
+		"Write Extended",	// 2a
+		"Seek Extended",	// 2b
+		"unknown",			// 2c
+		"unknown",			// 2d
+		"Write and Verify", // 2e
+		"Verify",			// 2f
+};
+#endif
 #endif
 

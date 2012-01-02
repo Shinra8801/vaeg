@@ -3,3 +3,7 @@
 *.opt
 *.plg
 traceout.txt
+ipch
+*.vcxproj.user
+*.sdf
+*.suo

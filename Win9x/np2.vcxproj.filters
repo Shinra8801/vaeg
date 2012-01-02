@@ -1,0 +1,869 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{31bda657-6d5f-4407-a19e-7dfc7334df7a}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{9dcab100-17b5-44fc-a49b-f5c4f4108252}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cpu">
+      <UniqueIdentifier>{cc0ecff2-ae93-4e02-b447-18316714c97a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bios">
+      <UniqueIdentifier>{c7cf78ee-8589-41a6-a621-4008d00b05a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sound">
+      <UniqueIdentifier>{66bbc9f1-732b-4f25-bf41-ce03d1afa207}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sound\vermouth">
+      <UniqueIdentifier>{a55548cd-f977-424b-bb04-402d5cf7896a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sound\getsnd">
+      <UniqueIdentifier>{4fa44493-a001-4042-a0c5-0c2da6ec59f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fdd">
+      <UniqueIdentifier>{d1b8bdd8-9828-4c2a-9ff6-e358f3eae5f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lio">
+      <UniqueIdentifier>{b8eee919-eea8-4913-97d1-54075955bea2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\font">
+      <UniqueIdentifier>{fc4c4aa7-7d55-4922-a5c0-284916b84f74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Win9x">
+      <UniqueIdentifier>{bb82b676-7062-41a9-b51f-66f4d8ebe2b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Win9x\dialog">
+      <UniqueIdentifier>{6ef555e4-5943-4d7c-b951-d4daa0904277}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Win9x\debuguty">
+      <UniqueIdentifier>{f368f6c5-00d9-40c9-b9ec-370d5ddd14e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{28772e5a-5e9f-49a7-9335-716843dd2e65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CBUS">
+      <UniqueIdentifier>{bbbe3421-48b4-43cc-a603-28fa553aa398}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vram">
+      <UniqueIdentifier>{bcd8a490-1beb-45b7-8346-c6e9af8782bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\generic">
+      <UniqueIdentifier>{617c1c77-54b2-4941-b2ff-499a838505d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vramva">
+      <UniqueIdentifier>{b80aa4eb-fa7c-45d6-9c04-b42e405eccb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cpuxva">
+      <UniqueIdentifier>{04b068bb-ceee-4b71-9234-a12b9e7202c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\biosva">
+      <UniqueIdentifier>{9406bd39-6c03-4a59-86e2-f87b03a1e107}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IOVA">
+      <UniqueIdentifier>{187a0593-17d4-4b78-a126-ba99e9d25fc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cpucva">
+      <UniqueIdentifier>{dce7f1a6-fe33-49c2-aeda-0f9812f7eac4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{546ecede-e8e5-4363-b93e-6ac111a7a639}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{c3d23012-ab8a-4f19-a831-b6910bfd2df7}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\BREAKPOINT.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CALENDAR.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DEBUGSUB.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\KEYSTAT.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NEVENT.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\OPRECORD.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PCCORE.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STATSAVE.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TIMING.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\_MEMORY.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\BMPDATA.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\LSTARRAY.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\MILSTR.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\MIMPIDEF.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\PROFILE.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\STRRES.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\TEXTFILE.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\WAVEFILE.C">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\I286X.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\I286XADR.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\I286XCTS.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\I286XREP.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\I286XS.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\I286X\V30PATCH.CPP">
+      <Filter>Source Files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS09.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS0C.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS12.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS13.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS18.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS19.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS1A.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS1B.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS1C.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\BIOS1F.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOS\SXSIBIOS.C">
+      <Filter>Source Files\bios</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\ADPCMC.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\ADPCMG.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\BEEPC.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\BEEPG.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\CS4231C.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\CS4231G.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\FMBOARD.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\FMTIMER.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\OPNGENC.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\PCM86C.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\PCM86G.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\PSGGENC.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\PSGGENG.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\RHYTHMC.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\S98.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\SOUND.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\SOUNDROM.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\TMS3631C.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\TMS3631G.C">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\VERMOUTH\MIDIMOD.C">
+      <Filter>Source Files\sound\vermouth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\VERMOUTH\MIDINST.C">
+      <Filter>Source Files\sound\vermouth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\VERMOUTH\MIDIOUT.C">
+      <Filter>Source Files\sound\vermouth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\VERMOUTH\MIDTABLE.C">
+      <Filter>Source Files\sound\vermouth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\VERMOUTH\MIDVOICE.C">
+      <Filter>Source Files\sound\vermouth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\GETSND\GETSMIX.C">
+      <Filter>Source Files\sound\getsnd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\GETSND\GETSND.C">
+      <Filter>Source Files\sound\getsnd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SOUND\GETSND\GETWAVE.C">
+      <Filter>Source Files\sound\getsnd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\DISKDRV.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\FDD_D88.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\FDD_MTR.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\FDD_XDF.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\FDDFILE.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\NEWDISK.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FDD\SXSI.C">
+      <Filter>Source Files\fdd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\GCIRCLE.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\GLINE.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\GPSET.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\GPUT1.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\GSCREEN.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LIO\LIO.C">
+      <Filter>Source Files\lio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONT.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTDATA.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTFM7.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTMAKE.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTPC88.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTPC98.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTV98.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTX1.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FONT\FONTX68K.C">
+      <Filter>Source Files\font</Filter>
+    </ClCompile>
+    <ClCompile Include="CMMIDI.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="CMPARA.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="CMSERIAL.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="COMMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="DCLOCK.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="DD2.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="DOSIO.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="EXTROMIO.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="FONTMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="INI.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="JOYMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="JULIET.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="MENU.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="MOUSEMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="NP2.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="NP2ARG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SCRNMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SOUNDMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SSTP.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SSTPMSG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SUBWIND.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="SYSMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="TASKMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="TIMEMNG.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="TOOLWIN.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="TRACE.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="WINKBD.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="WINLOC.CPP">
+      <Filter>Source Files\Win9x</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_ABOUT.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_BMP.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_BMS.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_CLND.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_CONFIG.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_DISK.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_MPU98.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_OPRECORD.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_SCREEN.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_SERIAL.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\D_SOUND.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\DIALOGS.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DIALOG\NP2CLASS.CPP">
+      <Filter>Source Files\Win9x\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\DEBUGCTRL.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEW1MB.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWASM.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWCMN.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWER.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWGACTRLVA.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWMEM.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWMENU.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWREG.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWSEG.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWSND.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWSUBASM.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWSUBMEM.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWSUBREG.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWVABANK.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="DEBUGUTY\VIEWVIDEOVA.CPP">
+      <Filter>Source Files\Win9x\debuguty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\ARTIC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\BMSIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\CGROM.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\CPUIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\CRTC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\DIPSW.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\DMAC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\EGC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\EMSIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\EPSONIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\FDC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\FDD320.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\GDC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\GDC_PSET.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\GDC_SUB.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\IOCORE.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\MOUSEIF.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\NECIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\NMIIO.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\NP2SYSP.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\NP2VASUP.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\PIC.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\PIT.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\PRINTIF.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\SERIAL.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\SYSPORT.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IO\UPD4990.C">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\AMD98.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="BOARD118.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\BOARD14.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\BOARD26K.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\BOARD86.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\BOARDSPB.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\BOARDX2.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\CBUSCORE.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\CS4231IO.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\IDEIO.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\MPU98II.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\PC9861K.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\PCM86IO.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\SASIIO.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\SCSICMD.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CBUS\SCSIIO.C">
+      <Filter>Source Files\CBUS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\DISPSYNC.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\MAKETEXT.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\MAKETGRP.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\PALETTES.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\SCRNDRAW.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\SCRNSAVE.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\SDRAW.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAM\VRAM.C">
+      <Filter>Source Files\vram</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\CMJASTS.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\CMNDRAW.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\DIPSWBMP.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\HOSTDRV.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\HOSTDRVS.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\KEYDISP.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\NP2INFO.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\SOFTKBD.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GENERIC\UNASM.C">
+      <Filter>Source Files\generic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\MAKEGRPHVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\MAKESPRVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\MAKETEXTVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\PALETTESVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\SCRNDRAWVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VRAMVA\SDRAWVA.C">
+      <Filter>Source Files\vramva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BIOSVA\BIOSVA.C">
+      <Filter>Source Files\biosva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\BKUPMEMVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\BOARDSB2.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\CGROMVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\FDSUBSYS.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\GACTRLVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\I8255.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\IOCOREVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\MEMCTRLVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\MOUSEIFVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\SGP.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\SUBSYSTEM.CPP">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\SUBSYSTEMIF.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\SUBSYSTEMMX.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\SYSPORTVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\TSP.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\UPD9002.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\VA91.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\IOVA\VIDEOVA.C">
+      <Filter>Source Files\IOVA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CPUCVA\GVRAMVA.C">
+      <Filter>Source Files\cpucva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CPUCVA\Z80c.cpp">
+      <Filter>Source Files\cpucva</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CPUCVA\Z80diag.cpp">
+      <Filter>Source Files\cpucva</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ICONS\NEKOP2.BMP">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ICONS\Np2.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ICONS\NP2DEBUG.ICO">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ICONS\NP2TOOL.BMP">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ICONS\NP2TOOL2.BMP">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ICONS\Fddseek.wav" />
+    <None Include="ICONS\Fddseek1.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NP2.RC">
+      <Filter>Source Files\Win9x</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\BREAKPOINT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\FDSUBSYS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\GACCESS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VRAMVA\MAKESPRVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IO\NP2VASUP.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VRAMVA\PALETTESVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VRAMVA\SCRNDRAWVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VRAMVA\SDRAWVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\SGP.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\SUBSYSTEM.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\TSP.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IOVA\VIDEOVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DEBUGUTY\VIEWVIDEOVA.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CPUCVA\Z80if.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="x86\PARTS.X86">
+      <Filter>Source Files\common</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\I286X\DMAP.X86">
+      <Filter>Source Files\cpu</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\I286X\EGCMEM.X86">
+      <Filter>Source Files\cpu</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\I286X\MEMORY.X86">
+      <Filter>Source Files\cpu</Filter>
+    </CustomBuild>
+    <CustomBuild Include="x86\OPNGENG.X86">
+      <Filter>Source Files\sound</Filter>
+    </CustomBuild>
+    <CustomBuild Include="x86\CPUTYPE.X86">
+      <Filter>Source Files\Win9x</Filter>
+    </CustomBuild>
+    <CustomBuild Include="DCLOCKD.X86">
+      <Filter>Source Files\Win9x</Filter>
+    </CustomBuild>
+    <CustomBuild Include="x86\MAKEGRPH.X86">
+      <Filter>Source Files\vram</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CPUXVA\MEMORYVA.X86">
+      <Filter>Source Files\cpuxva</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

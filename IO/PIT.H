@@ -59,6 +59,10 @@ REG8 pit_getstat(PITCH pitch);
 void itimer_reset(void);
 void itimer_bind(void);
 
+#if defined(SUPPORT_PC88VA)
+void pit_ontckschanged(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

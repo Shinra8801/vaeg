@@ -10,7 +10,10 @@
 #include	"beep.h"
 #include	"board14.h"
 
+#if defined(SUPPORT_PC88VA)
 #include	"iocoreva.h"
+#include	"upd9002.h"
+#endif
 
 #define	BEEPCOUNTEREX					// BEEPアイドル時のカウンタをα倍に
 #if defined(CPUCORE_IA32)
@@ -18,16 +21,50 @@
 #endif
 
 
-// --- Interval timer
+// --- Common
+#if defined(SUPPORT_PC88VA)
+/*
+CPU供給クロック÷タイマ供給クロック を取得する
+*/
+static UINT timermultiple(void) {
+	if (pccore.model_va == PCMODEL_NOTVA) {
+		return pccore.multiple;
+	}
+	else {
+		return pccore.multiple << (upd9002.tcks & 3);
+	}
+}
 
+void pit_ontckschanged(void) {
+	PITCH	pitch;
+
+	pitch = pit.ch + 1;
+	if (pitch->ctrl & 0x0c) {
+		beep_hzset(pitch->value, pccore.realclock / timermultiple());
+	}
+}
+#endif
+
+
+
+// --- Interval timer
 static void setsystimerevent(UINT32 cnt, BOOL absolute) {
 
+#if defined(SUPPORT_PC88VA)
+	if (cnt > 8) {									// 根拠なし
+		cnt *= timermultiple();
+	}
+	else {
+		cnt = timermultiple() << 16;
+	}
+#else
 	if (cnt > 8) {									// 根拠なし
 		cnt *= pccore.multiple;
 	}
 	else {
 		cnt = pccore.multiple << 16;
 	}
+#endif
 	nevent_set(NEVENT_ITIMER, cnt, systimer, absolute);
 }
 
@@ -58,12 +95,21 @@ void systimer(NEVENTITEM item) {
 #if defined(BEEPCOUNTEREX)
 static void setbeepeventex(UINT32 cnt, BOOL absolute) {
 
+#if defined(SUPPORT_PC88VA)
+	if (cnt > 2) {
+		cnt *= timermultiple();
+	}
+	else {
+		cnt = timermultiple() << 16;
+	}
+#else
 	if (cnt > 2) {
 		cnt *= pccore.multiple;
 	}
 	else {
 		cnt = pccore.multiple << 16;
 	}
+#endif
 	while(cnt < 0x100000) {
 		cnt <<= 1;
 	}
@@ -73,12 +119,21 @@ static void setbeepeventex(UINT32 cnt, BOOL absolute) {
 
 static void setbeepevent(UINT32 cnt, BOOL absolute) {
 
+#if defined(SUPPORT_PC88VA)
+	if (cnt > 2) {
+		cnt *= timermultiple();
+	}
+	else {
+		cnt = timermultiple() << 16;
+	}
+#else
 	if (cnt > 2) {
 		cnt *= pccore.multiple;
 	}
 	else {
 		cnt = pccore.multiple << 16;
 	}
+#endif
 	nevent_set(NEVENT_BEEP, cnt, beeponeshot, absolute);
 }
 
@@ -111,12 +166,21 @@ void beeponeshot(NEVENTITEM item) {
 
 static void setrs232cevent(UINT32 cnt, BOOL absolute) {
 
+#if defined(SUPPORT_PC88VA)
+	if (cnt > 1) {
+		cnt *= timermultiple();
+	}
+	else {
+		cnt = timermultiple() << 16;
+	}
+#else
 	if (cnt > 1) {
 		cnt *= pccore.multiple;
 	}
 	else {
 		cnt = pccore.multiple << 16;
 	}
+#endif
 	cnt *= rs232c.mul;
 	nevent_set(NEVENT_RS232C, cnt, rs232ctimer, absolute);
 }
@@ -162,7 +226,11 @@ static UINT getcount(const _PITCH *pitch) {
 			clock = nevent_getremain(NEVENT_BEEP);
 #if defined(BEEPCOUNTEREX)
 			if (clock >= 0) {
+#if defined(SUPPORT_PC88VA)
+				clock /= timermultiple();
+#else
 				clock /= pccore.multiple;
+#endif
 				if (pitch->value > 2) {
 					clock %= pitch->value;
 				}
@@ -189,7 +257,11 @@ static UINT getcount(const _PITCH *pitch) {
 			break;
 	}
 	if (clock > 0) {
+#if defined(SUPPORT_PC88VA)
+		return(clock / timermultiple());
+#else
 		return(clock / pccore.multiple);
+#endif
 	}
 	return(0);
 }
@@ -340,7 +412,11 @@ static void IOOUTCALL pit_o73(UINT port, REG8 dat) {
 	setbeepevent(pitch->value, NEVENT_ABSOLUTE);
 	beep_lheventset(1);												// ver0.79
 	if (pitch->ctrl & 0x0c) {
+#if defined(SUPPORT_PC88VA)
+		beep_hzset(pitch->value, pccore.realclock / timermultiple());
+#else
 		beep_hzset(pitch->value);
+#endif
 	}
 	(void)port;
 }
@@ -428,7 +504,11 @@ void itimer_reset(void) {
 #endif
 	setsystimerevent(0, NEVENT_ABSOLUTE);
 	beep_lheventset(1);												// ver0.79
+#if defined(SUPPORT_PC88VA)
+	beep_hzset(beepcnt, pccore.realclock / timermultiple());
+#else
 	beep_hzset(beepcnt);
+#endif
 }
 
 void itimer_bind(void) {

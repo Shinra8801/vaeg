@@ -119,15 +119,64 @@ REG8 scsicmd_transfer(REG8 id, BYTE *cdb) {
 }
 
 #if defined(VAEG_EXT)
-static REG8 scsicmd_transferinfo_cmd(REG8 id, BYTE *cdb) {
+static const BYTE mode_sense_header[0x04] = {
+	0x00, 0x00, 0x00, 0x08
+};
 
+static REG8 scsicmd_transferinfo_mode_sense_cmd(SXSIDEV sxsi, REG8 id, BYTE *cdb) {
+	int pagecode = cdb[2] & 0x3f;
+	BYTE *data;
+
+	TRACEOUT(("scsi: mode sense command: page=%.2x", pagecode));
+
+	data = scsiio.data;
+
+	// mode sense header
+	CopyMemory(data, mode_sense_header, sizeof(mode_sense_header));
+	data += sizeof(mode_sense_header);
+
+	// mode sense block descriptor
+	*data++ = 0x00;	// dencity code
+	*data++ = (BYTE)((sxsi->totals & 0x00ff0000L) >> 16);		// block number
+	*data++ = (BYTE)((sxsi->totals & 0x0000ff00L) >>  8);
+	*data++ = (BYTE)((sxsi->totals & 0x000000ffL));
+	*data++ = 0;												// zero
+	*data++ = 0;												// block length
+	*data++ = (sxsi->size & 0xff00) >> 8;
+	*data++ = (sxsi->size & 0x00ff);
+
+	scsiio.phase = SCSIPH_DATAIN;
+	switch(pagecode) {
+	case 0x04:	// Rigid Disk Drive Geometry Parameters
+		*data++ = 0x04;	// page code
+		*data++ = 0x12;	// page length
+		*data++ = 0x00; // cylinder number (3 bytes)
+		*data++ = (BYTE)((sxsi->cylinders & 0xff00) >> 8);
+		*data++ = (BYTE)((sxsi->cylinders & 0x00ff));
+		*data++ = (BYTE)sxsi->surfaces;
+		ZeroMemory(data, 14);
+		data += 14;
+		break;
+
+	default:	// サポートしていないページコードの場合
+				// どう応答を返したら良いか不明・・・
+		scsiio.phase = SCSIPH_STATUS;
+		break;
+	}
+	scsiio.data[0] = (data - scsiio.data) - 1;
+	return 0x19;		// Succeed
+}
+
+static REG8 scsicmd_transferinfo_cmd(REG8 id, BYTE *cdb) {
+	REG8 drv;
 	SXSIDEV	sxsi;
 
 	if (scsiio.reg[SCSICTR_TARGETLUN] & 7) {
 		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
 	}
 
-	sxsi = sxsi_getptr((REG8)(0x20 + id));
+	drv = 0x20 + id;
+	sxsi = sxsi_getptr(drv);
 	if ((sxsi == NULL) || (sxsi->type == 0)) {
 		return(0x42); // このコードはselect/reselect用なので、ここで使うのは正しくないかも
 	}
@@ -147,6 +196,9 @@ static REG8 scsicmd_transferinfo_cmd(REG8 id, BYTE *cdb) {
 			scsiio.phase = SCSIPH_DATAIN;
 			return(0x19);		// Succeed
 
+		case 0x1a:				// Sense Mode
+			return(scsicmd_transferinfo_mode_sense_cmd(sxsi, id, cdb));
+
 		case 0x25:				// Read Capacity
 			scsiio.data[0] = (BYTE)((sxsi->totals & 0xff000000L) >> 24);	// total blocks
 			scsiio.data[1] = (BYTE)((sxsi->totals & 0x00ff0000L) >> 16);
@@ -158,6 +210,41 @@ static REG8 scsicmd_transferinfo_cmd(REG8 id, BYTE *cdb) {
 			scsiio.data[7] = (sxsi->size & 0x00ff);
 			scsiio.phase = SCSIPH_DATAIN;
 			return(0x19);		// Succeed
+
+		case 0x28:				// Read Extended
+			{
+				UINT32 pos;
+				UINT16 blocks;
+
+				pos = (((UINT32)cdb[2]) << 24) + 
+					  (((UINT32)cdb[3]) << 16) + 
+					  (((UINT32)cdb[4]) <<  8) + 
+					  (((UINT32)cdb[5]));
+				blocks = (((UINT16)cdb[7]) << 8) + ((UINT16)cdb[8]);
+				if (pos > 0x7fffffffL ||
+					blocks > 0x7fff ||
+					pos + blocks > 0x7fffffffL ||
+					pos + blocks >= (UINT32)sxsi->totals) {
+					// pos(論理ブロックアドレス)またはblocks(転送長)が不正
+					// どのような応答を返すべき？？
+					scsiio.phase = SCSIPH_STATUS;
+					return(0x19);		// Succeed
+				}
+				if ((long)blocks * sxsi->size > sizeof(scsiio.data)) {
+					// blocks(転送長)が大きすぎてscsiio.dataに入らない
+					// エラーの扱いとする。どのような応答を返すべき？？
+					scsiio.phase = SCSIPH_STATUS;
+					return(0x19);		// Succeed
+				}
+				if (sxsi_read(drv, pos, scsiio.data, blocks * sxsi->size)) {
+					// 読み取りエラー
+					// どのような応答を返すべき？？
+					scsiio.phase = SCSIPH_STATUS;
+					return(0x19);		// Succeed
+				}
+				scsiio.phase = SCSIPH_DATAIN;
+				return(0x19);		// Succeed
+			}
 
 	}
 

@@ -14,6 +14,7 @@
 #include	"sgp.h"
 #include	"subsystemmx.h"
 #include	"va91.h"
+#include	"upd9002.h"
 #endif
 
 	_ARTIC		artic;
@@ -478,6 +479,7 @@ static const IOCBFN resetfn[] = {
 			gactrlva_reset,
 			cgromva_reset,
 			va91_reset,
+			upd9002_reset,
 #endif
 		};
 
@@ -510,6 +512,7 @@ static const IOCBFN bindfn[] = {
 			gactrlva_bind,
 			cgromva_bind,
 			va91_bind,
+			upd9002_bind,
 #endif
 		};
 

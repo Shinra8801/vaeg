@@ -49,6 +49,7 @@
 #include	"subsystem.h"
 #include	"boardsb2.h"
 #include	"va91.h"
+#include	"upd9002.h"
 #endif
 
 #if defined(MACOS)

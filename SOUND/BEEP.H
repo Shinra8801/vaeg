@@ -47,7 +47,11 @@ void beep_setvol(UINT vol);
 void beep_changeclock(void);
 
 void beep_reset(void);
+#if defined(SUPPORT_PC88VA)
+void beep_hzset(UINT16 cnt, UINT beepclock);
+#else
 void beep_hzset(UINT16 cnt);
+#endif
 void beep_modeset(void);
 void beep_eventinit(void);
 void beep_eventreset(void);
@@ -64,7 +68,11 @@ void SOUNDCALL beep_getpcm(BEEP bp, SINT32 *pcm, UINT count);
 
 #define beep_setvol(v)
 #define beep_changeclock()
+#if defined(SUPPORT_PC88VA)
+#define beep_hzset(c,clock)
+#else
 #define beep_hzset(c)
+#endif
 #define beep_modeset()
 #define beep_eventreset()
 #define beep_lheventset(b)

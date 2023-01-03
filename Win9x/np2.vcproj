@@ -172,7 +172,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ddraw.lib dxguid.lib DSOUND.LIB winmm.lib comctl32.lib wsock32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib ddraw.lib dxguid.lib DSOUND.LIB winmm.lib comctl32.lib wsock32.lib user32.lib Comdlg32.lib Gdi32.lib Shell32.lib"
 				OutputFile="..\bin/vaegd.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -367,7 +367,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ddraw.lib dxguid.lib DSOUND.LIB winmm.lib comctl32.lib wsock32.lib"
+				AdditionalDependencies="ddraw.lib dxguid.lib DSOUND.LIB winmm.lib comctl32.lib wsock32.lib user32.lib Comdlg32.lib Gdi32.lib Shell32.lib"
 				OutputFile="..\bin/vaeg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"

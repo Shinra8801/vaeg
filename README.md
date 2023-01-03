@@ -41,4 +41,8 @@ http://www.pc88.gr.jp/vaeg/
 * この設定でも次の場合は文字化けする。
     * git show: 異なる文字コードが混在。コミットメッセージ(UTF-8)は化ける。ファイル(CP932)は正常。
 
+## ビルド
+
+[Win9x/README_BUILD.md](Win9x/README_BUILD.md) を参照。
+
 

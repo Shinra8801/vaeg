@@ -2,4 +2,6 @@
 *.ncb
 *.opt
 *.plg
+*.suo
+*.user
 traceout.txt

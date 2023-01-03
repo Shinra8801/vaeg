@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "np2", "np2.vcproj", "{21EA621C-DCB0-4576-B54D-2E300D2DD395}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+		Trace|Win32 = Trace|Win32
+		WaveRec|Win32 = WaveRec|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Debug|Win32.Build.0 = Debug|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Release|Win32.ActiveCfg = Release|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Release|Win32.Build.0 = Release|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Trace|Win32.ActiveCfg = Trace|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.Trace|Win32.Build.0 = Trace|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.WaveRec|Win32.ActiveCfg = WaveRec|Win32
+		{21EA621C-DCB0-4576-B54D-2E300D2DD395}.WaveRec|Win32.Build.0 = WaveRec|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
